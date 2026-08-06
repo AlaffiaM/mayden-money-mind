@@ -19,6 +19,7 @@ import AdminNotifications from "./pages/admin/Notifications";
 import AdminSettings from "./pages/admin/Settings";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminLayout from "./components/layout/AdminLayout";
+import ErrorBanner from "./components/ui/ErrorBanner";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Support from "./pages/Support";
@@ -111,6 +112,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ErrorBanner />
         <AppRoutes />
       </AuthProvider>
     </BrowserRouter>
