@@ -253,7 +253,7 @@ export default function Episodes() {
     setSelectedAudio(ep.audioUrl || null);
     setShowModal(true);
     if (ep.audioUrl && !ep.runTimeSeconds) {
-      const duration = await detectAudioDuration(ep.audioUrl);
+      const duration = await detectAudioDuration(ep.previewAudioUrl || ep.audioUrl);
       if (duration > 0) setForm((prev) => ({ ...prev, runTimeSeconds: String(duration) }));
     }
   };
@@ -369,7 +369,7 @@ export default function Episodes() {
         const file = dayAudio[0];
         const duration = await detectAudioDuration(file.url);
         const fd = new FormData();
-        fd.append("audioUrl", file.url);
+        fd.append("audioUrl", file.path);
         if (duration > 0) fd.append("runTimeSeconds", String(duration));
         await api.put(`/admin/episodes/${ep.id}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
         assigned++;
@@ -639,34 +639,34 @@ export default function Episodes() {
                   Audio — {currentDayPillar} ({form.dayType})
                 </label>
                 {currentDayFiles.length === 0 ? (
-                  <p className="text-xs text-gray-400 py-3">No audio files available for this day. Add files to client/public/audio/Maiden/</p>
+                  <p className="text-xs text-gray-400 py-3">No audio files available for this day. Add files to server/storage/audio/Maiden/</p>
                 ) : (
                   <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-48 overflow-y-auto">
                     {currentDayFiles.map((file) => (
                       <div
-                        key={file.url}
+                        key={file.path}
                         onClick={async () => {
-                          if (selectedAudio === file.url) {
+                          if (selectedAudio === file.path) {
                             setSelectedAudio(null);
                           } else {
-                            setSelectedAudio(file.url);
+                            setSelectedAudio(file.path);
                             const duration = await detectAudioDuration(file.url);
                             if (duration > 0) setForm((prev) => ({ ...prev, runTimeSeconds: String(duration) }));
                           }
                         }}
                         className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${
-                          selectedAudio === file.url ? "bg-mayden-magenta/10 border-l-2 border-mayden-magenta" : "hover:bg-gray-50"
+                          selectedAudio === file.path ? "bg-mayden-magenta/10 border-l-2 border-mayden-magenta" : "hover:bg-gray-50"
                         }`}
                       >
-                        <Music size={14} className={`flex-shrink-0 ${selectedAudio === file.url ? "text-mayden-magenta" : "text-gray-400"}`} />
-                        <span className={`text-sm flex-1 truncate ${selectedAudio === file.url ? "text-mayden-magenta font-medium" : "text-gray-600"}`}>
+                        <Music size={14} className={`flex-shrink-0 ${selectedAudio === file.path ? "text-mayden-magenta" : "text-gray-400"}`} />
+                        <span className={`text-sm flex-1 truncate ${selectedAudio === file.path ? "text-mayden-magenta font-medium" : "text-gray-600"}`}>
                           {file.name}
                         </span>
                         <button
                           onClick={(e) => { e.stopPropagation(); togglePreview(file); }}
                           className="p-1 rounded hover:bg-gray-200"
                         >
-                          {playingPreview === file.url ? <Pause size={12} /> : <Play size={12} />}
+                          {playingPreview === file.path ? <Pause size={12} /> : <Play size={12} />}
                         </button>
                       </div>
                     ))}
