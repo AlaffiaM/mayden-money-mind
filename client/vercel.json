@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://mayden-money-mind.onrender.com/api/$1" }
+  ]
+}
