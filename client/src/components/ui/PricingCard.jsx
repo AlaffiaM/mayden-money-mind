@@ -1,11 +1,11 @@
 // Pricing card displaying monthly/weekly plans with features list and trust badge
 import { Lock, Check } from "lucide-react";
 
-export default function PricingCard({ plans, note, cta, trust, included }) {
+export default function PricingCard({ plans, note, trust, included }) {
   return (
     <div className="max-w-lg mx-auto">
       <div className="grid grid-cols-2 gap-4 mb-6">
-        {plans.map((plan, i) => {
+        {plans.map((plan) => {
           const isMonthly = plan.badge;
           return (
             <div
