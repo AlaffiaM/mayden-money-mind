@@ -1,6 +1,6 @@
 // Admin users page — searchable + filterable user table
 // Clicking "View" navigates to the full user detail page with tabs
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { Search, Filter, Eye, Trash2, Headphones } from "lucide-react";
