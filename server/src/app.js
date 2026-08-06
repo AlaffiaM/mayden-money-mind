@@ -13,6 +13,7 @@ import adminRoutes from "./routes/admin.js";
 import audioRoutes from "./routes/audio.js";
 import { startRenewalProcessor } from "./services/renewalService.js";
 import { startAutoPublisher } from "./services/autoPublishService.js";
+import { startReconciliationProcessor } from "./services/reconciliationService.js";
 import { authenticate } from "./middleware/auth.js";
 
 const app = express();
@@ -172,5 +173,8 @@ startRenewalProcessor();
 
 // Start auto-publish — checks every 15min for episodes ready to go live
 startAutoPublisher();
+
+// Start daily reconciliation — emails yesterday's successful-payment CSV to finance
+startReconciliationProcessor();
 
 export default app;
