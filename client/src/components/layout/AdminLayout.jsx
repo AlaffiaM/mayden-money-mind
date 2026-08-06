@@ -3,9 +3,10 @@
 import { useAuth } from "../../context/AuthContext";
 import { LayoutDashboard, FileText, Users, CreditCard, Bell, Settings, LogOut } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import LogoutButton from "../ui/LogoutButton";
 
 export default function AdminLayout({ children }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   // Navigation items — exact match for dashboard, prefix match for others
   const nav = [
@@ -62,12 +63,11 @@ export default function AdminLayout({ children }) {
               <p className="text-xs text-gray-400">Admin</p>
             </div>
           </div>
-          <button
-            onClick={logout}
+          <LogoutButton
             className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors w-full"
           >
             <LogOut size={16} /> Logout
-          </button>
+          </LogoutButton>
         </div>
       </aside>
 

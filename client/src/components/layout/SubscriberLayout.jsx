@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
 import { LogOut, Library, Home, CreditCard, Bell, X } from "lucide-react";
+import LogoutButton from "../ui/LogoutButton";
 import { Link, useLocation } from "react-router-dom";
 import LogoLockup from "../ui/LogoLockup";
 
@@ -101,7 +102,7 @@ function NotificationBell() {
 
 // Main subscriber layout with header, nav tabs, and content area
 export default function SubscriberLayout({ children }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
 
   // Top navigation tabs
@@ -122,9 +123,12 @@ export default function SubscriberLayout({ children }) {
           <div className="flex items-center gap-4">
             <NotificationBell />
             <span className="text-sm text-gray-500">Hi, {user?.fullName?.split(" ")[0]}</span>
-            <button onClick={logout} className="text-gray-400 hover:text-mayden-magenta transition-colors">
+            <LogoutButton
+              ariaLabel="Log out"
+              className="text-gray-400 hover:text-mayden-magenta transition-colors"
+            >
               <LogOut size={18} />
-            </button>
+            </LogoutButton>
           </div>
         </div>
       </header>
