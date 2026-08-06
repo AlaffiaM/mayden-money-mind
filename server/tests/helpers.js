@@ -63,9 +63,16 @@ export async function createSubscription({ userId, plan = "weekly", status = "pe
   });
 }
 
-export async function createPayment({ userId, subscriptionId, amount = 100, status = "pending", reference }) {
+export async function createPayment({ userId, subscriptionId, amount = 100, status = "pending", reference, paidAt }) {
   return prisma.payment.create({
-    data: { userId, subscriptionId, amount, status, reference: reference || `REF-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` },
+    data: {
+      userId,
+      subscriptionId,
+      amount,
+      status,
+      reference: reference || `REF-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      paidAt: paidAt || null,
+    },
   });
 }
 
