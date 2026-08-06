@@ -32,7 +32,17 @@ export async function register(req, res) {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { fullName, email, phone, passwordHash },
+      data: {
+        fullName,
+        email,
+        phone,
+        passwordHash,
+        utmSource: req.body.utmSource || null,
+        utmMedium: req.body.utmMedium || null,
+        utmCampaign: req.body.utmCampaign || null,
+        utmTerm: req.body.utmTerm || null,
+        utmContent: req.body.utmContent || null,
+      },
     });
 
     res.status(201).json({ token: issueToken(user), user: serializeUser(user) });
