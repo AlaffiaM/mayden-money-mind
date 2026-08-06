@@ -1,5 +1,6 @@
 // Axios API client — base instance pointing at /api with auth interceptor
-// Automatically attaches JWT token to all requests and handles 401 redirects
+// Automatically attaches JWT token to all requests, logs every call, and
+// handles 401 redirects.
 import axios from "axios";
 
 const api = axios.create({
@@ -7,23 +8,45 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// Attach stored JWT token to every outgoing request
+// Log every outgoing request (endpoint + payload)
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  const fullUrl = `${config.baseURL || ""}${config.url || ""}`;
+  const body = config.data ? ` ${JSON.stringify(config.data)}` : "";
+  console.log(`[API REQUEST] ${(config.method || "?").toUpperCase()} ${fullUrl}${body}`);
   return config;
 });
 
-// On 401 response: clear auth state and redirect to login
+// Log every response, and on failure surface the full error BEFORE redirecting
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    const fullUrl = `${res.config.baseURL || ""}${res.config.url || ""}`;
+    console.log(`[API RESPONSE] ${(res.config.method || "?").toUpperCase()} ${fullUrl} -> ${res.status}`);
+    return res;
+  },
   (err) => {
-    if (err.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "/";
+    const fullUrl = `${err.config?.baseURL || ""}${err.config?.url || ""}`;
+    const method = (err.config?.method || "?").toUpperCase();
+    const status = err.response?.status;
+
+    console.error(`[API ERROR] ${method} ${fullUrl} -> ${status || "no response"}`);
+    if (err.response?.data) {
+      console.error("[API ERROR] response body:", err.response.data);
+    }
+    if (!err.response) {
+      console.error("[API ERROR] network / CORS failure:", err.message);
+    }
+
+    if (status === 401) {
+      // Keep the error visible (console + page) for a moment before redirecting
+      setTimeout(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/";
+      }, 2000);
     }
     return Promise.reject(err);
   }
