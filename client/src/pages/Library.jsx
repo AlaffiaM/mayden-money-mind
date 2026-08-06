@@ -106,7 +106,7 @@ export default function Library() {
             </div>
             {playing === ep.id && (
               <div className="mt-4 pt-4 border-t border-gray-100">
-                <AudioPlayer src={ep.audioUrl} title={ep.title} />
+                <AudioPlayer src={ep.audioUrl} />
               </div>
             )}
           </div>
