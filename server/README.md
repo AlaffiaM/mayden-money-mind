@@ -48,6 +48,10 @@ Server runs on `http://localhost:5000`.
 | `FRONTEND_URL` | Frontend base URL for payment redirects/callbacks (default `http://localhost:5173`); a trailing slash is tolerated and stripped |
 | `CLIENT_ORIGINS` | Comma-separated CORS allowlist of browser origins (default `http://localhost:5173`; merged with the hardcoded `https://mayden-money-mind.vercel.app` production origin) |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Credentials for the admin user — `npm run seed` upserts them |
+| `BREVO_API_KEY` | Brevo transactional API key for the daily reconciliation email (Brevo: SMTP & API → API Keys) |
+| `BREVO_FROM_EMAIL` | Verified sender address in Brevo for the report email |
+| `RECONCILIATION_EMAIL` | Recipient of the daily payment CSV report |
+| `RECONCILIATION_HOUR` | Hour (UTC) the daily report runs — default `23` (23:00 UTC = midnight Lagos) |
 
 ## Production Deployment
 
@@ -98,6 +102,7 @@ src/
 │   ├── paymentService.js     # Paystack API integration
 │   ├── renewalService.js     # Grace period processor (every 12h)
 │   ├── autoPublishService.js # Auto-publish scheduler (every 15min)
+│   ├── reconciliationService.js # Daily payment CSV → finance email
 │   └── audioStorageService.js# Multer config for audio uploads
 │
 └── utils/
@@ -202,6 +207,8 @@ prisma/
 | DELETE | `/api/admin/notifications/:id` | Delete notification |
 | DELETE | `/api/admin/notifications` | Clear all notifications |
 | GET | `/api/admin/audio-files` | Browse uploaded audio files |
+| GET | `/api/admin/reports/utm` | UTM attribution funnel (registered → paid → active by source) |
+| GET | `/api/admin/payments/export?days=1` | CSV of successful payments (or `?from=ISO&to=ISO`) |
 
 ### Utility
 
