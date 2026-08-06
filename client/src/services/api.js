@@ -40,14 +40,17 @@ api.interceptors.response.use(
       console.error("[API ERROR] network / CORS failure:", err.message);
     }
 
-    if (status === 401) {
-      // Keep the error visible (console + page) for a moment before redirecting
-      setTimeout(() => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.location.href = "/";
-      }, 2000);
-    }
+    // Surface the error in the UI banner — NO redirect, session stays intact.
+    window.dispatchEvent(
+      new CustomEvent("api:error", {
+        detail: {
+          method,
+          url: fullUrl,
+          status: status || null,
+          message: err.response?.data?.error || err.message,
+        },
+      })
+    );
     return Promise.reject(err);
   }
 );
