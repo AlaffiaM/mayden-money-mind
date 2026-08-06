@@ -3,38 +3,81 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import path from "path";
-import { fileURLToPath } from "url";
-import { PrismaClient } from "@prisma/client";
+import rateLimit from "express-rate-limit";
+import { prisma } from "./config/prisma.js";
 import authRoutes from "./routes/auth.js";
 import episodeRoutes from "./routes/episodes.js";
 import subscriptionRoutes from "./routes/subscriptions.js";
 import paymentRoutes from "./routes/payments.js";
 import adminRoutes from "./routes/admin.js";
-import { startRenewalProcessor } from "./services/renewal.js";
-import { startAutoPublisher } from "./services/autoPublish.js";
+import audioRoutes from "./routes/audio.js";
+import { startRenewalProcessor } from "./services/renewalService.js";
+import { startAutoPublisher } from "./services/autoPublishService.js";
 import { authenticate } from "./middleware/auth.js";
-
-const prisma = new PrismaClient();
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
-// Security, CORS, logging, body parsing, static file serving
+// CORS — only allow the configured frontend origins (dev default: localhost:5173)
+const allowedOrigins = (process.env.CLIENT_ORIGINS || "http://localhost:5173")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Allow same-origin / non-browser (curl, mobile SDK) requests
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
+  })
+);
+
+// Security headers
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
-app.use(cors());
+
+// Request logging
 app.use(morgan("dev"));
-app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-app.use("/audio", express.static(path.join(__dirname, "../../../client/public/audio")));
+
+// JSON body parsing — captures the raw body so the Paystack webhook can verify
+// its HMAC signature against the exact bytes sent by Paystack.
+app.use(
+  express.json({
+    limit: "1mb",
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
+
+// Rate limiting
+// Strict: brute-force protection on auth (login/register)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many attempts. Please try again later." },
+});
+
+// Looser: protects admin endpoints against abuse while not breaking legitimate use
+const adminLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  limit: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please slow down." },
+});
 
 // API route mounting
-app.use("/api/auth", authRoutes);           // Register + login
+app.use("/api/auth", authLimiter, authRoutes);           // Register + login
 app.use("/api/episodes", episodeRoutes);    // Public episode listing + listen logging
 app.use("/api/subscriptions", subscriptionRoutes); // User subscription management
 app.use("/api/payments", paymentRoutes);    // Paystack payment init, verify, webhook
-app.use("/api/admin", adminRoutes);         // Admin-only CRUD + stats + notifications
+app.use("/api/audio", audioRoutes);         // Signed, access-controlled audio streaming
+app.use("/api/admin", adminLimiter, adminRoutes);         // Admin-only CRUD + stats + notifications
 
 // Health check
 app.get("/api/health", (req, res) => {
@@ -44,19 +87,19 @@ app.get("/api/health", (req, res) => {
 // Public pricing endpoint — used by the landing page and subscription page
 const DEFAULT_PRICING = { weeklyPrice: "100", monthlyPrice: "350", currency: "NGN" };
 
-app.get("/api/settings/pricing", async (req, res) => {
+app.get("/api/settings/pricing", async (req, res, next) => {
   try {
     const settings = await prisma.setting.findMany();
     const map = {};
     for (const s of settings) map[s.key] = s.value;
     res.json({ ...DEFAULT_PRICING, ...map });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
 // Authenticated endpoint for users to fetch their in-app notifications with read status
-app.get("/api/notifications/latest", authenticate, async (req, res) => {
+app.get("/api/notifications/latest", authenticate, async (req, res, next) => {
   try {
     const notifications = await prisma.notification.findMany({
       orderBy: { sentAt: "desc" },
@@ -75,14 +118,17 @@ app.get("/api/notifications/latest", authenticate, async (req, res) => {
     }));
     res.json(mapped);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
 // Mark a notification as read for the current user
-app.post("/api/notifications/:id/read", authenticate, async (req, res) => {
+app.post("/api/notifications/:id/read", authenticate, async (req, res, next) => {
   try {
     const notificationId = parseInt(req.params.id);
+    if (!Number.isInteger(notificationId) || notificationId <= 0) {
+      return res.status(400).json({ error: "Invalid notification id" });
+    }
     const userId = req.user.id;
     await prisma.notificationRead.upsert({
       where: { userId_notificationId: { userId, notificationId } },
@@ -91,8 +137,24 @@ app.post("/api/notifications/:id/read", authenticate, async (req, res) => {
     });
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
+});
+
+// 404 for unknown API routes
+app.use("/api", (req, res) => {
+  res.status(404).json({ error: "Not found" });
+});
+
+// Final error handler — never leak internal error messages to clients
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  if (res.headersSent) return next(err);
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({
+    error: status >= 500 ? "Internal server error" : "Bad request",
+  });
 });
 
 // Start the grace period / failed renewal processor (runs every 12h)
