@@ -20,6 +20,9 @@ import {
   listSubscriptions,
   getRevenue,
   sendReminder,
+  getUtmReport,
+  exportPayments,
+  sendReportNow,
   listNotifications,
   createNotification,
   testNotification,
@@ -52,6 +55,10 @@ router.get("/episodes", listEpisodes);
 router.get("/subscriptions", listSubscriptions);
 router.get("/subscriptions/revenue", getRevenue);
 router.post("/subscriptions/send-reminder", sendReminder);
+
+router.get("/reports/utm", getUtmReport);
+router.get("/payments/export", exportPayments);
+router.post("/reports/send-now", sendReportNow);
 
 router.get("/notifications", listNotifications);
 router.post("/notifications", createNotification);
