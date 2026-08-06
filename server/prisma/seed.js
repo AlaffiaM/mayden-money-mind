@@ -18,7 +18,12 @@ async function main() {
   });
 
   if (existing) {
-    console.log("Admin user already exists, skipping seed.");
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
+    await prisma.user.update({
+      where: { email: adminEmail },
+      data: { passwordHash, role: "admin" },
+    });
+    console.log(`Admin user updated with the password from ADMIN_PASSWORD: ${adminEmail}`);
     return;
   }
 
