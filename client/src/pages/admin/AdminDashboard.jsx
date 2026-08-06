@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
-import { Users, CreditCard, FileText, TrendingUp, TrendingDown, Activity, AlertCircle } from "lucide-react";
+import { Users, CreditCard, FileText, TrendingUp, TrendingDown, Activity, AlertCircle, Download, BarChart3, Send } from "lucide-react";
 
 // SVG mini line chart — renders a filled area chart from { date, count } data points
 function MiniLineChart({ data, color = "#EC268F", height = 60 }) {
@@ -56,16 +56,44 @@ function TrendBadge({ value, suffix = "%" }) {
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
+  const [utmReport, setUtmReport] = useState(null);
+  const [downloading, setDownloading] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   // Fetch dashboard stats on mount
   useEffect(() => {
-    api.get("/admin/stats")
-      .then(({ data }) => setStats(data))
+    Promise.all([
+      api.get("/admin/stats"),
+      api.get("/admin/reports/utm"),
+    ])
+      .then(([statsRes, utmRes]) => {
+        setStats(statsRes.data);
+        setUtmReport(utmRes.data);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  // Download last-24h successful payments as CSV
+  const downloadCsv = async () => {
+    setDownloading(true);
+    try {
+      const res = await api.get("/admin/payments/export?days=1", { responseType: "blob" });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `payments-last24h-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      window.dispatchEvent(
+        new CustomEvent("api:error", { detail: { status: 500, message: "Failed to download CSV" } })
+      );
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -147,6 +175,58 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <p className="text-sm text-gray-400 text-center py-8">No subscriber data yet</p>
+        )}
+      </div>
+
+      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-mayden-dark">Reconciliation &amp; UTM</h2>
+          <BarChart3 size={16} className="text-gray-400" />
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-5">
+          <button
+            onClick={downloadCsv}
+            disabled={downloading}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-mayden-magenta text-white text-sm font-medium hover:bg-mayden-magenta/90 transition-colors disabled:opacity-50"
+          >
+            <Download size={16} />
+            {downloading ? "Downloading..." : "Download CSV (last 24h)"}
+          </button>
+          <p className="text-xs text-gray-400">
+            Successful payments from the last 24 hours for finance reconciliation.
+          </p>
+        </div>
+
+        {utmReport?.sources?.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+                  <th className="py-2 pr-4">Source</th>
+                  <th className="py-2 pr-4">Campaign</th>
+                  <th className="py-2 pr-4">Registered</th>
+                  <th className="py-2 pr-4">Paid</th>
+                  <th className="py-2">Active Subscribers</th>
+                </tr>
+              </thead>
+              <tbody>
+                {utmReport.sources.map((s) => (
+                  <tr key={`${s.utmSource}-${s.utmCampaign || ""}`} className="border-b border-gray-50">
+                    <td className="py-2.5 pr-4 font-medium text-mayden-dark">{s.utmSource || "direct"}</td>
+                    <td className="py-2.5 pr-4 text-gray-500">{s.utmCampaign || "—"}</td>
+                    <td className="py-2.5 pr-4 text-gray-500">{s.registered}</td>
+                    <td className="py-2.5 pr-4 text-gray-500">{s.paid}</td>
+                    <td className="py-2.5 text-gray-500">{s.active}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 text-center py-6">
+            No UTM-attributed signups yet — users landing from the Mayden site will appear here.
+          </p>
         )}
       </div>
 
