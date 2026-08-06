@@ -18,6 +18,11 @@ model User {
   phone           String?          @unique
   passwordHash    String
   role            String           @default("user") // user | admin
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  utmTerm         String?
+  utmContent      String?
   createdAt       DateTime         @default(now())
   subscriptions   Subscription[]
   payments        Payment[]
