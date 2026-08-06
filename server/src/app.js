@@ -21,11 +21,15 @@ const app = express();
 // real client IP (req.ip), not the load balancer's.
 app.set("trust proxy", 1);
 
-// CORS — only allow the configured frontend origins (dev default: localhost:5173)
-const allowedOrigins = (process.env.CLIENT_ORIGINS || "http://localhost:5173")
+// CORS — only allow the configured frontend origins. The production frontend is
+// always allowed so direct cross-origin calls keep working even if the Render
+// env var is missing; CLIENT_ORIGINS can add more (e.g. a staging preview).
+const defaultOrigins = ["http://localhost:5173", "https://mayden-money-mind.vercel.app"];
+const envOrigins = (process.env.CLIENT_ORIGINS || "")
   .split(",")
   .map((o) => o.trim())
   .filter(Boolean);
+const allowedOrigins = [...defaultOrigins, ...envOrigins];
 
 app.use(
   cors({
