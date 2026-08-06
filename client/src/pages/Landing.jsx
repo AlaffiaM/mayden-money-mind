@@ -117,8 +117,6 @@ export default function Landing() {
             <p className="text-xs text-gray-400 mb-6">{LANDING.audio.subtitle}</p>
             <AudioPlayer
               src="/audio/Maiden Microfinance Bank MONDAY.mp3.mpeg"
-              title=""
-              subtitle=""
               large
             />
           </div>
@@ -164,7 +162,6 @@ export default function Landing() {
               { label: "Monthly", price: `₦${pricing.monthlyPrice}`, period: "/month", badge: "Most Popular", save: `Save ₦${parseInt(pricing.weeklyPrice) * 4 - parseInt(pricing.monthlyPrice)} vs. weekly` },
             ]}
             note={LANDING.pricing.note}
-            cta={LANDING.pricing.cta}
             trust={LANDING.pricing.trust}
             included={LANDING.pricing.included}
           />
