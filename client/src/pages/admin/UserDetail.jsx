@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../services/api";
-import { ArrowLeft, Mail, Phone, Calendar, CreditCard, Shield, AlertTriangle, Headphones, Trash2 } from "lucide-react";
+import { ArrowLeft, Mail, Phone, CreditCard, Shield, AlertTriangle, Headphones, Trash2 } from "lucide-react";
 
 // Status badge color map for subscription and payment statuses
 const STATUS_BADGE = {
@@ -61,10 +61,6 @@ export default function UserDetail() {
     } finally {
       setOverriding(false);
     }
-  };
-
-  const refreshUser = () => {
-    api.get(`/admin/users/${id}`).then(({ data }) => setUser(data)).catch(() => {});
   };
 
   if (loading) {
