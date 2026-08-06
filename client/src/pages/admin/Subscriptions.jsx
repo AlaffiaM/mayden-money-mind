@@ -2,7 +2,7 @@
 // Features: summary cards (revenue, failed, successful), tabbed view, bulk reminder actions
 import { useState, useEffect, useMemo } from "react";
 import api from "../../services/api";
-import { Download, Send, Filter, AlertTriangle, CreditCard, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Download, Send, Filter, AlertTriangle, CreditCard, CheckCircle } from "lucide-react";
 
 // Status badge color map
 const STATUS_BADGE = {
