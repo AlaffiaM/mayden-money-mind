@@ -38,8 +38,8 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Register: POST new user data, store token + user, redirect to subscription page
-  const register = async (fullName, email, phone, password) => {
+  // Register: POST new user data (plus optional UTM attribution), store token + user, redirect
+  const register = async (fullName, email, phone, password, utm = {}) => {
     setLoading(true);
     try {
       const { data } = await api.post("/auth/register", {
@@ -47,6 +47,11 @@ export function AuthProvider({ children }) {
         email,
         phone,
         password,
+        utmSource: utm.utm_source || null,
+        utmMedium: utm.utm_medium || null,
+        utmCampaign: utm.utm_campaign || null,
+        utmTerm: utm.utm_term || null,
+        utmContent: utm.utm_content || null,
       });
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
