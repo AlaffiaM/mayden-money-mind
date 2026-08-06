@@ -29,7 +29,7 @@ export async function getMine(req, res) {
 
     const sub = await prisma.subscription.findFirst({
       where: { userId: req.user.id },
-      orderBy: { createdAt: "desc" },
+      orderBy: { startDate: "desc" },
       include: { payments: { orderBy: { createdAt: "desc" }, take: 5 } },
     });
 
@@ -55,7 +55,7 @@ export async function getStatus(req, res) {
 
     const sub = await prisma.subscription.findFirst({
       where: { userId: req.user.id },
-      orderBy: { createdAt: "desc" },
+      orderBy: { startDate: "desc" },
       select: { id: true, status: true, plan: true },
     });
 

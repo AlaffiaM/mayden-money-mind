@@ -5,7 +5,7 @@ import { app, prisma, createUser } from "./helpers.js";
 
 describe("Authentication", () => {
   beforeEach(async () => {
-    await prisma.$executeRawUnsafe("DELETE FROM User");
+    await prisma.$executeRawUnsafe('DELETE FROM "User"');
   });
 
   it("registers a valid user and returns a token", async () => {

@@ -69,3 +69,28 @@ describe("Subscription status enforcement (F1)", () => {
     assert.equal(res.status, 403);
   });
 });
+
+describe("Subscription read endpoints (regression: orderBy createdAt)", () => {
+  let freshToken;
+
+  before(async () => {
+    const fresh = await createUser({ email: "subfresh@test.com", password: "SubPass123!" });
+    freshToken = await login("subfresh@test.com", "SubPass123!");
+  });
+
+  it("GET /api/subscriptions/mine returns 200 + null for a user with no subscription", async () => {
+    const res = await request(app)
+      .get("/api/subscriptions/mine")
+      .set("Authorization", `Bearer ${freshToken}`);
+    assert.equal(res.status, 200);
+    assert.equal(res.body, null);
+  });
+
+  it("GET /api/subscriptions/mine/status returns none for a user with no subscription", async () => {
+    const res = await request(app)
+      .get("/api/subscriptions/mine/status")
+      .set("Authorization", `Bearer ${freshToken}`);
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body, { status: "none", subscriptionId: null });
+  });
+});
