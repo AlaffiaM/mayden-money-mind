@@ -8,7 +8,7 @@ REST API server for the Money & Mind subscription audio platform. Handles authen
 |---|---|
 | Runtime | Node.js (ES Modules) |
 | Framework | Express 5 |
-| Database | SQLite via Prisma ORM 6 |
+| Database | PostgreSQL via Prisma ORM 6 |
 | Authentication | JWT + bcryptjs |
 | Payments | Paystack |
 | File Uploads | Multer (50MB max, audio only) |
@@ -19,8 +19,8 @@ REST API server for the Money & Mind subscription audio platform. Handles authen
 
 ```bash
 npm install
-cp .env.example .env        # configure secrets
-npx prisma migrate dev      # run migrations
+cp .env.example .env        # configure secrets (add your PostgreSQL DATABASE_URL)
+npx prisma migrate dev      # create tables in the database
 npm run seed                 # create admin user
 npm run dev                  # start with nodemon
 ```
@@ -34,44 +34,72 @@ Server runs on `http://localhost:5000`.
 | `npm run dev` | Start development server with nodemon |
 | `npm start` | Start production server |
 | `npm run seed` | Create initial admin user from env vars |
+| `npm test` | Run the test suite (against a dedicated `test` schema in your PostgreSQL database) |
 
 ## Environment Variables
 
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | SQLite connection string (default `file:./dev.db`) |
-| `JWT_SECRET` | Secret key for JWT signing |
+| `DATABASE_URL` | PostgreSQL connection string (e.g. from Render) |
+| `JWT_SECRET` | Secret key for JWT signing (must be a strong, unique value in production) |
 | `PORT` | Server port (default `5000`) |
 | `PAYSTACK_SECRET_KEY` | Paystack API secret key |
 | `PAYSTACK_PUBLIC_KEY` | Paystack public key |
-| `BASE_URL` | Frontend URL for redirects (default `http://localhost:5173`) |
+| `FRONTEND_URL` | Frontend URL for payment redirects/callbacks (default `http://localhost:5173`) |
+| `CLIENT_ORIGINS` | Comma-separated CORS allowlist of browser origins (default `http://localhost:5173`) |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Credentials for the initial admin user (`npm run seed`) |
 
 ## Project Structure
 
 ```
 src/
-├── server.js                 # Entry point
+├── server.js                 # Entry point (env check, DB connect, startup)
 ├── app.js                    # Express setup, middleware, route mounting
+│
+├── config/
+│   ├── env.js                # Central env vars + config guard
+│   ├── prisma.js             # Shared PrismaClient singleton
+│   └── paystack.js           # Paystack API base URL + key lookup
 │
 ├── middleware/
 │   ├── auth.js               # JWT verification
 │   └── admin.js              # Admin role check
 │
-├── routes/
-│   ├── auth.js               # Register + login
-│   ├── episodes.js           # Public episode endpoints
-│   ├── subscriptions.js      # User subscription CRUD
-│   ├── payments.js           # Paystack payment flow
-│   └── admin.js              # Admin-only endpoints
+├── controllers/
+│   ├── authController.js     # Register + login
+│   ├── episodeController.js  # Public episode endpoints
+│   ├── subscriptionController.js  # User subscription CRUD
+│   ├── paymentController.js  # Paystack payment flow
+│   ├── adminController.js    # Admin-only endpoints
+│   └── audioController.js    # Signed audio streaming
+│
+├── routes/                   # Thin route definitions → controllers
+│   ├── auth.js
+│   ├── episodes.js
+│   ├── subscriptions.js
+│   ├── payments.js
+│   ├── admin.js
+│   └── audio.js
 │
 ├── services/
-│   ├── payment.js            # Paystack API integration
-│   ├── renewal.js            # Grace period processor (every 12h)
-│   ├── autoPublish.js        # Auto-publish scheduler (every 15min)
-│   └── audioStorage.js       # Multer config for audio uploads
+│   ├── paymentService.js     # Paystack API integration
+│   ├── renewalService.js     # Grace period processor (every 12h)
+│   ├── autoPublishService.js # Auto-publish scheduler (every 15min)
+│   └── audioStorageService.js# Multer config for audio uploads
 │
 └── utils/
-    └── helpers.js            # Reference generation, date helpers
+    ├── helpers.js            # Reference generation, date helpers
+    └── audioAccessControl.js # Signed-URL signing/verification
+
+tests/
+├── helpers.js                # Test bootstrap (env, DB reset, factories)
+├── auth.test.js              # Auth + rate limiting
+├── admin.test.js             # Admin access control
+├── subscriptions.test.js     # Subscription lifecycle enforcement
+├── payments.test.js          # Payment flow + webhook signatures
+├── episodes.test.js          # Episode visibility
+├── audio.test.js             # Audio access control
+└── app.test.js               # Notifications + CORS
 
 prisma/
 ├── schema.prisma             # Database schema (7 models)
