@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Mail, User, Phone, Loader2 } from "lucide-react";
 import PasswordInput from "../components/ui/PasswordInput";
+import { getUtm } from "../utils/utm";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -77,7 +78,8 @@ export default function Register() {
         form.fullName.trim(),
         form.email.trim().toLowerCase(),
         form.phone.trim(),
-        form.password
+        form.password,
+        getUtm()
       );
     } catch (err) {
       setServerError(err.response?.data?.error || "Registration failed. Please try again.");
