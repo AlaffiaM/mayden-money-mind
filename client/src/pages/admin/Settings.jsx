@@ -130,7 +130,7 @@ export default function Settings() {
       <Section icon={Tag} title="Day-Type Labels">
         <p className="text-sm text-gray-500 mb-4">Customize the display names for each day's episode theme.</p>
         <div className="space-y-3">
-          {Object.entries(DEFAULT_DAY_LABELS).map(([key, defaultVal]) => (
+          {Object.entries(DEFAULT_DAY_LABELS).map(([key]) => (
             <div key={key} className="flex items-center gap-3">
               <span className="w-24 text-xs text-gray-400 capitalize">{key}</span>
               <input
