@@ -77,6 +77,24 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Email yesterday's reconciliation report immediately (test before the daily job)
+  const sendReportNow = async () => {
+    setSending(true);
+    setSendFeedback(null);
+    try {
+      const { data } = await api.post("/admin/reports/send-now");
+      if (data.sent) {
+        setSendFeedback({ ok: true, text: `Report emailed via Brevo — ${data.count} payment(s).` });
+      } else {
+        setSendFeedback({ ok: false, text: `Email not sent: ${data.reason}. Set BREVO_API_KEY, BREVO_FROM_EMAIL and RECONCILIATION_EMAIL.` });
+      }
+    } catch {
+      setSendFeedback({ ok: false, text: "Failed to send report." });
+    } finally {
+      setSending(false);
+    }
+  };
+
   // Download last-24h successful payments as CSV
   const downloadCsv = async () => {
     setDownloading(true);
