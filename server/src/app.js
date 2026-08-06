@@ -155,7 +155,7 @@ app.use("/api", (req, res) => {
 // Final error handler — never leak internal error messages to clients
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
+  console.error("Unhandled error:", err.stack || err);
   if (res.headersSent) return next(err);
   const status = err.status || err.statusCode || 500;
   res.status(status).json({
