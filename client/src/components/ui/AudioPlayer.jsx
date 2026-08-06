@@ -35,7 +35,7 @@ function RadialPulse({ active }) {
   );
 }
 
-export default function AudioPlayer({ src, title = "", subtitle = "", large = false, onPlayToggle, onPlayStart }) {
+export default function AudioPlayer({ src, large = false, onPlayToggle, onPlayStart }) {
   const { playing, currentTime, duration, error, audioRef, toggle, handleTimeUpdate, handleLoadedMetadata, handleError, seek, skip } = useAudio();
   const [loading, setLoading] = useState(true);
 
