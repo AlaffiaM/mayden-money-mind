@@ -58,6 +58,8 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [utmReport, setUtmReport] = useState(null);
   const [downloading, setDownloading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendFeedback, setSendFeedback] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
