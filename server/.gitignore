@@ -5,3 +5,6 @@ node_modules
 /generated/prisma
 /storage
 /uploads
+# SQLite dev artifact (Postgres is the DB now)
+/prisma/dev.db
+*.db

@@ -35,7 +35,7 @@ export async function initializePayment(user, subscriptionId, amount) {
       amount: amountInKobo,
       reference,
       channels: ["card", "bank", "bank_transfer", "ussd"],
-      callback_url: `${process.env.FRONTEND_URL || "http://localhost:5173"}/subscription?reference=${reference}`,
+      callback_url: `${(process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "")}/subscription?reference=${reference}`,
     }),
   });
 

@@ -33,7 +33,7 @@ Server runs on `http://localhost:5000`.
 |---|---|
 | `npm run dev` | Start development server with nodemon |
 | `npm start` | Start production server |
-| `npm run seed` | Create initial admin user from env vars |
+| `npm run seed` | Create or rotate the admin user from env vars (upsert) |
 | `npm test` | Run the test suite (against a dedicated `test` schema in your PostgreSQL database) |
 
 ## Environment Variables
@@ -43,11 +43,24 @@ Server runs on `http://localhost:5000`.
 | `DATABASE_URL` | PostgreSQL connection string (e.g. from Render) |
 | `JWT_SECRET` | Secret key for JWT signing (must be a strong, unique value in production) |
 | `PORT` | Server port (default `5000`) |
-| `PAYSTACK_SECRET_KEY` | Paystack API secret key |
-| `PAYSTACK_PUBLIC_KEY` | Paystack public key |
-| `FRONTEND_URL` | Frontend URL for payment redirects/callbacks (default `http://localhost:5173`) |
-| `CLIENT_ORIGINS` | Comma-separated CORS allowlist of browser origins (default `http://localhost:5173`) |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Credentials for the initial admin user (`npm run seed`) |
+| `PAYSTACK_SECRET_KEY` | Paystack API secret key (live or test) |
+| `PAYSTACK_PUBLIC_KEY` | Paystack public key (must match secret key's mode) |
+| `FRONTEND_URL` | Frontend base URL for payment redirects/callbacks (default `http://localhost:5173`); a trailing slash is tolerated and stripped |
+| `CLIENT_ORIGINS` | Comma-separated CORS allowlist of browser origins (default `http://localhost:5173`; merged with the hardcoded `https://mayden-money-mind.vercel.app` production origin) |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Credentials for the admin user — `npm run seed` upserts them |
+
+## Production Deployment
+
+The app ships as two services:
+
+- **API → Render** (free web service, `server/`): set `DATABASE_URL` (External URL from the Render Postgres dashboard), `JWT_SECRET`, `PAYSTACK_*`, `FRONTEND_URL=https://mayden-money-mind.vercel.app`, `CLIENT_ORIGINS=https://mayden-money-mind.vercel.app`. After first deploy run `npm run seed` locally against the same `DATABASE_URL`.
+- **Client → Vercel** (`client/`): `client/vercel.json` rewrites `/api/(.*)` → the Render API and adds an SPA fallback to `/index.html` (required for the Paystack return redirect to reach client-side routing).
+
+Paystack dashboard: set the webhook to `https://<render-host>/api/payments/webhook` and the callback to the Vercel app URL.
+
+## Admin User
+
+`npm run seed` **upserts** the admin by email — it updates the password hash + role if the user already exists. To rotate the admin password: edit `ADMIN_PASSWORD` in `.env`, then run `npm run seed`. It reads `.env` automatically.
 
 ## Project Structure
 
