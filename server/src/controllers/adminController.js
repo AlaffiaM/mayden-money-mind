@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import { prisma } from "../config/prisma.js";
 import { getUploadUrl } from "../services/audioStorageService.js";
 import { signAudioUrl } from "../utils/audioAccessControl.js";
+import { runDailyReconciliation } from "../services/reconciliationService.js";
 
 // Default settings values used as fallback if DB has no value set
 const DEFAULT_SETTINGS = {
@@ -490,6 +491,105 @@ export async function getRevenue(req, res, next) {
       orderBy: { createdAt: "desc" },
     });
     res.json(payments);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// GET /api/admin/reports/utm — conversion funnel grouped by UTM source
+export async function getUtmReport(req, res, next) {
+  try {
+    const users = await prisma.user.findMany({
+      where: { utmSource: { not: null } },
+      select: {
+        utmSource: true,
+        utmMedium: true,
+        utmCampaign: true,
+        _count: {
+          select: { payments: { where: { status: "success" } } },
+        },
+        subscriptions: { select: { status: true } },
+      },
+    });
+
+    const bySource = {};
+    for (const u of users) {
+      const key = `${u.utmSource}|${u.utmMedium || ""}|${u.utmCampaign || ""}`;
+      bySource[key] ||= {
+        utmSource: u.utmSource,
+        utmMedium: u.utmMedium,
+        utmCampaign: u.utmCampaign,
+        registered: 0,
+        paid: 0,
+        active: 0,
+      };
+      bySource[key].registered++;
+      if (u._count.payments > 0) bySource[key].paid++;
+      if (u.subscriptions.some((s) => s.status === "active")) bySource[key].active++;
+    }
+
+    res.json({ sources: Object.values(bySource), totalRegistered: users.length });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/admin/reports/send-now — email yesterday's reconciliation CSV immediately
+export async function sendReportNow(req, res, next) {
+  try {
+    const day = new Date();
+    day.setUTCDate(day.getUTCDate() - 1);
+    const result = await runDailyReconciliation(day);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// GET /api/admin/payments/export?days=1 (or ?from=ISO&to=ISO) — CSV of successful payments
+export async function exportPayments(req, res, next) {
+  try {
+    const { days, from, to } = req.query;
+    const end = to ? new Date(to) : new Date();
+    let start;
+    if (from) {
+      start = new Date(from);
+    } else {
+      start = new Date();
+      start.setDate(start.getDate() - (parseInt(days, 10) || 1));
+    }
+
+    const payments = await prisma.payment.findMany({
+      where: { status: "success", paidAt: { gte: start, lt: end } },
+      include: {
+        user: { select: { email: true, phone: true } },
+        subscription: { select: { plan: true } },
+      },
+      orderBy: { paidAt: "asc" },
+    });
+
+    const esc = (v) => {
+      if (v === null || v === undefined) return "";
+      const s = String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+
+    const rows = [
+      ["Transaction Date & Time", "Customer Identifier", "Subscription Tier", "Amount (NGN)", "Paystack Reference", "Payment Status"],
+      ...payments.map((p) => [
+        (p.paidAt || p.createdAt).toISOString(),
+        p.user.email || p.user.phone || "",
+        p.subscription.plan === "weekly" ? "Weekly (₦100)" : "Monthly (₦350)",
+        p.amount,
+        p.reference,
+        p.status,
+      ]),
+    ];
+    const csv = rows.map((r) => r.map(esc).join(",")).join("\r\n");
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="payments-${start.toISOString().slice(0, 10)}-${end.toISOString().slice(0, 10)}.csv"`);
+    res.send(csv);
   } catch (err) {
     next(err);
   }
