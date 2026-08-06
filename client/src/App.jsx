@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { captureUtm } from "./utils/utm";
 import api from "./services/api";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
@@ -109,6 +110,11 @@ function AppRoutes() {
 
 // App shell: BrowserRouter → AuthProvider → AppRoutes
 export default function App() {
+  // Capture UTM params on first load so signups can be attributed to the source
+  useEffect(() => {
+    captureUtm();
+  }, []);
+
   return (
     <BrowserRouter>
       <AuthProvider>
