@@ -17,6 +17,10 @@ import { authenticate } from "./middleware/auth.js";
 
 const app = express();
 
+// Behind Render's proxy — trust the single hop so rate limiting keys off the
+// real client IP (req.ip), not the load balancer's.
+app.set("trust proxy", 1);
+
 // CORS — only allow the configured frontend origins (dev default: localhost:5173)
 const allowedOrigins = (process.env.CLIENT_ORIGINS || "http://localhost:5173")
   .split(",")
@@ -59,6 +63,7 @@ const authLimiter = rateLimit({
   limit: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false, forwardedHeader: false },
   message: { error: "Too many attempts. Please try again later." },
 });
 
@@ -68,6 +73,7 @@ const adminLimiter = rateLimit({
   limit: 120,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false, forwardedHeader: false },
   message: { error: "Too many requests. Please slow down." },
 });
 
