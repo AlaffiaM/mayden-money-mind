@@ -1,4 +1,4 @@
-// Prisma schema for Money & Mind — SQLite database
+// Prisma schema for Money & Mind — PostgreSQL database (Supabase)
 // Models: User, Subscription, Payment, Setting, Episode, ListenLog, Notification
 
 generator client {
@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
