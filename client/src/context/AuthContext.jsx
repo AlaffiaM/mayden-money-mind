@@ -1,6 +1,6 @@
 // Auth context — manages user state, login/register/logout actions
 // Persists user + token in localStorage and redirects based on role after login
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
