@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
-import { Users, CreditCard, FileText, TrendingUp, TrendingDown, Activity, AlertCircle, Download, BarChart3, Send } from "lucide-react";
+import { Users, CreditCard, FileText, TrendingUp, TrendingDown, Activity, AlertCircle, Download, BarChart3 } from "lucide-react";
 
 // SVG mini line chart — renders a filled area chart from { date, count } data points
 function MiniLineChart({ data, color = "#EC268F", height = 60 }) {
@@ -58,8 +58,6 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [utmReport, setUtmReport] = useState(null);
   const [downloading, setDownloading] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [sendFeedback, setSendFeedback] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -76,24 +74,6 @@ export default function AdminDashboard() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
-
-  // Email yesterday's reconciliation report immediately (test before the daily job)
-  const sendReportNow = async () => {
-    setSending(true);
-    setSendFeedback(null);
-    try {
-      const { data } = await api.post("/admin/reports/send-now");
-      if (data.sent) {
-        setSendFeedback({ ok: true, text: `Report emailed via Brevo — ${data.count} payment(s).` });
-      } else {
-        setSendFeedback({ ok: false, text: `Email not sent: ${data.reason}. Set BREVO_API_KEY, BREVO_FROM_EMAIL and RECONCILIATION_EMAIL.` });
-      }
-    } catch {
-      setSendFeedback({ ok: false, text: "Failed to send report." });
-    } finally {
-      setSending(false);
-    }
-  };
 
   // Download last-24h successful payments as CSV
   const downloadCsv = async () => {
@@ -213,23 +193,10 @@ export default function AdminDashboard() {
             <Download size={16} />
             {downloading ? "Downloading..." : "Download CSV (last 24h)"}
           </button>
-          <button
-            onClick={sendReportNow}
-            disabled={sending}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-mayden-dark text-white text-sm font-medium hover:bg-mayden-dark/90 transition-colors disabled:opacity-50"
-          >
-            <Send size={16} />
-            {sending ? "Sending..." : "Send report now"}
-          </button>
         </div>
         <p className="text-xs text-gray-400 mb-1">
-          Successful payments from the last 24 hours for finance reconciliation. "Send report now" emails the same last-24h report via Brevo.
+          Successful payments for finance reconciliation. Reports are emailed automatically — daily at midnight and monthly on the 1st.
         </p>
-        {sendFeedback && (
-          <p className={`text-xs mb-3 ${sendFeedback.ok ? "text-emerald-600" : "text-amber-600"}`}>
-            {sendFeedback.text}
-          </p>
-        )}
 
         {utmReport?.sources?.length > 0 ? (
           <div className="overflow-x-auto">
