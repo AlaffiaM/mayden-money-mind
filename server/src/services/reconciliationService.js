@@ -2,13 +2,14 @@
 // to the finance team: daily (previous calendar day) + monthly (previous month).
 // The same CSV builder powers the admin on-demand export.
 import { prisma } from "../config/prisma.js";
+import { sendEmail } from "./emailService.js";
 
 const RECONCILIATION_EMAIL = process.env.RECONCILIATION_EMAIL || "";
 const RECONCILIATION_HOUR = parseInt(process.env.RECONCILIATION_HOUR || "23", 10); // 23:00 UTC = midnight Lagos
 const MONTHLY_REPORT_HOUR = parseInt(process.env.MONTHLY_REPORT_HOUR || "23", 10); // 23:00 UTC = midnight Lagos
 const MONTHLY_REPORT_DAY = parseInt(process.env.MONTHLY_REPORT_DAY || "1", 10); // 1st of the month
 
-// Brevo transactional email REST API — the only email path
+// Brevo is ready when the API key, from-address AND the finance recipient are set
 function brevoConfigured() {
   return Boolean(process.env.BREVO_API_KEY && process.env.BREVO_FROM_EMAIL && RECONCILIATION_EMAIL);
 }
@@ -19,34 +20,6 @@ function esc(value) {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-// Sends the CSV via the Brevo transactional email API
-async function sendBrevoEmail({ csv, date, subject, text }) {
-  const attachment = {
-    name: `payments-${date}.csv`,
-    content: Buffer.from(csv, "utf-8").toString("base64"),
-  };
-
-  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-    method: "POST",
-    headers: {
-      "api-key": process.env.BREVO_API_KEY,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      sender: { name: "Money & Mind", email: process.env.BREVO_FROM_EMAIL },
-      to: [{ email: RECONCILIATION_EMAIL }],
-      subject,
-      textContent: text,
-      attachment: [attachment],
-    }),
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Brevo API ${response.status}: ${body.slice(0, 200)}`);
-  }
-}
-
 // Emails the CSV to the finance team via Brevo — no-op when not configured.
 // `kind` is "Daily" | "Monthly"; `label` keys the subject/filename (e.g. "2026-08-05" or "2026-07").
 export async function sendReconciliationEmail({ csv, from, kind = "Daily", label }) {
@@ -55,7 +28,15 @@ export async function sendReconciliationEmail({ csv, from, kind = "Daily", label
   const text = `${kind} payment reconciliation report for ${labelValue} attached.`;
 
   if (brevoConfigured()) {
-    await sendBrevoEmail({ csv, date: labelValue, subject, text });
+    await sendEmail({
+      to: RECONCILIATION_EMAIL,
+      subject,
+      textContent: text,
+      attachment: {
+        name: `payments-${labelValue}.csv`,
+        content: Buffer.from(csv, "utf-8").toString("base64"),
+      },
+    });
     return { sent: true, via: "brevo" };
   }
 
