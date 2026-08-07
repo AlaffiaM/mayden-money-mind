@@ -48,10 +48,12 @@ Server runs on `http://localhost:5000`.
 | `FRONTEND_URL` | Frontend base URL for payment redirects/callbacks (default `http://localhost:5173`); a trailing slash is tolerated and stripped |
 | `CLIENT_ORIGINS` | Comma-separated CORS allowlist of browser origins (default `http://localhost:5173`; merged with the hardcoded `https://mayden-money-mind.vercel.app` production origin) |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Credentials for the admin user — `npm run seed` upserts them |
-| `BREVO_API_KEY` | Brevo transactional API key for the daily reconciliation email (Brevo: SMTP & API → API Keys) |
+| `BREVO_API_KEY` | Brevo transactional API key for the reconciliation emails (Brevo: SMTP & API → API Keys) |
 | `BREVO_FROM_EMAIL` | Verified sender address in Brevo for the report email |
-| `RECONCILIATION_EMAIL` | Recipient of the daily payment CSV report |
-| `RECONCILIATION_HOUR` | Hour (UTC) the daily report runs — default `23` (23:00 UTC = midnight Lagos) |
+| `RECONCILIATION_EMAIL` | Recipient of the daily/monthly payment CSV reports |
+| `RECONCILIATION_HOUR` | Hour (UTC) the daily report runs — default `23` (23:00 UTC = midnight Lagos), reports the previous calendar day |
+| `MONTHLY_REPORT_HOUR` | Hour (UTC) the monthly report runs — default `23` |
+| `MONTHLY_REPORT_DAY` | Day-of-month the monthly report runs — default `1` (reports the previous calendar month) |
 
 ## Production Deployment
 
@@ -102,7 +104,7 @@ src/
 │   ├── paymentService.js     # Paystack API integration
 │   ├── renewalService.js     # Grace period processor (every 12h)
 │   ├── autoPublishService.js # Auto-publish scheduler (every 15min)
-│   ├── reconciliationService.js # Daily payment CSV → finance email
+│   ├── reconciliationService.js # Daily (midnight) + monthly (1st) payment CSV → finance email
 │   └── audioStorageService.js# Multer config for audio uploads
 │
 └── utils/
