@@ -13,6 +13,7 @@ import adminRoutes from "./routes/admin.js";
 import audioRoutes from "./routes/audio.js";
 import { startRenewalProcessor } from "./services/renewalService.js";
 import { startAutoPublisher } from "./services/autoPublishService.js";
+import { startDailyReminderProcessor } from "./services/dailyReminderService.js";
 import { startReconciliationProcessor } from "./services/reconciliationService.js";
 import { authenticate } from "./middleware/auth.js";
 
@@ -109,14 +110,21 @@ app.get("/api/settings/pricing", async (req, res, next) => {
   }
 });
 
-// Authenticated endpoint for users to fetch their in-app notifications with read status
+// Authenticated endpoint for users to fetch their in-app notifications with read status.
+// Subscriber-only notifications (e.g. the daily listen reminder) are hidden from
+// users who do not currently have an active subscription.
 app.get("/api/notifications/latest", authenticate, async (req, res, next) => {
   try {
+    const hasActiveSub = await prisma.subscription.findFirst({
+      where: { userId: req.user.id, status: "active" },
+      select: { id: true },
+    });
+
     const notifications = await prisma.notification.findMany({
+      where: hasActiveSub ? undefined : { subscribersOnly: false },
       orderBy: { sentAt: "desc" },
       take: 20,
-      include: { reads: { where: { userId: req.user.id }, select: { id: true } },
-      },
+      include: { reads: { where: { userId: req.user.id }, select: { id: true } } },
     });
     const mapped = notifications.map((n) => ({
       id: n.id,
@@ -176,5 +184,8 @@ startAutoPublisher();
 
 // Start daily reconciliation — emails yesterday's successful-payment CSV to finance
 startReconciliationProcessor();
+
+// Start daily listen reminder — one in-app nudge per day at the episode release time
+startDailyReminderProcessor();
 
 export default app;
