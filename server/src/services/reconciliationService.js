@@ -81,7 +81,16 @@ export async function buildPaymentsCsv({ from, to }) {
       p.status,
     ]),
   ];
-  return { csv: rows.map((r) => r.map(esc).join(",")).join("\r\n"), count: payments.length };
+  const csv = "\uFEFF" + rows.map((r) => r.map(esc).join(",")).join("\r\n");
+  return { csv, count: payments.length };
+}
+
+// Builds + sends the report for an explicit window [from, to). Returns the summary.
+export async function runReconciliationForWindow({ from, to }) {
+  const { csv, count } = await buildPaymentsCsv({ from, to });
+  const result = await sendReconciliationEmail({ csv, from });
+  console.log(`[reconciliation] ${from.toISOString().slice(0, 10)}: ${count} payment(s), email ${result.sent ? "sent" : "skipped: " + result.reason}`);
+  return { date: from.toISOString().slice(0, 10), count, ...result };
 }
 
 // Builds + sends the report for a given day (UTC). Returns the summary.
@@ -89,11 +98,7 @@ export async function runDailyReconciliation(day = new Date()) {
   const start = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate()));
   const end = new Date(start);
   end.setUTCDate(end.getUTCDate() + 1);
-
-  const { csv, count } = await buildPaymentsCsv({ from: start, to: end });
-  const result = await sendReconciliationEmail({ csv, from: start });
-  console.log(`[reconciliation] ${start.toISOString().slice(0, 10)}: ${count} payment(s), email ${result.sent ? "sent" : "skipped: " + result.reason}`);
-  return { date: start.toISOString().slice(0, 10), count, ...result };
+  return runReconciliationForWindow({ from: start, to: end });
 }
 
 // Interval job — checks hourly and fires once per day at RECONCILIATION_HOUR UTC.

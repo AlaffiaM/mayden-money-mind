@@ -223,7 +223,7 @@ export default function AdminDashboard() {
           </button>
         </div>
         <p className="text-xs text-gray-400 mb-1">
-          Successful payments from the last 24 hours for finance reconciliation. "Send report now" emails yesterday's report via Brevo.
+          Successful payments from the last 24 hours for finance reconciliation. "Send report now" emails the same last-24h report via Brevo.
         </p>
         {sendFeedback && (
           <p className={`text-xs mb-3 ${sendFeedback.ok ? "text-emerald-600" : "text-amber-600"}`}>

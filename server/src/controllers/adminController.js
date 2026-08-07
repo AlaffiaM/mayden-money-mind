@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 import { prisma } from "../config/prisma.js";
 import { getUploadUrl } from "../services/audioStorageService.js";
 import { signAudioUrl } from "../utils/audioAccessControl.js";
-import { runDailyReconciliation } from "../services/reconciliationService.js";
+import { runReconciliationForWindow } from "../services/reconciliationService.js";
 
 // Default settings values used as fallback if DB has no value set
 const DEFAULT_SETTINGS = {
@@ -534,12 +534,13 @@ export async function getUtmReport(req, res, next) {
   }
 }
 
-// POST /api/admin/reports/send-now — email yesterday's reconciliation CSV immediately
+// POST /api/admin/reports/send-now — email the last 24 hours' reconciliation CSV immediately
 export async function sendReportNow(req, res, next) {
   try {
-    const day = new Date();
-    day.setUTCDate(day.getUTCDate() - 1);
-    const result = await runDailyReconciliation(day);
+    const to = new Date();
+    const from = new Date(to);
+    from.setHours(from.getHours() - 24);
+    const result = await runReconciliationForWindow({ from, to });
     res.json(result);
   } catch (err) {
     next(err);
@@ -585,7 +586,7 @@ export async function exportPayments(req, res, next) {
         p.status,
       ]),
     ];
-    const csv = rows.map((r) => r.map(esc).join(",")).join("\r\n");
+    const csv = "\uFEFF" + rows.map((r) => r.map(esc).join(",")).join("\r\n");
 
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", `attachment; filename="payments-${start.toISOString().slice(0, 10)}-${end.toISOString().slice(0, 10)}.csv"`);
