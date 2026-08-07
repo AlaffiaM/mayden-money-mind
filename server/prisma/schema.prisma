@@ -96,13 +96,14 @@ model ListenLog {
 
 // In-app notifications — sent by admin or system events
 model Notification {
-  id        Int              @id @default(autoincrement())
-  title     String
-  body      String
-  channels  String           // comma-separated: inapp,email
-  sentBy    String           @default("admin")
-  sentAt    DateTime         @default(now())
-  reads     NotificationRead[]
+  id              Int                @id @default(autoincrement())
+  title           String
+  body            String
+  channels        String             // comma-separated: inapp,email
+  sentBy          String             @default("admin")
+  subscribersOnly Boolean            @default(false) // only visible to users with an active subscription
+  sentAt          DateTime           @default(now())
+  reads           NotificationRead[]
 }
 
 // Tracks which notifications each user has read — for unread badge count
