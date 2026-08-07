@@ -52,12 +52,14 @@ export async function createUser({ fullName = "Test User", email, phone, passwor
   });
 }
 
-export async function createSubscription({ userId, plan = "weekly", status = "pending", nextRenewalDays = 7 }) {
+export async function createSubscription({ userId, plan = "weekly", status = "pending", nextRenewalDays = 7, autoRenew = true, paystackSubscriptionCode = null }) {
   return prisma.subscription.create({
     data: {
       userId,
       plan,
       status,
+      autoRenew,
+      paystackSubscriptionCode,
       nextRenewal: new Date(Date.now() + nextRenewalDays * 86400000),
     },
   });
