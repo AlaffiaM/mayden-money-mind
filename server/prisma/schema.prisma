@@ -23,6 +23,8 @@ model User {
   utmCampaign     String?
   utmTerm         String?
   utmContent      String?
+  resetPasswordToken    String?  @unique // sha256 hash of a one-time password reset token
+  resetPasswordExpires  DateTime? // expiry for the reset token (1 hour)
   createdAt       DateTime         @default(now())
   subscriptions   Subscription[]
   payments        Payment[]
