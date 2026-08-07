@@ -59,6 +59,13 @@ describe("Reconciliation CSV + UTM report", () => {
     assert.equal(res.status, 401);
   });
 
+  it("removed the manual send-now endpoint", async () => {
+    const res = await request(app)
+      .post("/api/admin/reports/send-now")
+      .set("Authorization", `Bearer ${adminToken}`);
+    assert.equal(res.status, 404);
+  });
+
   it("exports only recent successful payments as CSV", async () => {
     const res = await request(app)
       .get("/api/admin/payments/export?days=1")
@@ -79,7 +86,7 @@ describe("Reconciliation CSV + UTM report", () => {
   it("reports the UTM funnel counts", async () => {
     await prisma.user.update({
       where: { email: "payer@test.com" },
-      data: { utmSource: "mayden_website" },
+      data: { utmSource: "mayden_funnel" },
     });
 
     const res = await request(app)
@@ -87,10 +94,36 @@ describe("Reconciliation CSV + UTM report", () => {
       .set("Authorization", `Bearer ${adminToken}`);
     assert.equal(res.status, 200);
 
-    const source = res.body.sources.find((s) => s.utmSource === "mayden_website");
-    assert.ok(source, "mayden_website source present");
+    const source = res.body.sources.find((s) => s.utmSource === "mayden_funnel");
+    assert.ok(source, "mayden_funnel source present");
     assert.equal(source.registered, 1);
     assert.equal(source.paid, 1);
     assert.equal(source.active, 1);
+  });
+
+  it("includes previous-month payments in the monthly report window", async () => {
+    const now = new Date();
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const lastMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+
+    const user = await prisma.user.findUnique({ where: { email: "payer@test.com" } });
+    const sub = await prisma.subscription.findFirst({ where: { userId: user.id } });
+    await prisma.payment.create({
+      data: {
+        userId: user.id,
+        subscriptionId: sub.id,
+        amount: 350,
+        status: "success",
+        reference: "REF-MONTHLY-1",
+        paidAt: new Date(lastMonthStart.getTime() + 86400000),
+      },
+    });
+
+    const res = await request(app)
+      .get(`/api/admin/payments/export?from=${lastMonthStart.toISOString()}&to=${monthStart.toISOString()}`)
+      .set("Authorization", `Bearer ${adminToken}`);
+    assert.equal(res.status, 200);
+    assert.match(res.text, /REF-MONTHLY-1/);
+    assert.doesNotMatch(res.text, /REF-SUCCESS-1/);
   });
 });
