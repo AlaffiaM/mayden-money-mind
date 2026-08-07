@@ -41,6 +41,8 @@ model Subscription {
   nextRenewal DateTime
   pausedAt    DateTime?  // set when paused to freeze the renewal timer
   autoRenew   Boolean   @default(true)
+  paystackSubscriptionCode String? // Paystack subscription code for recurring card billing
+  paystackPlanCode         String? // Paystack plan code (weekly or monthly) this sub belongs to
   payments    Payment[]
 }
 
@@ -55,6 +57,7 @@ model Payment {
   currency       String        @default("NGN")
   status         String        // pending | success | failed
   reference      String        @unique
+  last4          String?       // last 4 digits of the card charged (auto-renewal display)
   paidAt         DateTime?
   createdAt      DateTime      @default(now())
 }
