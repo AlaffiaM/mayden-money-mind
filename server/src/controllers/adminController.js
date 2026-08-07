@@ -393,20 +393,6 @@ export async function publishEpisode(req, res, next) {
       data: { status: "published" },
     });
 
-    const activeUsers = await prisma.user.findMany({
-      where: { subscriptions: { some: { status: "active" } } },
-      select: { id: true },
-    });
-
-    await prisma.notification.create({
-      data: {
-        title: `New Episode: ${episode.title}`,
-        body: `Today's ${episode.dayType} episode is now available. Tap to listen.`,
-        channels: "inapp",
-        sentBy: "system",
-      },
-    });
-
     res.json(episode);
   } catch (err) {
     next(err);
