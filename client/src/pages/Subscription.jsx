@@ -11,7 +11,7 @@ import SubscriberLayout from "../components/layout/SubscriberLayout";
 
 export default function Subscription() {
   const navigate = useNavigate();
-  const { subscription, loading, subscribe, update } = useSubscription();
+  const { subscription, loading, subscribe, update, setAutoRenew } = useSubscription();
   const { pricing } = usePricing();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlStatus = searchParams.get("status");
@@ -105,6 +105,27 @@ export default function Subscription() {
     }
   };
 
+  const handleAutoRenewToggle = async () => {
+    if (!subscription) return;
+    try {
+      if (subscription.autoRenew) {
+        await setAutoRenew(subscription.id, false);
+      } else {
+        // Re-enable: flip the flag, then complete a 1-tap re-checkout with the saved card
+        await setAutoRenew(subscription.id, true);
+        const { data } = await api.post("/payments/initialize", { subscriptionId: subscription.id });
+        if (data.redirectUrl) {
+          window.location.href = data.redirectUrl;
+        } else {
+          await api.post("/payments/verify", { reference: data.payment.reference });
+          navigate("/dashboard", { replace: true });
+        }
+      }
+    } catch (err) {
+      alert(err.response?.data?.error || "Something went wrong");
+    }
+  };
+
   if (loading) {
     return (
       <SubscriberLayout>
@@ -114,6 +135,9 @@ export default function Subscription() {
       </SubscriberLayout>
     );
   }
+
+  const last4 = subscription?.payments?.find((p) => p.status === "success")?.last4 || null;
+  const periodLabel = subscription?.plan === "weekly" ? "week" : "month";
 
   const statusBanner = (() => {
     if (polling) {
@@ -212,6 +236,24 @@ export default function Subscription() {
             <div className="text-sm text-gray-500 space-y-2 mb-6">
               <p>Started: {new Date(subscription.startDate).toLocaleDateString()}</p>
               <p>Next renewal: {new Date(subscription.nextRenewal).toLocaleDateString()}</p>
+            </div>
+            <div className="flex items-center justify-between py-3 border-t border-gray-100 mb-6">
+              <div>
+                <p className="text-sm font-medium text-mayden-dark">Auto-renew</p>
+                <p className="text-xs text-gray-500">
+                  {subscription.autoRenew
+                    ? `Charged automatically to your card${last4 ? ` (•••• ${last4})` : ""} each ${periodLabel}`
+                    : "Off — your access ends when the current period expires"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleAutoRenewToggle}
+                aria-pressed={subscription.autoRenew}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${subscription.autoRenew ? "bg-emerald-500" : "bg-gray-300"}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${subscription.autoRenew ? "translate-x-6" : "translate-x-1"}`} />
+              </button>
             </div>
             <div className="flex gap-3">
               <Button
