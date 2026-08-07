@@ -194,6 +194,7 @@ export async function webhook(req, res) {
     // charge.success — first payment OR a recurring renewal charge
     if (event.event === "charge.success") {
       let payment = reference ? await prisma.payment.findUnique({ where: { reference } }) : null;
+      let createdRenewalPayment = false;
 
       // Recurring renewal — the reference is new to us; find the subscription via
       // the Paystack subscription_code and record the renewal payment.
@@ -213,22 +214,25 @@ export async function webhook(req, res) {
               ...(event.data.authorization?.last4 ? { last4: event.data.authorization.last4 } : {}),
             },
           });
+          createdRenewalPayment = true;
         }
       }
 
-      if (payment && payment.status !== "success") {
+      if (payment && (createdRenewalPayment || payment.status !== "success")) {
         if (event.data.amount && payment.amount * 100 !== event.data.amount) {
           return res.sendStatus(200);
         }
 
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: "success",
-            paidAt: new Date(),
-            ...(event.data.authorization?.last4 ? { last4: event.data.authorization.last4 } : {}),
-          },
-        });
+        if (!createdRenewalPayment) {
+          await prisma.payment.update({
+            where: { id: payment.id },
+            data: {
+              status: "success",
+              paidAt: new Date(),
+              ...(event.data.authorization?.last4 ? { last4: event.data.authorization.last4 } : {}),
+            },
+          });
+        }
 
         await activateSubscription(payment.subscriptionId, {
           planCode: event.data.plan?.plan_code,
