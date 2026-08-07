@@ -1,7 +1,8 @@
 import { describe, it, before } from "node:test";
 import assert from "node:assert/strict";
 import request from "supertest";
-import { app, createUser, createSubscription, login } from "./helpers.js";
+import { app, prisma, createUser, createSubscription, login } from "./helpers.js";
+import { processExpiredSubscriptions } from "../src/services/renewalService.js";
 
 describe("Subscription status enforcement (F1)", () => {
   let userA;
@@ -67,6 +68,90 @@ describe("Subscription status enforcement (F1)", () => {
       .set("Authorization", `Bearer ${tokenB}`)
       .send({ status: "cancelled" });
     assert.equal(res.status, 403);
+  });
+});
+
+describe("Auto-renewal toggle (F4)", () => {
+  let user;
+  let token;
+
+  before(async () => {
+    user = await createUser({ email: "renew@test.com", password: "RenewPass123!" });
+    token = await login("renew@test.com", "RenewPass123!");
+  });
+
+  it("turning auto-renew off keeps access active but stops renewal", async () => {
+    const sub = await createSubscription({
+      userId: user.id,
+      status: "active",
+      autoRenew: true,
+      paystackSubscriptionCode: "SUB_abc123",
+    });
+    const res = await request(app)
+      .patch(`/api/subscriptions/${sub.id}/auto-renew`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ autoRenew: false });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.autoRenew, false);
+    assert.equal(res.body.status, "active");
+  });
+
+  it("turning auto-renew back on re-enables the flag", async () => {
+    const sub = await createSubscription({
+      userId: user.id,
+      status: "active",
+      autoRenew: false,
+    });
+    const res = await request(app)
+      .patch(`/api/subscriptions/${sub.id}/auto-renew`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ autoRenew: true });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.autoRenew, true);
+  });
+
+  it("rejects a non-boolean autoRenew value", async () => {
+    const sub = await createSubscription({ userId: user.id, status: "active" });
+    const res = await request(app)
+      .patch(`/api/subscriptions/${sub.id}/auto-renew`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ autoRenew: "yes" });
+    assert.equal(res.status, 400);
+  });
+
+  it("enforces ownership on the auto-renew endpoint", async () => {
+    const other = await createUser({ email: "renewother@test.com", password: "RenewPass123!" });
+    const otherToken = await login("renewother@test.com", "RenewPass123!");
+    const sub = await createSubscription({ userId: user.id, status: "active" });
+    const res = await request(app)
+      .patch(`/api/subscriptions/${sub.id}/auto-renew`)
+      .set("Authorization", `Bearer ${otherToken}`)
+      .send({ autoRenew: false });
+    assert.equal(res.status, 403);
+  });
+
+  it("an active subscription with auto-renew off expires after its renewal date", async () => {
+    const sub = await createSubscription({
+      userId: user.id,
+      status: "active",
+      autoRenew: false,
+      nextRenewalDays: -1,
+    });
+    await processExpiredSubscriptions();
+    const updated = await prisma.subscription.findUnique({ where: { id: sub.id } });
+    assert.equal(updated.status, "expired");
+  });
+
+  it("an active subscription with auto-renew on is not expired by the processor", async () => {
+    const sub = await createSubscription({
+      userId: user.id,
+      status: "active",
+      autoRenew: true,
+      nextRenewalDays: -1,
+    });
+    await processExpiredSubscriptions();
+    const updated = await prisma.subscription.findUnique({ where: { id: sub.id } });
+    assert.equal(updated.status, "active");
   });
 });
 
