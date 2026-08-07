@@ -30,5 +30,12 @@ export function useSubscription() {
     return data;
   };
 
-  return { subscription, loading, subscribe, update };
+  // Toggle automatic card renewal on/off
+  const setAutoRenew = async (id, autoRenew) => {
+    const { data } = await api.patch(`/subscriptions/${id}/auto-renew`, { autoRenew });
+    setSubscription(data);
+    return data;
+  };
+
+  return { subscription, loading, subscribe, update, setAutoRenew };
 }
