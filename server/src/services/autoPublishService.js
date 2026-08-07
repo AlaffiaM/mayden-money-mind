@@ -1,5 +1,4 @@
 // Auto-publish service — checks for scheduled episodes and publishes them at the configured release time
-// Also sends in-app notifications to all active subscribers
 import { prisma } from "../config/prisma.js";
 
 // Runs every 15 minutes to check for episodes ready to publish
@@ -33,16 +32,6 @@ export async function checkAndPublishEpisodes() {
     await prisma.episode.update({
       where: { id: episode.id },
       data: { status: "published" },
-    });
-
-    // Notify all active subscribers
-    await prisma.notification.create({
-      data: {
-        title: `New Episode: ${episode.title}`,
-        body: `Today's ${episode.dayType} episode is now available. Tap to listen.`,
-        channels: "inapp",
-        sentBy: "system",
-      },
     });
   }
 }
