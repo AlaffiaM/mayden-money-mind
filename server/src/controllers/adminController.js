@@ -6,7 +6,6 @@ import { fileURLToPath } from "url";
 import { prisma } from "../config/prisma.js";
 import { getUploadUrl } from "../services/audioStorageService.js";
 import { signAudioUrl } from "../utils/audioAccessControl.js";
-import { runReconciliationForWindow } from "../services/reconciliationService.js";
 
 // Default settings values used as fallback if DB has no value set
 const DEFAULT_SETTINGS = {
@@ -529,19 +528,6 @@ export async function getUtmReport(req, res, next) {
     }
 
     res.json({ sources: Object.values(bySource), totalRegistered: users.length });
-  } catch (err) {
-    next(err);
-  }
-}
-
-// POST /api/admin/reports/send-now — email the last 24 hours' reconciliation CSV immediately
-export async function sendReportNow(req, res, next) {
-  try {
-    const to = new Date();
-    const from = new Date(to);
-    from.setHours(from.getHours() - 24);
-    const result = await runReconciliationForWindow({ from, to });
-    res.json(result);
   } catch (err) {
     next(err);
   }
