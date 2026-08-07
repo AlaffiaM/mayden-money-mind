@@ -8,6 +8,8 @@ import api from "./services/api";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Library from "./pages/Library";
 import Subscription from "./pages/Subscription";
@@ -81,6 +83,8 @@ function AppRoutes() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Subscriber-only routes (requires active subscription) */}
       <Route path="/dashboard" element={<SubscriberRoute><Dashboard /></SubscriberRoute>} />
