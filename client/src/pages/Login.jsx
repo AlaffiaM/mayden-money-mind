@@ -83,6 +83,12 @@ export default function Login() {
             Create one
           </Link>
         </p>
+
+        <p className="text-sm text-gray-500 text-center mt-3">
+          <Link to="/forgot-password" className="text-mayden-magenta font-semibold hover:underline">
+            Forgot password?
+          </Link>
+        </p>
       </div>
     </div>
   );
