@@ -132,7 +132,7 @@ prisma/
 | Model | Purpose |
 |---|---|
 | **User** | Users with email/phone, password hash, role (user/admin) |
-| **Subscription** | Plans (weekly/monthly) with status lifecycle |
+| **Subscription** | Plans (weekly/monthly) with status lifecycle + Paystack recurring codes (`paystackSubscriptionCode`, `paystackPlanCode`)
 | **Payment** | Paystack payment records with references |
 | **Episode** | Audio episodes with day type, show notes, publish date |
 | **ListenLog** | Tracks which episodes users have listened to |
@@ -167,6 +167,7 @@ prisma/
 | GET | `/api/subscriptions/mine/status` | Yes | Lightweight status check |
 | POST | `/api/subscriptions` | Yes | Create new subscription |
 | PATCH | `/api/subscriptions/:id` | Yes | Pause / resume / cancel |
+| PATCH | `/api/subscriptions/:id/auto-renew` | Yes | Toggle automatic card renewal |
 
 ### Payments
 
@@ -223,6 +224,7 @@ prisma/
 
 ### Renewal Processor
 - Runs every **12 hours**
+- Expires `active` subscriptions whose renewal date passed with `autoRenew: false` (no further charge attempted)
 - Handles `past_due` subscriptions with a configurable grace period (default 48h)
 - Sends reminder notifications at 12h and 24h
 - Auto-cancels when grace period expires
@@ -242,7 +244,12 @@ pending → active → past_due → cancelled
 ## Payment Flow
 
 1. User creates a subscription
-2. Server initializes a Paystack transaction
-3. User is redirected to Paystack checkout
-4. On success, callback/webhook activates the subscription
-5. Dev mode bypasses Paystack when no API key is configured
+2. Server ensures the Paystack Weekly/Monthly **Plans** exist (auto-created once, plan codes cached in the `Setting` table)
+3. Server initializes a Paystack transaction with `plan` + `invoice_limit: 0` — Paystack saves the card and enables **recurring billing** (auto-charges the card every 7/30 days)
+4. User is redirected to Paystack checkout
+5. On success, callback/webhook activates the subscription and stores the Paystack `subscription_code`
+6. Each renewal fires `invoice.update` / `charge.success` (extend access) or `invoice.update` failed / `charge.failed` (→ `past_due` grace period)
+7. Turning **auto-renew off** calls `DELETE /subscription/{code}` — future charges stop but access continues until the current period ends
+8. Dev mode bypasses Paystack when no API key is configured
+
+Paystack dashboard: set the webhook to `https://<render-host>/api/payments/webhook` and the callback to the Vercel app URL. No Paystack dashboard plan/subscription setup is required — plans are created by the server on first use.
