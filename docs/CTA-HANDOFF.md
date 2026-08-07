@@ -99,6 +99,10 @@ router link component (same `href`) so SPA navigation works in-app.
 - [ ] Portal deploy tested at `https://<PORTAL_DOMAIN>/register`.
 - [ ] Paystack keys configured in production (`PAYSTACK_SECRET_KEY`,
       `PAYSTACK_PUBLIC_KEY`) — the dev-mode bypass is disabled in production.
+- [ ] Paystack **webhook** set to `https://<RENDER_HOST>/api/payments/webhook` with
+      these events enabled: `charge.success`, `charge.failed`, `subscription.create`,
+      `invoice.update`, `subscription.disable`, `subscription.not_renew`. The server
+      auto-creates the Weekly/Monthly Plans — no Paystack dashboard plan setup needed.
 - [ ] Click the CTA from the live Mayden site and complete a test signup →
       Paystack checkout → active subscription → audio playback.
 
