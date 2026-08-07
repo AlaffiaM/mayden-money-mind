@@ -1,5 +1,6 @@
 // Subscription handlers — user-facing subscription management (create, pause, cancel, check status)
 import { prisma } from "../config/prisma.js";
+import { disablePaystackSubscription } from "../services/paymentService.js";
 
 // Allowed user-initiated status transitions for a subscription.
 // "pending → active" is NOT allowed here — it may only happen through a verified payment
@@ -149,12 +150,60 @@ export async function update(req, res) {
         updateData.nextRenewal = newRenewal;
       }
       updateData.pausedAt = null;
+    } else if (status === "cancelled") {
+      // Stop future recurring charges at Paystack, then cancel locally
+      if (sub.paystackSubscriptionCode) {
+        try {
+          await disablePaystackSubscription(sub.paystackSubscriptionCode);
+        } catch (err) {
+          console.error("[cancel] failed to disable Paystack subscription:", err.message);
+        }
+      }
+      updateData.autoRenew = false;
     }
 
     const updated = await prisma.subscription.update({
       where: { id: parseInt(req.params.id) },
       data: updateData,
     });
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+// PATCH /api/subscriptions/:id/auto-renew — turn automatic card renewal on/off.
+// Turning OFF stops future Paystack charges but keeps access until the current
+// paid period (nextRenewal) ends. Turning ON re-enables the flag; the client
+// routes the user through a 1-tap re-checkout with their saved card.
+export async function setAutoRenew(req, res) {
+  try {
+    const { autoRenew } = req.body;
+
+    const sub = await prisma.subscription.findUnique({
+      where: { id: parseInt(req.params.id) },
+    });
+    if (!sub) return res.status(404).json({ error: "Subscription not found" });
+    if (sub.userId !== req.user.id) return res.status(403).json({ error: "Forbidden" });
+
+    if (typeof autoRenew !== "boolean") {
+      return res.status(400).json({ error: "autoRenew must be a boolean" });
+    }
+
+    if (autoRenew === false && sub.autoRenew && sub.paystackSubscriptionCode) {
+      try {
+        await disablePaystackSubscription(sub.paystackSubscriptionCode);
+      } catch (err) {
+        console.error("[auto-renew] failed to disable Paystack subscription:", err.message);
+      }
+    }
+
+    const updated = await prisma.subscription.update({
+      where: { id: parseInt(req.params.id) },
+      data: { autoRenew },
+    });
+
     res.json(updated);
   } catch (err) {
     console.error(err);
