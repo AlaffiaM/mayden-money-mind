@@ -17,6 +17,13 @@ const REMINDER_INTERVAL_MS = 12 * 60 * 60 * 1000;
 export async function processExpiredSubscriptions() {
   const now = new Date();
 
+  // Subscriptions that reached their renewal date with auto-renew turned off
+  // expire cleanly — no charge was attempted, so there's no grace period.
+  await prisma.subscription.updateMany({
+    where: { status: "active", autoRenew: false, nextRenewal: { lte: now } },
+    data: { status: "expired" },
+  });
+
   const pastDueSubs = await prisma.subscription.findMany({
     where: { status: "past_due" },
     include: { user: { select: { id: true, fullName: true, email: true } } },
