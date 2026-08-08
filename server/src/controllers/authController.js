@@ -7,7 +7,7 @@ import { prisma } from "../config/prisma.js";
 import { JWT_SECRET, FRONTEND_URL } from "../config/env.js";
 import { sendEmail } from "../services/emailService.js";
 
-const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
+const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 function issueToken(user) {
   return jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
@@ -112,7 +112,7 @@ export async function forgotPassword(req, res) {
         subject: "Reset your Money & Mind password",
         textContent:
           `Hi ${user.fullName},\n\n` +
-          `You asked to reset your Money & Mind password. Click the link below to choose a new one (valid for 1 hour):\n\n` +
+          `You asked to reset your Money & Mind password. Click the link below to choose a new one (valid for 30 minutes):\n\n` +
           `${resetUrl}\n\n` +
           `If you didn't request this, you can safely ignore this email.`,
       });
