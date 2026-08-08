@@ -48,8 +48,8 @@ Server runs on `http://localhost:5000`.
 | `FRONTEND_URL` | Frontend base URL for payment redirects/callbacks (default `http://localhost:5173`); a trailing slash is tolerated and stripped |
 | `CLIENT_ORIGINS` | Comma-separated CORS allowlist of browser origins (default `http://localhost:5173`; merged with the hardcoded `https://mayden-money-mind.vercel.app` production origin) |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Credentials for the admin user — `npm run seed` upserts them |
-| `BREVO_API_KEY` | Brevo transactional API key for the reconciliation emails (Brevo: SMTP & API → API Keys) |
-| `BREVO_FROM_EMAIL` | Verified sender address in Brevo for the report email |
+| `BREVO_API_KEY` | Brevo transactional API key for the reconciliation emails and password-reset emails (Brevo: SMTP & API → API Keys) |
+| `BREVO_FROM_EMAIL` | Verified sender address in Brevo for all outgoing mail (reports + reset links) |
 | `RECONCILIATION_EMAIL` | Recipient of the daily/monthly payment CSV reports |
 | `RECONCILIATION_HOUR` | Hour (UTC) the daily report runs — default `23` (23:00 UTC = midnight Lagos), reports the previous calendar day |
 | `MONTHLY_REPORT_HOUR` | Hour (UTC) the monthly report runs — default `23` |
@@ -85,7 +85,7 @@ src/
 │   └── admin.js              # Admin role check
 │
 ├── controllers/
-│   ├── authController.js     # Register + login
+│   ├── authController.js     # Register, login, password reset
 │   ├── episodeController.js  # Public episode endpoints
 │   ├── subscriptionController.js  # User subscription CRUD
 │   ├── paymentController.js  # Paystack payment flow
@@ -104,7 +104,9 @@ src/
 │   ├── paymentService.js     # Paystack API integration
 │   ├── renewalService.js     # Grace period processor (every 12h)
 │   ├── autoPublishService.js # Auto-publish scheduler (every 15min)
+│   ├── dailyReminderService.js # Daily "time to listen" in-app reminder (every 15min)
 │   ├── reconciliationService.js # Daily (midnight) + monthly (1st) payment CSV → finance email
+│   ├── emailService.js       # Shared Brevo transactional email sender
 │   └── audioStorageService.js# Multer config for audio uploads
 │
 └── utils/
@@ -113,16 +115,17 @@ src/
 
 tests/
 ├── helpers.js                # Test bootstrap (env, DB reset, factories)
-├── auth.test.js              # Auth + rate limiting
+├── auth.test.js              # Auth + rate limiting + password reset
 ├── admin.test.js             # Admin access control
 ├── subscriptions.test.js     # Subscription lifecycle enforcement
 ├── payments.test.js          # Payment flow + webhook signatures
 ├── episodes.test.js          # Episode visibility
 ├── audio.test.js             # Audio access control
+├── reminders.test.js         # Daily listen reminder
 └── app.test.js               # Notifications + CORS
 
 prisma/
-├── schema.prisma             # Database schema (7 models)
+├── schema.prisma             # Database schema (8 models)
 ├── seed.js                   # Admin user seeder
 └── migrations/               # Migration history
 ```
@@ -131,12 +134,12 @@ prisma/
 
 | Model | Purpose |
 |---|---|
-| **User** | Users with email/phone, password hash, role (user/admin) |
+| **User** | Users with email/phone, password hash, role (user/admin), password-reset token fields |
 | **Subscription** | Plans (weekly/monthly) with status lifecycle + Paystack recurring codes (`paystackSubscriptionCode`, `paystackPlanCode`)
 | **Payment** | Paystack payment records with references |
 | **Episode** | Audio episodes with day type, show notes, publish date |
 | **ListenLog** | Tracks which episodes users have listened to |
-| **Notification** | In-app notifications with channel info |
+| **Notification** | In-app notifications with channel info + `subscribersOnly` flag |
 | **NotificationRead** | Per-user read tracking for notifications |
 | **Setting** | Key-value app configuration (pricing, scheduling, labels) |
 
@@ -148,6 +151,8 @@ prisma/
 |---|---|---|---|
 | POST | `/api/auth/register` | No | Create account, returns JWT |
 | POST | `/api/auth/login` | No | Login, returns JWT |
+| POST | `/api/auth/forgot-password` | No | Email a one-time password-reset link (no account enumeration) |
+| POST | `/api/auth/reset-password` | No | Set a new password with a valid reset token |
 
 ### Episodes
 
@@ -199,7 +204,7 @@ prisma/
 | GET | `/api/admin/episodes` | List all episodes |
 | POST | `/api/admin/episodes` | Create episode (with audio upload) |
 | PUT | `/api/admin/episodes/:id` | Update episode |
-| POST | `/api/admin/episodes/:id/publish` | Publish + notify subscribers |
+| POST | `/api/admin/episodes/:id/publish` | Publish episode |
 | DELETE | `/api/admin/episodes/:id` | Delete episode |
 | GET | `/api/admin/subscriptions` | List all subscriptions |
 | GET | `/api/admin/subscriptions/revenue` | Payment history |
@@ -232,7 +237,15 @@ prisma/
 ### Auto-Publisher
 - Runs every **15 minutes**
 - Publishes episodes when their `publishDate` + configured release time (default 6:00 AM) has passed
-- Sends in-app notifications to all active subscribers
+- Does **not** send notifications — subscribers get the daily reminder instead (below)
+
+### Daily Listen Reminder
+- Runs every **15 minutes**, fires **once per day** (idempotent via the `lastDailyReminderDate` setting) at the same release time as the auto-publisher (default 6:00 AM)
+- Creates a single `subscribersOnly` in-app notification for active subscribers ("Time to Listen"), naming today's episode when one is published
+- Non-subscribers never see these — `GET /api/notifications/latest` filters them out
+
+### Password Reset Emails
+- `POST /api/auth/forgot-password` emails a one-time link via Brevo (needs `BREVO_API_KEY` + `BREVO_FROM_EMAIL`). Without Brevo keys the server logs the link instead and still returns success — so local dev works without setup.
 
 ## Subscription Lifecycle
 
