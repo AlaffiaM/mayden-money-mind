@@ -51,7 +51,7 @@ export default function ForgotPassword() {
         {sent ? (
           <div className="p-4 rounded-lg bg-green-50 border border-green-100 text-sm text-green-700 text-center">
             If an account exists for <span className="font-semibold">{email.trim().toLowerCase()}</span>,
-            a password reset link is on its way. The link expires in 1 hour.
+            a password reset link is on its way. The link expires in 30 minutes.
             <div className="mt-4">
               <Link
                 to="/login"
