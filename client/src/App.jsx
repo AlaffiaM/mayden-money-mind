@@ -1,7 +1,7 @@
 // App root — defines all routes, route guards, and wraps everything in AuthProvider
 // Route guards: ProtectedRoute (logged in), SubscriberRoute (active sub), AdminRoute (admin role)
 import { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { captureUtm } from "./utils/utm";
 import api from "./services/api";
