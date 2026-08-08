@@ -112,6 +112,16 @@ function AppRoutes() {
   );
 }
 
+// Redirects stray double-slash paths (e.g. //reset-password from a trailing-slash
+// FRONTEND_URL) to the single-slash equivalent so routes still match.
+function NormalizedRoutes() {
+  const { pathname, search, hash } = useLocation();
+  if (pathname.startsWith("//")) {
+    return <Navigate to={`${pathname.slice(1)}${search}${hash}`} replace />;
+  }
+  return <AppRoutes />;
+}
+
 // App shell: BrowserRouter → AuthProvider → AppRoutes
 export default function App() {
   // Capture UTM params on first load so signups can be attributed to the source
@@ -123,7 +133,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <ErrorBanner />
-        <AppRoutes />
+        <NormalizedRoutes />
       </AuthProvider>
     </BrowserRouter>
   );
