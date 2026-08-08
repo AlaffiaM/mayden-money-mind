@@ -60,6 +60,7 @@ model Payment {
   status         String        // pending | success | failed
   reference      String        @unique
   last4          String?       // last 4 digits of the card charged (auto-renewal display)
+  usesCard       Boolean       @default(true) // true = card (recurring), false = bank transfer/USSD/QR (one-time)
   paidAt         DateTime?
   createdAt      DateTime      @default(now())
 }
