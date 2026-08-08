@@ -687,7 +687,7 @@ export async function listAudioFiles(req, res, next) {
       }
     };
 
-    scan(AUDIO_DIR, "/audio/Maiden");
+    scan(path.join(AUDIO_DIR, "Maiden"), "/audio/Maiden");
     scan(UPLOADS_DIR, "/uploads");
 
     res.json(grouped);
