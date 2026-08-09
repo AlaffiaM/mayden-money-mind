@@ -178,11 +178,13 @@ export default function Episodes() {
 
   useEffect(() => { fetchEpisodes(); fetchAudioFiles(); }, []);
 
-  // Find the next available date for a dayType — skips days that already have an episode
-  const getNextAvailableDate = (dayTypeKey) => {
+  // Find the next available date for a dayType — skips days that already have an episode.
+  // Pass excludeDate (YYYY-MM-DD) to also skip that specific date (used when editing).
+  const getNextAvailableDate = (dayTypeKey, excludeDate) => {
     const idx = DAY_TYPES.findIndex((d) => d.key === dayTypeKey);
     if (idx === -1) return toLocalDateStr(new Date());
     const taken = new Set(episodes.map((e) => toLocalDateStr(new Date(e.publishDate))));
+    if (excludeDate) taken.add(excludeDate);
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     const dayOfWeek = start.getDay();
@@ -195,32 +197,6 @@ export default function Episodes() {
       candidate.setDate(candidate.getDate() + 7);
     }
     return toLocalDateStr(candidate);
-  };
-
-  // Get all remaining dates for a specific day type from this week through end of next month
-  const getRemainingDatesForDayType = (dayTypeKey) => {
-    const idx = DAY_TYPES.findIndex((d) => d.key === dayTypeKey);
-    if (idx === -1) return [];
-    const taken = new Set(episodes.map((e) => toLocalDateStr(new Date(e.publishDate))));
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const endWindow = new Date(today.getFullYear(), today.getMonth() + 2, 0);
-    const dayOfWeek = today.getDay();
-    const targetDay = idx + 1;
-    let diff = targetDay - dayOfWeek;
-    if (diff < 0) diff += 7;
-    const first = new Date(today);
-    first.setDate(first.getDate() + diff);
-    const results = [];
-    const current = new Date(first);
-    while (current <= endWindow) {
-      const dateStr = toLocalDateStr(current);
-      if (!taken.has(dateStr)) {
-        results.push(dateStr);
-      }
-      current.setDate(current.getDate() + 7);
-    }
-    return results;
   };
 
   // Auto-detect audio duration from URL using the browser Audio API
@@ -262,37 +238,34 @@ export default function Episodes() {
     setSaving(true);
     try {
       if (editingEp) {
+        const publishDate =
+          form.dayType === editingEp.dayType
+            ? toLocalDateStr(new Date(editingEp.publishDate))
+            : getNextAvailableDate(form.dayType, toLocalDateStr(new Date(editingEp.publishDate)));
         const fd = new FormData();
         fd.append("title", form.title);
         fd.append("dayType", form.dayType);
         fd.append("runTimeSeconds", form.runTimeSeconds);
         fd.append("showNotes", form.showNotes);
-        fd.append("publishDate", getNextAvailableDate(form.dayType));
+        fd.append("publishDate", publishDate);
         if (selectedAudio) fd.append("audioUrl", selectedAudio);
         await api.put(`/admin/episodes/${editingEp.id}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
         setShowModal(false);
         fetchEpisodes();
         showToast("Episode updated");
       } else {
-        const dates = getRemainingDatesForDayType(form.dayType);
-        if (dates.length === 0) {
-          showToast("No remaining dates for this day type", "error");
-          setSaving(false);
-          return;
-        }
-        for (const date of dates) {
-          const fd = new FormData();
-          fd.append("title", form.title);
-          fd.append("dayType", form.dayType);
-          fd.append("runTimeSeconds", form.runTimeSeconds || 0);
-          fd.append("showNotes", form.showNotes);
-          fd.append("publishDate", date);
-          if (selectedAudio) fd.append("audioUrl", selectedAudio);
-          await api.post("/admin/episodes", fd, { headers: { "Content-Type": "multipart/form-data" } });
-        }
+        const publishDate = getNextAvailableDate(form.dayType);
+        const fd = new FormData();
+        fd.append("title", form.title);
+        fd.append("dayType", form.dayType);
+        fd.append("runTimeSeconds", form.runTimeSeconds || 0);
+        fd.append("showNotes", form.showNotes);
+        fd.append("publishDate", publishDate);
+        if (selectedAudio) fd.append("audioUrl", selectedAudio);
+        await api.post("/admin/episodes", fd, { headers: { "Content-Type": "multipart/form-data" } });
         setShowModal(false);
         fetchEpisodes();
-        showToast(`${dates.length} ${form.dayType} episodes scheduled`);
+        showToast(`Episode scheduled for ${publishDate}`);
       }
     } catch (err) {
       showToast(err.response?.data?.error || "Failed to save episode", "error");
@@ -400,7 +373,7 @@ export default function Episodes() {
 
   const currentDayFiles = audioFiles[form.dayType] || [];
   const currentDayPillar = DAY_TYPES.find((d) => d.key === form.dayType)?.pillar || "";
-  const remainingCount = !editingEp ? getRemainingDatesForDayType(form.dayType).length : 0;
+  const nextPublishDate = !editingEp ? getNextAvailableDate(form.dayType) : null;
 
   if (loading) {
     return (
@@ -574,7 +547,7 @@ export default function Episodes() {
               <div>
                 <h3 className="font-bold text-mayden-dark">{editingEp ? "Edit Episode" : "New Episode"}</h3>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {editingEp ? "Update episode details" : "Pick a day type — episodes are scheduled for every remaining week"}
+                  {editingEp ? "Update episode details" : "Pick a day type — the episode is scheduled for its next available date"}
                 </p>
               </div>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
@@ -619,17 +592,11 @@ export default function Episodes() {
                 </div>
               </div>
 
-              {/* Remaining episodes summary — only when creating */}
-              {!editingEp && remainingCount > 0 && (
+              {/* Next publish date summary — only when creating */}
+              {!editingEp && nextPublishDate && (
                 <div className="bg-mayden-magenta/5 border border-mayden-magenta/20 rounded-lg px-4 py-3">
-                  <p className="text-sm text-mayden-dark font-medium">{remainingCount} {form.dayType} episodes will be created</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Starting from this week through end of next month. Dates with existing episodes are skipped.</p>
-                </div>
-              )}
-
-              {!editingEp && remainingCount === 0 && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-                  <p className="text-sm text-gray-500">All {form.dayType} episodes are already scheduled.</p>
+                  <p className="text-sm text-mayden-dark font-medium">This episode will publish on {nextPublishDate}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">The next {form.dayType} without an existing episode. Create again to schedule additional episodes.</p>
                 </div>
               )}
 
@@ -686,8 +653,8 @@ export default function Episodes() {
             </div>
             <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
               <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-              <button onClick={handleSave} disabled={saving || !form.title || (!editingEp && remainingCount === 0)} className="px-4 py-2 bg-mayden-magenta text-white text-sm font-medium rounded-lg hover:bg-mayden-magenta/90 disabled:opacity-50">
-                {saving ? "Saving..." : editingEp ? "Update" : `Schedule ${remainingCount} Episodes`}
+              <button onClick={handleSave} disabled={saving || !form.title} className="px-4 py-2 bg-mayden-magenta text-white text-sm font-medium rounded-lg hover:bg-mayden-magenta/90 disabled:opacity-50">
+                {saving ? "Saving..." : editingEp ? "Update" : "Create Episode"}
               </button>
             </div>
           </div>
