@@ -157,6 +157,7 @@ export default function Episodes() {
   const [audioFiles, setAudioFiles] = useState({});
   const [saving, setSaving] = useState(false);
   const [playingPreview, setPlayingPreview] = useState(null);
+  const [playingRowId, setPlayingRowId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkDeleteTarget, setBulkDeleteTarget] = useState(false);
@@ -225,6 +226,7 @@ export default function Episodes() {
 
   const openCreate = () => {
     setEditingEp(null);
+    fetchAudioFiles();
     const dayType = "monday";
     setForm({ title: "", dayType, runTimeSeconds: "", showNotes: "" });
     setSelectedAudio(null);
@@ -233,6 +235,7 @@ export default function Episodes() {
 
   const openEdit = async (ep) => {
     setEditingEp(ep);
+    fetchAudioFiles();
     setForm({
       title: ep.title,
       dayType: ep.dayType,
@@ -242,8 +245,14 @@ export default function Episodes() {
     setSelectedAudio(ep.audioUrl || null);
     setShowModal(true);
     if (ep.audioUrl && !ep.runTimeSeconds) {
-      const duration = await detectAudioDuration(ep.previewAudioUrl || ep.audioUrl);
-      if (duration > 0) setForm((prev) => ({ ...prev, runTimeSeconds: String(duration) }));
+      try {
+        const { data } = await api.post(`/admin/episodes/${ep.id}/stream`);
+        const duration = await detectAudioDuration(data.url);
+        if (duration > 0) setForm((prev) => ({ ...prev, runTimeSeconds: String(duration) }));
+      } catch {
+        const duration = await detectAudioDuration(ep.previewAudioUrl || ep.audioUrl);
+        if (duration > 0) setForm((prev) => ({ ...prev, runTimeSeconds: String(duration) }));
+      }
     }
   };
 
@@ -354,25 +363,61 @@ export default function Episodes() {
     }
   };
 
-  const handleBulkAssignAudio = async () => {
-    try {
-      let assigned = 0;
-      for (const id of selectedIds) {
-        const ep = episodes.find((e) => e.id === id);
-        if (!ep) continue;
-        const dayAudio = audioFiles[ep.dayType] || [];
-        if (dayAudio.length === 0) continue;
-        const file = dayAudio[0];
+  const assignAudioInOrder = async (epIds, onlyMissing) => {
+    let targets = epIds
+      .map((id) => episodes.find((e) => e.id === id))
+      .filter(Boolean);
+    if (onlyMissing) targets = targets.filter((e) => !e.audioUrl);
+    if (targets.length === 0) return 0;
+
+    // Group by day type, then assign audio files in publish-date order so each
+    // week gets the next file in the folder (Monday 1 → file 1, Monday 2 → file 2, ...)
+    const byDay = {};
+    for (const ep of targets) {
+      (byDay[ep.dayType] = byDay[ep.dayType] || []).push(ep);
+    }
+
+    let assigned = 0;
+    for (const dayType of Object.keys(byDay)) {
+      const files = audioFiles[dayType] || [];
+      if (files.length === 0) continue;
+      const group = byDay[dayType].sort((a, b) => new Date(a.publishDate) - new Date(b.publishDate));
+      for (let i = 0; i < group.length; i++) {
+        const file = files[i % files.length];
         const duration = await detectAudioDuration(file.url);
         const fd = new FormData();
         fd.append("audioUrl", file.path);
         if (duration > 0) fd.append("runTimeSeconds", String(duration));
-        await api.put(`/admin/episodes/${ep.id}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+        await api.put(`/admin/episodes/${group[i].id}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
         assigned++;
       }
+    }
+    return assigned;
+  };
+
+  const handleBulkAssignAudio = async () => {
+    try {
+      const assigned = await assignAudioInOrder(selectedIds, false);
       setSelectedIds([]);
       fetchEpisodes();
-      showToast(`Audio assigned to ${assigned} episodes`);
+      showToast(assigned > 0 ? `Audio assigned to ${assigned} episodes` : "No audio files available for the selected day(s)");
+    } catch (err) {
+      showToast(err.response?.data?.error || "Failed to assign audio", "error");
+    }
+  };
+
+  const handleAssignMissingAudio = async (ids = null) => {
+    try {
+      const source = ids || episodes.filter((e) => !e.audioUrl).map((e) => e.id);
+      const targets = source.filter((id) => !episodes.find((e) => e.id === id)?.audioUrl);
+      if (targets.length === 0) {
+        showToast("No episodes are missing audio");
+        return;
+      }
+      const assigned = await assignAudioInOrder(targets, true);
+      setSelectedIds([]);
+      fetchEpisodes();
+      showToast(assigned > 0 ? `Audio assigned to ${assigned} episodes` : "No audio files available for those day(s)");
     } catch (err) {
       showToast(err.response?.data?.error || "Failed to assign audio", "error");
     }
@@ -392,6 +437,35 @@ export default function Episodes() {
     audio.onended = () => setPlayingPreview(null);
     previewRef.current = audio;
     setPlayingPreview(file.url);
+  };
+
+  const toggleRowPlay = async (ep) => {
+    if (previewRef.current) {
+      previewRef.current.pause();
+      previewRef.current = null;
+    }
+    if (playingRowId === ep.id) {
+      setPlayingRowId(null);
+      return;
+    }
+    if (!ep.audioUrl) {
+      openEdit(ep);
+      return;
+    }
+    try {
+      const { data } = await api.post(`/admin/episodes/${ep.id}/stream`);
+      const audio = new Audio(data.url);
+      audio.play();
+      audio.onended = () => setPlayingRowId(null);
+      previewRef.current = audio;
+      setPlayingRowId(ep.id);
+    } catch {
+      const audio = new Audio(ep.previewAudioUrl || ep.audioUrl);
+      audio.play();
+      audio.onended = () => setPlayingRowId(null);
+      previewRef.current = audio;
+      setPlayingRowId(ep.id);
+    }
   };
 
   const currentDayFiles = audioFiles[form.dayType] || [];
@@ -414,9 +488,16 @@ export default function Episodes() {
           <h1 className="text-2xl font-bold text-mayden-dark">Episodes</h1>
           <p className="text-sm text-gray-400 mt-1">Create episodes with audio and show notes. They auto-publish on the scheduled date and notify subscribers.</p>
         </div>
-        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-mayden-magenta text-white rounded-lg text-sm font-medium hover:bg-mayden-magenta/90">
-          <Plus size={16} /> New Episode
-        </button>
+        <div className="flex items-center gap-2">
+          {episodes.some((e) => !e.audioUrl) && (
+            <button onClick={() => handleAssignMissingAudio()} className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600">
+              <Music size={16} /> Assign Missing Audio
+            </button>
+          )}
+          <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-mayden-magenta text-white rounded-lg text-sm font-medium hover:bg-mayden-magenta/90">
+            <Plus size={16} /> New Episode
+          </button>
+        </div>
       </div>
 
       {/* Weekly Calendar */}
@@ -453,6 +534,9 @@ export default function Episodes() {
               <span className="text-xs text-gray-500">{selectedIds.length} selected</span>
               <button onClick={handleBulkAssignAudio} className="px-3 py-1.5 bg-blue-500 text-white text-xs font-medium rounded-lg hover:bg-blue-600 flex items-center gap-1">
                 <Music size={12} /> Assign Audio
+              </button>
+              <button onClick={() => handleAssignMissingAudio(selectedIds)} className="px-3 py-1.5 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600 flex items-center gap-1">
+                <Music size={12} /> Assign Missing
               </button>
               <button onClick={handleBulkPublish} className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 flex items-center gap-1">
                 <Send size={12} /> Publish
@@ -538,6 +622,19 @@ export default function Episodes() {
                       <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 w-14 text-center ${day.color}`}>{day.label.slice(0, 3)}</span>
                       {day.episode ? (
                         <>
+                          <button
+                            onClick={() => toggleRowPlay(day.episode)}
+                            title={day.episode.audioUrl ? "Play audio" : "No audio — edit to assign"}
+                            className={`shrink-0 p-1 rounded-full transition-colors ${
+                              playingRowId === day.episode.id
+                                ? "text-white bg-mayden-magenta"
+                                : day.episode.audioUrl
+                                  ? "text-mayden-magenta hover:bg-mayden-magenta/10"
+                                  : "text-gray-300 hover:text-gray-400"
+                            }`}
+                          >
+                            {playingRowId === day.episode.id ? <Pause size={12} /> : <Play size={12} />}
+                          </button>
                           <span className="text-xs font-medium text-mayden-dark truncate flex-1 min-w-0">{day.episode.title}</span>
                           <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full uppercase shrink-0 ${STATUS_BADGE[day.episode.status]}`}>{day.episode.status}</span>
                           <span className="text-[10px] text-gray-400 shrink-0 flex items-center gap-1"><Headphones size={10} />{day.episode.listenCount || 0}</span>
