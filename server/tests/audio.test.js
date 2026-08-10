@@ -66,6 +66,7 @@ describe("Per-play stream endpoint (/api/episodes/:id/stream)", () => {
         dayType: "friday",
         audioUrl: PROTECTED_FILE,
         runTimeSeconds: 60,
+        showNotes: "",
         publishDate: new Date(),
         status: "published",
       },
@@ -101,6 +102,8 @@ describe("Per-play stream endpoint (/api/episodes/:id/stream)", () => {
       data: {
         title: "Draft Episode",
         dayType: "monday",
+        runTimeSeconds: 0,
+        showNotes: "",
         publishDate: new Date(),
         status: "draft",
       },
@@ -116,6 +119,8 @@ describe("Per-play stream endpoint (/api/episodes/:id/stream)", () => {
       data: {
         title: "No Audio Episode",
         dayType: "tuesday",
+        runTimeSeconds: 0,
+        showNotes: "",
         publishDate: new Date(),
         status: "published",
       },
