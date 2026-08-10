@@ -86,7 +86,7 @@ export default function Dashboard() {
             {heroTitle}
           </h2>
           <AudioPlayer
-            src={todayEpisode.audioUrl}
+            episodeId={todayEpisode.id}
             large
             onPlayToggle={setPlaying}
             onPlayStart={() => {
