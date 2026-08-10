@@ -17,6 +17,7 @@ import {
   publishEpisode,
   deleteEpisode,
   listEpisodes,
+  streamEpisode,
   listSubscriptions,
   getRevenue,
   sendReminder,
@@ -49,6 +50,7 @@ router.post("/episodes", upload.single("audio"), createEpisode);
 router.put("/episodes/:id", upload.single("audio"), updateEpisode);
 router.post("/episodes/:id/publish", publishEpisode);
 router.delete("/episodes/:id", deleteEpisode);
+router.post("/episodes/:id/stream", streamEpisode);
 router.get("/episodes", listEpisodes);
 
 router.get("/subscriptions", listSubscriptions);
