@@ -22,8 +22,9 @@ const PUBLIC_AUDIO_DIR = path.join(__dirname, "../../../client/public/audio");
 // Files intentionally served without a token (the free marketing sample)
 const PUBLIC_FILES = ["/audio/Maiden Microfinance Bank MONDAY.mp3.mpeg"];
 
-// Default token lifetime in seconds
-const DEFAULT_TTL_SECONDS = 30 * 60;
+// Default token lifetime in seconds — kept very short so a copied link is
+// useless by the time someone tries to reuse it. Fresh URLs are minted on play.
+const DEFAULT_TTL_SECONDS = 60;
 
 function sign(filePath, expires) {
   return crypto
