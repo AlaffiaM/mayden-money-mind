@@ -7,7 +7,7 @@
 //    from an opaque blob: URL. The real signed URL never lives in the DOM, and it
 //    expires within seconds anyway. Right-click save, drag, and the native
 //    download control are disabled as extra deterrents.
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
 import { useAudio } from "../../hooks/useAudio";
 import api from "../../services/api";
