@@ -1,7 +1,16 @@
 // Audio player component with play/pause, seek, volume, and animated waveform
-import { useState } from "react";
+//
+// Two modes:
+//  - src: a direct (public) URL, e.g. the free marketing sample on the landing page
+//  - episodeId: protected episode — the player calls POST /episodes/:id/stream to
+//    mint a short-lived signed URL, fetches the audio into a Blob, and plays it
+//    from an opaque blob: URL. The real signed URL never lives in the DOM, and it
+//    expires within seconds anyway. Right-click save, drag, and the native
+//    download control are disabled as extra deterrents.
+import { useState, useEffect, useRef } from "react";
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
 import { useAudio } from "../../hooks/useAudio";
+import api from "../../services/api";
 
 function Waveform({ playing }) {
   return (
@@ -35,9 +44,18 @@ function RadialPulse({ active }) {
   );
 }
 
-export default function AudioPlayer({ src, large = false, onPlayToggle, onPlayStart }) {
+export default function AudioPlayer({ src, episodeId, large = false, onPlayToggle, onPlayStart }) {
   const { playing, currentTime, duration, error, audioRef, toggle, handleTimeUpdate, handleLoadedMetadata, handleError, seek, skip } = useAudio();
   const [loading, setLoading] = useState(true);
+  const [blobUrl, setBlobUrl] = useState(null);
+  const protectedMode = !!episodeId;
+
+  // Revoke the blob URL when the player unmounts to free memory
+  useEffect(() => {
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [blobUrl]);
 
   const formatTime = (s) => {
     if (!s || !isFinite(s)) return "0:00";
@@ -46,7 +64,40 @@ export default function AudioPlayer({ src, large = false, onPlayToggle, onPlaySt
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
+  // Protected flow: mint a fresh signed URL, fetch the bytes into a Blob, and
+  // play from a blob: URL so the signed URL is never exposed in the DOM.
+  const loadProtected = async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.post(`/episodes/${episodeId}/stream`);
+      if (!data?.url) throw new Error("No stream url");
+      const resp = await fetch(data.url);
+      if (!resp.ok) throw new Error("Stream fetch failed");
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      setBlobUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return url;
+      });
+      if (audioRef.current) {
+        audioRef.current.src = url;
+      }
+      setLoading(false);
+      toggle();
+      if (onPlayStart) onPlayStart();
+      if (onPlayToggle) onPlayToggle(true);
+    } catch {
+      setLoading(false);
+      handleError();
+      if (onPlayToggle) onPlayToggle(false);
+    }
+  };
+
   const handleToggle = () => {
+    if (protectedMode && !blobUrl) {
+      loadProtected();
+      return;
+    }
     toggle();
     if (!playing && onPlayStart) onPlayStart();
     if (onPlayToggle) onPlayToggle(!playing);
@@ -54,18 +105,26 @@ export default function AudioPlayer({ src, large = false, onPlayToggle, onPlaySt
 
   const handleCanPlay = () => setLoading(false);
 
+  const preventSave = (e) => e.preventDefault();
+
   return (
-    <div className={`${large ? "w-full" : "w-full"}`}>
+    <div
+      className={`w-full select-none ${large ? "" : ""}`}
+      onContextMenu={preventSave}
+      onDragStart={preventSave}
+    >
       <audio
         ref={audioRef}
-        src={src || undefined}
+        src={protectedMode ? blobUrl || undefined : src || undefined}
+        controlsList="nodownload"
+        disablePictureInPicture
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={(e) => { handleLoadedMetadata(e); setLoading(false); }}
         onError={(e) => { handleError(e); setLoading(false); }}
         onCanPlay={handleCanPlay}
-        preload="metadata"
+        preload={protectedMode ? "none" : "metadata"}
       />
-      {!src && (
+      {!protectedMode && !src && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3 text-xs text-amber-600">No audio file assigned to this episode.</div>
       )}
       {error && (
