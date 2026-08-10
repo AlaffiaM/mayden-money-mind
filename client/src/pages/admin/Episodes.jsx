@@ -199,6 +199,19 @@ export default function Episodes() {
     return toLocalDateStr(candidate);
   };
 
+  // Get the next `count` available weekly dates for a dayType — one per week,
+  // skipping weeks that already have an episode. Used by the batch scheduler.
+  const getWeeklyDatesForDayType = (dayTypeKey, count) => {
+    const dates = [];
+    let cursor = null;
+    for (let i = 0; i < count; i++) {
+      const next = getNextAvailableDate(dayTypeKey, cursor);
+      dates.push(next);
+      cursor = next;
+    }
+    return dates;
+  };
+
   // Auto-detect audio duration from URL using the browser Audio API
   const detectAudioDuration = (url) => {
     return new Promise((resolve) => {
@@ -254,18 +267,28 @@ export default function Episodes() {
         fetchEpisodes();
         showToast("Episode updated");
       } else {
-        const publishDate = getNextAvailableDate(form.dayType);
-        const fd = new FormData();
-        fd.append("title", form.title);
-        fd.append("dayType", form.dayType);
-        fd.append("runTimeSeconds", form.runTimeSeconds || 0);
-        fd.append("showNotes", form.showNotes);
-        fd.append("publishDate", publishDate);
-        if (selectedAudio) fd.append("audioUrl", selectedAudio);
-        await api.post("/admin/episodes", fd, { headers: { "Content-Type": "multipart/form-data" } });
+        if (currentDayFiles.length === 0) {
+          showToast("No audio files available for this day type", "error");
+          return;
+        }
+        const dates = getWeeklyDatesForDayType(form.dayType, currentDayFiles.length);
+        let created = 0;
+        for (let i = 0; i < dates.length; i++) {
+          const file = currentDayFiles[i];
+          const duration = await detectAudioDuration(file.url);
+          const fd = new FormData();
+          fd.append("title", form.title);
+          fd.append("dayType", form.dayType);
+          fd.append("runTimeSeconds", duration > 0 ? String(duration) : "0");
+          fd.append("showNotes", form.showNotes);
+          fd.append("publishDate", dates[i]);
+          fd.append("audioUrl", file.path);
+          await api.post("/admin/episodes", fd, { headers: { "Content-Type": "multipart/form-data" } });
+          created++;
+        }
         setShowModal(false);
         fetchEpisodes();
-        showToast(`Episode scheduled for ${publishDate}`);
+        showToast(`${created} ${form.dayType} episodes scheduled`);
       }
     } catch (err) {
       showToast(err.response?.data?.error || "Failed to save episode", "error");
@@ -373,7 +396,8 @@ export default function Episodes() {
 
   const currentDayFiles = audioFiles[form.dayType] || [];
   const currentDayPillar = DAY_TYPES.find((d) => d.key === form.dayType)?.pillar || "";
-  const nextPublishDate = !editingEp ? getNextAvailableDate(form.dayType) : null;
+  const batchCount = !editingEp ? currentDayFiles.length : 0;
+  const batchDates = !editingEp ? getWeeklyDatesForDayType(form.dayType, batchCount) : [];
 
   if (loading) {
     return (
@@ -547,7 +571,7 @@ export default function Episodes() {
               <div>
                 <h3 className="font-bold text-mayden-dark">{editingEp ? "Edit Episode" : "New Episode"}</h3>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {editingEp ? "Update episode details" : "Pick a day type — the episode is scheduled for its next available date"}
+                  {editingEp ? "Update episode details" : "Pick a day type — episodes are created for every week the day has audio"}
                 </p>
               </div>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
@@ -592,11 +616,19 @@ export default function Episodes() {
                 </div>
               </div>
 
-              {/* Next publish date summary — only when creating */}
-              {!editingEp && nextPublishDate && (
+              {/* Batch summary — only when creating */}
+              {!editingEp && batchCount > 0 && (
                 <div className="bg-mayden-magenta/5 border border-mayden-magenta/20 rounded-lg px-4 py-3">
-                  <p className="text-sm text-mayden-dark font-medium">This episode will publish on {nextPublishDate}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">The next {form.dayType} without an existing episode. Create again to schedule additional episodes.</p>
+                  <p className="text-sm text-mayden-dark font-medium">{batchCount} {form.dayType} episodes will be created</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    From {batchDates[0]} to {batchDates[batchDates.length - 1]}. Each episode gets the next audio file in order (weeks with existing episodes are skipped).
+                  </p>
+                </div>
+              )}
+
+              {!editingEp && batchCount === 0 && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                  <p className="text-sm text-gray-500">No audio files available for this day. Add files to server/storage/audio/Maiden/</p>
                 </div>
               )}
 
@@ -653,8 +685,8 @@ export default function Episodes() {
             </div>
             <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
               <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-              <button onClick={handleSave} disabled={saving || !form.title} className="px-4 py-2 bg-mayden-magenta text-white text-sm font-medium rounded-lg hover:bg-mayden-magenta/90 disabled:opacity-50">
-                {saving ? "Saving..." : editingEp ? "Update" : "Create Episode"}
+              <button onClick={handleSave} disabled={saving || !form.title || (!editingEp && batchCount === 0)} className="px-4 py-2 bg-mayden-magenta text-white text-sm font-medium rounded-lg hover:bg-mayden-magenta/90 disabled:opacity-50">
+                {saving ? "Saving..." : editingEp ? "Update" : `Schedule ${batchCount} Episodes`}
               </button>
             </div>
           </div>
