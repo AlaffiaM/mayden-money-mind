@@ -1,7 +1,7 @@
 // Episode handlers — public listing, today's episode, and listen logging
-// Episode metadata is public, but audio URLs are only issued to active
-// subscribers (as short-lived signed URLs). Anonymous/public responses get
-// audioUrl: null so the audio content stays protected.
+// Episode metadata is public, but the audio content is protected: listings never
+// contain a signed URL. Active subscribers mint a short-lived signed URL per
+// play via POST /api/episodes/:id/stream, so copied links expire within seconds.
 import { prisma } from "../config/prisma.js";
 import { signAudioUrl } from "../utils/audioAccessControl.js";
 
@@ -15,14 +15,14 @@ export async function isSubscriber(userId) {
   return !!sub;
 }
 
-// Flattens episodes and attaches a signed audioUrl only when the requester
-// is allowed to listen; otherwise audioUrl is null.
-export function serialize(episodes, canListen) {
+// Flattens episodes for listings. audioUrl is always null here — audio is only
+// handed out per-play through the /stream endpoint to active subscribers.
+export function serialize(episodes) {
   return episodes.map((e) => ({
     ...e,
     listenCount: e._count?.listenLogs ?? 0,
     _count: undefined,
-    audioUrl: canListen && e.audioUrl ? signAudioUrl(e.audioUrl) : null,
+    audioUrl: null,
   }));
 }
 
@@ -34,8 +34,7 @@ export async function list(req, res, next) {
       orderBy: { publishDate: "desc" },
       include: { _count: { select: { listenLogs: true } } },
     });
-    const canListen = await isSubscriber(req.user?.id);
-    res.json(serialize(episodes, canListen));
+    res.json(serialize(episodes));
   } catch (err) {
     next(err);
   }
@@ -65,8 +64,7 @@ export async function library(req, res, next) {
       }
     }
 
-    const canListen = await isSubscriber(userId);
-    const mapped = serialize(episodes, canListen).map((e) => ({
+    const mapped = serialize(episodes).map((e) => ({
       ...e,
       lastListened: lastListened[e.id],
     }));
@@ -97,11 +95,29 @@ export async function today(req, res, next) {
       return res.json({ message: "No episode for today yet" });
     }
 
-    const canListen = await isSubscriber(req.user?.id);
-    res.json({
-      ...episode,
-      audioUrl: canListen && episode.audioUrl ? signAudioUrl(episode.audioUrl) : null,
+    res.json({ ...episode, audioUrl: null });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/episodes/:id/stream — mints a fresh short-lived signed audio URL,
+// but only for users with an active subscription. This is the single entry
+// point for protected playback, so no reusable URL ever ships in listings.
+export async function stream(req, res, next) {
+  try {
+    const episodeId = req.params.id;
+    const episode = await prisma.episode.findFirst({
+      where: { id: episodeId, status: "published" },
     });
+    if (!episode) return res.status(404).json({ error: "Episode not found" });
+    if (!episode.audioUrl) return res.status(404).json({ error: "No audio assigned to this episode" });
+
+    if (!(await isSubscriber(req.user?.id))) {
+      return res.status(403).json({ error: "Active subscription required" });
+    }
+
+    res.json({ url: signAudioUrl(episode.audioUrl) });
   } catch (err) {
     next(err);
   }
