@@ -7,6 +7,10 @@ import { prisma } from "../config/prisma.js";
 import { getUploadUrl } from "../services/audioStorageService.js";
 import { signAudioUrl } from "../utils/audioAccessControl.js";
 
+// Admin-facing preview URLs use a longer TTL so the admin list/modal previews
+// stay playable while working in the dashboard (subscriber playback stays at 60s).
+const ADMIN_PREVIEW_TTL_SECONDS = 60 * 60;
+
 // Default settings values used as fallback if DB has no value set
 const DEFAULT_SETTINGS = {
   weeklyPrice: "100",
@@ -410,6 +414,19 @@ export async function deleteEpisode(req, res, next) {
   }
 }
 
+// POST /api/admin/episodes/:id/stream — mint a fresh signed URL for admin preview
+// (listings expire after an hour; this guarantees the play button always works)
+export async function streamEpisode(req, res, next) {
+  try {
+    const episode = await prisma.episode.findUnique({ where: { id: req.params.id } });
+    if (!episode) return res.status(404).json({ error: "Episode not found" });
+    if (!episode.audioUrl) return res.status(404).json({ error: "No audio assigned to this episode" });
+    res.json({ url: signAudioUrl(episode.audioUrl, ADMIN_PREVIEW_TTL_SECONDS) });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // GET /api/admin/episodes
 export async function listEpisodes(req, res, next) {
   try {
@@ -421,7 +438,7 @@ export async function listEpisodes(req, res, next) {
       ...e,
       listenCount: e._count.listenLogs,
       _count: undefined,
-      previewAudioUrl: e.audioUrl ? signAudioUrl(e.audioUrl) : null,
+      previewAudioUrl: e.audioUrl ? signAudioUrl(e.audioUrl, ADMIN_PREVIEW_TTL_SECONDS) : null,
     }));
     res.json(mapped);
   } catch (err) {
@@ -671,7 +688,7 @@ export async function listAudioFiles(req, res, next) {
       const files = fs.readdirSync(dir).filter((f) => AUDIO_EXT_RE.test(f));
       for (const file of files) {
         const canonical = `${urlPrefix}/${encodeURIComponent(file)}`;
-        const item = { name: file, path: canonical, url: signAudioUrl(canonical) };
+        const item = { name: file, path: canonical, url: signAudioUrl(canonical, ADMIN_PREVIEW_TTL_SECONDS) };
         const lower = file.toLowerCase();
         let matched = false;
         for (const [day, keywords] of Object.entries(DAY_KEYWORDS)) {
