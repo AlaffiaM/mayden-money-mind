@@ -16,18 +16,24 @@ import { sendUserEmail } from "./emailService.js";
 const REMINDER_INTERVAL_MS = 12 * 60 * 60 * 1000;
 
 // Creates an in-app notification AND emails the user the same renewal reminder.
-// Emails only when the user has an address (and Brevo is configured — sendUserEmail no-ops otherwise).
+// Emails only when the user has an address (and Brevo is configured — sendUserEmail
+// no-ops otherwise). Email failures are logged, never thrown, so one broken send
+// can't abort processing of the remaining subscriptions or duplicate the next run.
 async function sendRenewalReminder(sub, { title, body, subject }) {
   await prisma.notification.create({
     data: { title, body, channels: "inapp,email", sentBy: "system" },
   });
   if (sub.user.email) {
-    await sendUserEmail({
-      to: sub.user.email,
-      subject,
-      title,
-      body: `${body}\n\nUpdate your payment details anytime in your account: ${FRONTEND_URL}/subscription`,
-    });
+    try {
+      await sendUserEmail({
+        to: sub.user.email,
+        subject,
+        title,
+        body: `${body}\n\nUpdate your payment details anytime in your account: ${FRONTEND_URL}/subscription`,
+      });
+    } catch (err) {
+      console.error(`[renewal] reminder email to ${sub.user.email} failed:`, err.message);
+    }
   }
 }
 
@@ -47,9 +53,10 @@ export async function processExpiredSubscriptions() {
     include: { user: { select: { id: true, fullName: true, email: true } } },
   });
 
+  const graceSettings = await prisma.setting.findUnique({ where: { key: "gracePeriodHours" } });
+  const graceHours = parseInt(graceSettings?.value || "48");
+
   for (const sub of pastDueSubs) {
-    const graceSettings = await prisma.setting.findUnique({ where: { key: "gracePeriodHours" } });
-    const graceHours = parseInt(graceSettings?.value || "48");
     const graceEnd = new Date(sub.nextRenewal);
     graceEnd.setHours(graceEnd.getHours() - graceHours);
 
