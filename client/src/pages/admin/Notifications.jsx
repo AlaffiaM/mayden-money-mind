@@ -2,14 +2,13 @@
 // Features: live preview, send test to self, notification history with delete
 import { useState, useEffect } from "react";
 import api from "../../services/api";
-import { Send, Bell, Smartphone, Clock, CheckCircle, Trash2, AlertTriangle } from "lucide-react";
+import { Send, Bell, Clock, CheckCircle, Trash2, AlertTriangle } from "lucide-react";
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [channels, setChannels] = useState({ inapp: true });
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [testResult, setTestResult] = useState(null);
@@ -22,18 +21,12 @@ export default function Notifications() {
       .finally(() => setLoading(false));
   }, []);
 
-  const getChannelString = () => {
-    const ch = [];
-    if (channels.inapp) ch.push("inapp");
-    return ch.join(",") || "inapp";
-  };
-
   const handleSend = async () => {
     if (!title.trim() || !body.trim()) return;
     setSending(true);
     setSent(false);
     try {
-      await api.post("/admin/notifications", { title, body, channels: getChannelString() });
+      await api.post("/admin/notifications", { title, body, channels: "inapp" });
       setSent(true);
       setTitle("");
       setBody("");
@@ -49,7 +42,7 @@ export default function Notifications() {
   const handleTest = async () => {
     if (!title.trim() || !body.trim()) return;
     try {
-      const { data } = await api.post("/admin/notifications/test", { title, body, channels: getChannelString() });
+      const { data } = await api.post("/admin/notifications/test", { title, body, channels: "inapp" });
       setTestResult(data.preview);
       setTimeout(() => setTestResult(null), 3000);
     } catch (err) {
@@ -114,28 +107,6 @@ export default function Notifications() {
                 placeholder="Write your notification message..."
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20 focus:border-mayden-magenta resize-none"
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Delivery Channels</label>
-              <div className="flex gap-3">
-                {[
-                  { key: "inapp", label: "In-App", icon: Smartphone },
-                ].map((ch) => (
-                  <button
-                    key={ch.key}
-                    onClick={() => setChannels({ ...channels, [ch.key]: !channels[ch.key] })}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors ${
-                      channels[ch.key]
-                        ? "bg-mayden-magenta/10 border-mayden-magenta text-mayden-magenta"
-                        : "border-gray-200 text-gray-500 hover:bg-gray-50"
-                    }`}
-                  >
-                    <ch.icon size={14} />
-                    {ch.label}
-                  </button>
-                ))}
-              </div>
             </div>
 
             {/* Preview */}
