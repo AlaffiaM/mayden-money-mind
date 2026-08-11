@@ -2,17 +2,12 @@
 // to the finance team: daily (previous calendar day) + monthly (previous month).
 // The same CSV builder powers the admin on-demand export.
 import { prisma } from "../config/prisma.js";
-import { sendEmail } from "./emailService.js";
+import { brevoConfigured, sendEmail } from "./emailService.js";
 
 const RECONCILIATION_EMAIL = process.env.RECONCILIATION_EMAIL || "";
 const RECONCILIATION_HOUR = parseInt(process.env.RECONCILIATION_HOUR || "23", 10); // 23:00 UTC = midnight Lagos
 const MONTHLY_REPORT_HOUR = parseInt(process.env.MONTHLY_REPORT_HOUR || "23", 10); // 23:00 UTC = midnight Lagos
 const MONTHLY_REPORT_DAY = parseInt(process.env.MONTHLY_REPORT_DAY || "1", 10); // 1st of the month
-
-// Brevo is ready when the API key, from-address AND the finance recipient are set
-function brevoConfigured() {
-  return Boolean(process.env.BREVO_API_KEY && process.env.BREVO_FROM_EMAIL && RECONCILIATION_EMAIL);
-}
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -27,7 +22,8 @@ async function sendReconciliationEmail({ csv, from, kind = "Daily", label }) {
   const subject = `${kind} Payment Reconciliation — ${labelValue}`;
   const text = `${kind} payment reconciliation report for ${labelValue} attached.`;
 
-  if (brevoConfigured()) {
+  // Brevo must be configured AND the finance recipient set
+  if (brevoConfigured() && RECONCILIATION_EMAIL) {
     await sendEmail({
       to: RECONCILIATION_EMAIL,
       subject,
