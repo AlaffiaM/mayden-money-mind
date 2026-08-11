@@ -44,7 +44,6 @@ Server runs on `http://localhost:5000`.
 | `JWT_SECRET` | Secret key for JWT signing (must be a strong, unique value in production) |
 | `PORT` | Server port (default `5000`) |
 | `PAYSTACK_SECRET_KEY` | Paystack API secret key (live or test) |
-| `PAYSTACK_PUBLIC_KEY` | Paystack public key (must match secret key's mode) |
 | `FRONTEND_URL` | Frontend base URL for payment redirects/callbacks (default `http://localhost:5173`); a trailing slash is tolerated and stripped |
 | `CLIENT_ORIGINS` | Comma-separated CORS allowlist of browser origins (default `http://localhost:5173`; merged with the hardcoded `https://mayden-money-mind.vercel.app` production origin) |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Credentials for the admin user — `npm run seed` upserts them |
