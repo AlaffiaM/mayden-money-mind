@@ -113,7 +113,10 @@ export default function Subscription() {
       } else {
         // Re-enable: flip the flag, then complete a 1-tap re-checkout with the saved card
         await setAutoRenew(subscription.id, true);
-        const { data } = await api.post("/payments/initialize", { subscriptionId: subscription.id });
+        const { data } = await api.post("/payments/initialize", {
+          subscriptionId: subscription.id,
+          forceCard: true,
+        });
         if (data.redirectUrl) {
           window.location.href = data.redirectUrl;
         } else {
@@ -239,21 +242,32 @@ export default function Subscription() {
             </div>
             <div className="flex items-center justify-between py-3 border-t border-gray-100 mb-6">
               <div>
-                <p className="text-sm font-medium text-mayden-dark">Auto-renew</p>
-                <p className="text-xs text-gray-500">
-                  {subscription.autoRenew
-                    ? `Charged automatically to your card${last4 ? ` (•••• ${last4})` : ""} each ${periodLabel}`
-                    : "Off — your access ends when the current period expires"}
-                </p>
+                {subscription.paystackSubscriptionCode ? (
+                  <>
+                    <p className="text-sm font-medium text-mayden-dark">Auto-renew</p>
+                    <p className="text-xs text-gray-500">
+                      {subscription.autoRenew
+                        ? `Charged automatically to your card${last4 ? ` (•••• ${last4})` : ""} each ${periodLabel}`
+                        : "Off — your access ends when the current period expires"}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium text-mayden-dark">One-time payment</p>
+                    <p className="text-xs text-gray-500">Resubscribe when your current period ends.</p>
+                  </>
+                )}
               </div>
-              <button
-                type="button"
-                onClick={handleAutoRenewToggle}
-                aria-pressed={subscription.autoRenew}
-                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${subscription.autoRenew ? "bg-emerald-500" : "bg-gray-300"}`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${subscription.autoRenew ? "translate-x-6" : "translate-x-1"}`} />
-              </button>
+              {subscription.paystackSubscriptionCode && (
+                <button
+                  type="button"
+                  onClick={handleAutoRenewToggle}
+                  aria-pressed={subscription.autoRenew}
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${subscription.autoRenew ? "bg-emerald-500" : "bg-gray-300"}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${subscription.autoRenew ? "translate-x-6" : "translate-x-1"}`} />
+                </button>
+              )}
             </div>
             <div className="flex gap-3">
               <Button
@@ -288,7 +302,7 @@ export default function Subscription() {
 
             {!polling && (
               <p className="text-xs text-center text-gray-400 mt-2">
-                Auto-deducted from your Mayden account. Cancel anytime.
+                Pay with card, bank transfer, USSD or bank. Only card payments auto-renew each period.
               </p>
             )}
           </div>
