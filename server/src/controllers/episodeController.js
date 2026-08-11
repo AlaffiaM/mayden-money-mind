@@ -6,7 +6,7 @@ import { prisma } from "../config/prisma.js";
 import { signAudioUrl } from "../utils/audioAccessControl.js";
 
 // Returns true if the given user has an active subscription
-export async function isSubscriber(userId) {
+async function isSubscriber(userId) {
   if (!userId) return false;
   const sub = await prisma.subscription.findFirst({
     where: { userId, status: "active" },
@@ -17,7 +17,7 @@ export async function isSubscriber(userId) {
 
 // Flattens episodes for listings. audioUrl is always null here — audio is only
 // handed out per-play through the /stream endpoint to active subscribers.
-export function serialize(episodes) {
+function serialize(episodes) {
   return episodes.map((e) => ({
     ...e,
     listenCount: e._count?.listenLogs ?? 0,
