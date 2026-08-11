@@ -4,7 +4,7 @@
 const SENDER_NAME = "Money & Mind";
 const BREVO_URL = "https://api.brevo.com/v3/smtp/email";
 
-export function brevoConfigured() {
+function brevoConfigured() {
   return Boolean(process.env.BREVO_API_KEY && process.env.BREVO_FROM_EMAIL);
 }
 
