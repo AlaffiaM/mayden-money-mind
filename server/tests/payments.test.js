@@ -1,4 +1,4 @@
-import { describe, it, before, after, beforeEach } from "node:test";
+import { describe, it, before, after, beforeEach, mock } from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import request from "supertest";
@@ -35,6 +35,18 @@ describe("Payments (F2 + F3)", () => {
       .set("Authorization", `Bearer ${tokenA}`)
       .send({ reference: payment.reference });
     assert.equal(res.status, 200);
+  });
+
+  it("initializes a payment in dev mode (no Paystack key) without a redirect", async () => {
+    const sub = await createSubscription({ userId: userA.id, status: "pending" });
+    const res = await request(app)
+      .post("/api/payments/initialize")
+      .set("Authorization", `Bearer ${tokenA}`)
+      .send({ subscriptionId: sub.id });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.redirectUrl, null);
+    assert.equal(res.body.payment.status, "pending");
+    assert.equal(res.body.payment.subscriptionId, sub.id);
   });
 
   describe("webhook signature verification", () => {
@@ -103,6 +115,72 @@ describe("Payments (F2 + F3)", () => {
 
       const updated = await prisma.subscription.findUnique({ where: { id: sub.id } });
       assert.equal(updated.status, "pending");
+    });
+
+    it("links a reusable card payment to a recurring Paystack subscription", async () => {
+      const { sub, payment } = await makePendingPayment();
+      const fetchMock = mock.method(globalThis, "fetch", async (url, options = {}) => {
+        const body = JSON.parse(options.body || "{}");
+        if (String(url).endsWith("/plan")) {
+          return {
+            ok: true,
+            json: async () => ({
+              status: true,
+              data: { plan_code: body.name?.includes("Weekly") ? "PLN_WEEKLY" : "PLN_MONTHLY" },
+            }),
+          };
+        }
+        if (String(url).endsWith("/subscription")) {
+          return {
+            ok: true,
+            json: async () => ({ status: true, data: { subscription_code: "SUB_LINKED_CARD" } }),
+          };
+        }
+        return { ok: true, json: async () => ({ status: false }) };
+      });
+
+      try {
+        const { rawBody, sig } = signedWebhook("charge.success", {
+          reference: payment.reference,
+          amount: 10000,
+          authorization: { channel: "card", reusable: true, authorization_code: "AUTH_CARD_1", last4: "4242" },
+          customer: { customer_code: "CUS_CARD_1" },
+        });
+        const res = await request(app)
+          .post("/api/payments/webhook")
+          .set("Content-Type", "application/json")
+          .set("x-paystack-signature", sig)
+          .send(rawBody);
+        assert.equal(res.status, 200);
+      } finally {
+        fetchMock.mock.restore();
+      }
+
+      const updated = await prisma.subscription.findUnique({ where: { id: sub.id } });
+      assert.equal(updated.status, "active");
+      assert.equal(updated.autoRenew, true);
+      assert.equal(updated.paystackSubscriptionCode, "SUB_LINKED_CARD");
+      assert.equal(updated.paystackPlanCode, "PLN_WEEKLY");
+    });
+
+    it("keeps non-card payments one-time (no Paystack subscription, autoRenew false)", async () => {
+      const { sub, payment } = await makePendingPayment();
+      const { rawBody, sig } = signedWebhook("charge.success", {
+        reference: payment.reference,
+        amount: 10000,
+        authorization: { channel: "bank_transfer", reusable: false },
+      });
+      const res = await request(app)
+        .post("/api/payments/webhook")
+        .set("Content-Type", "application/json")
+        .set("x-paystack-signature", sig)
+        .send(rawBody);
+      assert.equal(res.status, 200);
+
+      const updated = await prisma.subscription.findUnique({ where: { id: sub.id } });
+      assert.equal(updated.status, "active");
+      assert.equal(updated.autoRenew, false);
+      assert.equal(updated.paystackSubscriptionCode, null);
     });
   });
 
