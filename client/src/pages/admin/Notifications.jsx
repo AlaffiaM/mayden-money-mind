@@ -2,17 +2,18 @@
 // Features: live preview, send test to self, notification history with delete
 import { useState, useEffect } from "react";
 import api from "../../services/api";
-import { Send, Bell, Smartphone, Mail, Clock, CheckCircle, Trash2 } from "lucide-react";
+import { Send, Bell, Smartphone, Clock, CheckCircle, Trash2, AlertTriangle } from "lucide-react";
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [channels, setChannels] = useState({ inapp: true, email: false });
+  const [channels, setChannels] = useState({ inapp: true });
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [testResult, setTestResult] = useState(null);
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
 
   useEffect(() => {
     api.get("/admin/notifications")
@@ -24,7 +25,6 @@ export default function Notifications() {
   const getChannelString = () => {
     const ch = [];
     if (channels.inapp) ch.push("inapp");
-    if (channels.email) ch.push("email");
     return ch.join(",") || "inapp";
   };
 
@@ -67,12 +67,13 @@ export default function Notifications() {
   };
 
   const handleClearAll = async () => {
-    if (!confirm("Delete all notification history? This cannot be undone.")) return;
     try {
       await api.delete("/admin/notifications");
       setNotifications([]);
+      setConfirmClearAll(false);
     } catch (err) {
       alert(err.response?.data?.error || "Failed to clear");
+      setConfirmClearAll(false);
     }
   };
 
@@ -120,7 +121,6 @@ export default function Notifications() {
               <div className="flex gap-3">
                 {[
                   { key: "inapp", label: "In-App", icon: Smartphone },
-                  { key: "email", label: "Email", icon: Mail },
                 ].map((ch) => (
                   <button
                     key={ch.key}
@@ -186,7 +186,7 @@ export default function Notifications() {
             <h2 className="font-semibold text-mayden-dark">Notification History</h2>
             {notifications.length > 0 && (
               <button
-                onClick={handleClearAll}
+                onClick={() => setConfirmClearAll(true)}
                 className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition-colors"
               >
                 <Trash2 size={12} /> Clear All
@@ -230,6 +230,34 @@ export default function Notifications() {
           </div>
         </div>
       </div>
+
+      {/* Clear-all confirmation modal */}
+      {confirmClearAll && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+                <AlertTriangle size={20} className="text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-mayden-dark">Clear All Notifications</h3>
+                <p className="text-xs text-gray-500">This action cannot be undone</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Delete all notification history? This cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setConfirmClearAll(false)} className="px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100">
+                Cancel
+              </button>
+              <button onClick={handleClearAll} className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-red-500 hover:bg-red-600">
+                Delete All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
