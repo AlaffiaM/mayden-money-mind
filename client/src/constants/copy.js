@@ -5,7 +5,6 @@ export const LANDING = {
     headlineLight: "Protect your peace.",
     subheadline:
       "A premium, 2-minute daily audio series designed exclusively to help the Mayden woman conquer financial anxiety, build wealth-generating habits, and regulate her nervous system.",
-    cta: "Subscribe Now – ₦100 / Week",
     ctaPlay: "▶ Play a Sample",
     trust: [
       { icon: "Lock", text: "Secured by Mayden Microfinance Bank" },
@@ -68,10 +67,6 @@ export const LANDING = {
   },
   pricing: {
     headline: "Invest in Your Mind for Less Than the Cost of a Data Bundle.",
-    plans: [
-      { label: "Weekly", price: "₦100", period: "/week" },
-      { label: "Monthly", price: "₦350", period: "/month", badge: "Most Popular", save: "Save ₦50 vs. weekly" },
-    ],
     note: "Auto-deducted seamlessly from your Mayden account. Cancel anytime.",
     cta: "Activate My Subscription",
     trust: "Secure, one-click billing integrated directly with Mayden Microfinance Bank.",
