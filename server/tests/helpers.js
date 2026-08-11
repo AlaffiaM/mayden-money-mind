@@ -40,6 +40,12 @@ execSync("npx prisma db push --force-reset --skip-generate", {
 export const { prisma } = await import("../src/config/prisma.js");
 export const { default: app } = await import("../src/app.js");
 
+// Prisma Client re-reads .env on construction and re-populates the live
+// PAYSTACK_SECRET_KEY — delete it again so the dev-mode payment bypass (no
+// Paystack key → always succeeds) stays active for tests. Webhook tests set
+// their own test key before each run.
+delete process.env.PAYSTACK_SECRET_KEY;
+
 async function hashPassword(password) {
   return bcrypt.hash(password, 10);
 }
