@@ -4,7 +4,7 @@ import { prisma } from "../config/prisma.js";
 // Runs every 15 minutes to check for episodes ready to publish
 const CHECK_INTERVAL_MS = 15 * 60 * 1000;
 
-export async function checkAndPublishEpisodes() {
+async function checkAndPublishEpisodes() {
   const now = new Date();
 
   // Get configured release time (default 06:00)
