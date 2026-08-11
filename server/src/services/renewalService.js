@@ -9,6 +9,7 @@
 //   3. After grace period expires → subscription is auto-cancelled
 //
 import { prisma } from "../config/prisma.js";
+import { sendUserEmail } from "./emailService.js";
 
 // How often to check for expired subscriptions (12 hours)
 const REMINDER_INTERVAL_MS = 12 * 60 * 60 * 1000;
@@ -68,10 +69,21 @@ export async function processExpiredSubscriptions() {
           data: {
             title: "Payment Reminder",
             body: `Hi ${sub.user.fullName}, your subscription renewal failed. Please update your payment method.`,
-            channels: "inapp",
+            channels: "inapp,email",
             sentBy: "system",
           },
         });
+        if (sub.user.email) {
+          await sendUserEmail({
+            to: sub.user.email,
+            subject: "Your Money & Mind renewal needs attention",
+            title: "Payment Reminder",
+            body:
+              `Hi ${sub.user.fullName},\n\n` +
+              `Your subscription renewal failed. Please update your payment method so your subscription stays active.\n\n` +
+              `You can update your payment details anytime in your account: ${process.env.FRONTEND_URL || "https://mayden-money-mind.vercel.app"}/subscription`,
+          });
+        }
       }
 
       // Final reminder at 24h past grace start
@@ -80,10 +92,21 @@ export async function processExpiredSubscriptions() {
           data: {
             title: "Final Payment Reminder",
             body: `Hi ${sub.user.fullName}, this is your final reminder. Your subscription will be cancelled if payment is not received.`,
-            channels: "inapp",
+            channels: "inapp,email",
             sentBy: "system",
           },
         });
+        if (sub.user.email) {
+          await sendUserEmail({
+            to: sub.user.email,
+            subject: "Final reminder: your Money & Mind subscription",
+            title: "Final Payment Reminder",
+            body:
+              `Hi ${sub.user.fullName},\n\n` +
+              `This is your final reminder. Your subscription will be cancelled if payment is not received. Please update your payment method to keep listening.\n\n` +
+              `Update payment details here: ${process.env.FRONTEND_URL || "https://mayden-money-mind.vercel.app"}/subscription`,
+          });
+        }
       }
     }
   }
