@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
 import { prisma } from "../config/prisma.js";
 import { JWT_SECRET, FRONTEND_URL } from "../config/env.js";
-import { sendEmail } from "../services/emailService.js";
+import { sendUserEmail } from "../services/emailService.js";
 
 const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -107,10 +107,11 @@ export async function forgotPassword(req, res) {
       });
 
       const resetUrl = `${FRONTEND_URL}/reset-password?token=${token}`;
-      const result = await sendEmail({
+      const result = await sendUserEmail({
         to: user.email,
         subject: "Reset your Money & Mind password",
-        textContent:
+        title: "Reset your password",
+        body:
           `Hi ${user.fullName},\n\n` +
           `You asked to reset your Money & Mind password. Click the link below to choose a new one (valid for 30 minutes):\n\n` +
           `${resetUrl}\n\n` +
