@@ -60,7 +60,7 @@ export function verifyAudioToken(query) {
   return filePath;
 }
 
-export function isPublicFile(filePath) {
+function isPublicFile(filePath) {
   return PUBLIC_FILES.includes(filePath);
 }
 
