@@ -146,6 +146,7 @@ export function startReconciliationProcessor() {
   };
 
   const timer = setInterval(tick, 60 * 60 * 1000);
+  timer.unref();
   tick();
   console.log(`   - Reconciliation reports (daily at ${RECONCILIATION_HOUR}:00 UTC, monthly on day ${MONTHLY_REPORT_DAY} at ${MONTHLY_REPORT_HOUR}:00 UTC)`);
   return timer;
