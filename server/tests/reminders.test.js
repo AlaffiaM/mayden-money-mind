@@ -1,7 +1,8 @@
-import { describe, it, beforeEach } from "node:test";
+import { describe, it, beforeEach, after, mock } from "node:test";
 import assert from "node:assert/strict";
-import { prisma } from "./helpers.js";
+import { prisma, createUser, createSubscription } from "./helpers.js";
 import { sendDailyReminder } from "../src/services/dailyReminderService.js";
+import { processExpiredSubscriptions } from "../src/services/renewalService.js";
 
 // Release time is forced to "00:00" so the reminder is past its daily cutoff
 // no matter when the suite runs. Default is "06:00".
@@ -88,5 +89,79 @@ describe("Daily listen reminder", () => {
     assert.equal(reminders.length, 1);
     assert.doesNotMatch(reminders[0].body, /"Today's episode/);
     assert.match(reminders[0].body, /ready/);
+  });
+});
+
+describe("Renewal reminder emails", () => {
+  beforeEach(async () => {
+    await prisma.notification.deleteMany();
+    await prisma.payment.deleteMany();
+    await prisma.setting.deleteMany();
+    process.env.BREVO_API_KEY = "test-key";
+    process.env.BREVO_FROM_EMAIL = "sender@test.com";
+  });
+  after(() => {
+    delete process.env.BREVO_API_KEY;
+    delete process.env.BREVO_FROM_EMAIL;
+  });
+
+  // A past_due subscription whose 48h grace window started 12h ago (but hasn't
+  // expired) — exactly where the first renewal reminder fires.
+  async function makePastDueUser(email) {
+    const user = await createUser({ fullName: "Renew Tester", email });
+    const sub = await createSubscription({
+      userId: user.id,
+      status: "past_due",
+      plan: "weekly",
+      nextRenewalDays: 1.5, // nextRenewal = now + 36h → graceStart = now - 12h
+    });
+    return { user, sub };
+  }
+
+  const brevoCalls = (calls) => calls.filter((c) => c.url === "https://api.brevo.com/v3/smtp/email");
+
+  it("emails a first reminder 12h into the grace period and records the in-app notification", async () => {
+    const { sub } = await makePastDueUser("renew1@test.com");
+
+    const calls = [];
+    const fetchMock = mock.method(globalThis, "fetch", async (url, options = {}) => {
+      calls.push({ url: String(url), body: JSON.parse(options.body || "{}") });
+      return { ok: true, text: async () => "" };
+    });
+    try {
+      await processExpiredSubscriptions();
+    } finally {
+      fetchMock.mock.restore();
+    }
+
+    const emails = brevoCalls(calls);
+    assert.equal(emails.length, 1);
+    assert.equal(emails[0].body.to[0].email, "renew1@test.com");
+    assert.equal(emails[0].body.subject, "Your Money & Mind renewal needs attention");
+    assert.match(emails[0].body.htmlContent, /update your payment method/i);
+
+    const reminder = await prisma.notification.findFirst({ where: { title: "Payment Reminder" } });
+    assert.ok(reminder);
+    assert.equal(reminder.channels, "inapp,email");
+
+    const still = await prisma.subscription.findUnique({ where: { id: sub.id } });
+    assert.equal(still.status, "past_due");
+  });
+
+  it("still records the in-app notification when the email send fails", async () => {
+    await makePastDueUser("renew2@test.com");
+
+    const fetchMock = mock.method(globalThis, "fetch", async () => {
+      throw new Error("smtp down");
+    });
+    try {
+      await processExpiredSubscriptions();
+    } finally {
+      fetchMock.mock.restore();
+    }
+
+    const reminder = await prisma.notification.findFirst({ where: { title: "Payment Reminder" } });
+    assert.ok(reminder);
+    assert.equal(reminder.channels, "inapp,email");
   });
 });
