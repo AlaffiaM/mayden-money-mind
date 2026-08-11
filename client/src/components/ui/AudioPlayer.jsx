@@ -45,8 +45,8 @@ function RadialPulse({ active }) {
 }
 
 export default function AudioPlayer({ src, episodeId, large = false, onPlayToggle, onPlayStart }) {
-  const { playing, currentTime, duration, error, audioRef, toggle, handleTimeUpdate, handleLoadedMetadata, handleError, seek, skip } = useAudio();
-  const [loading, setLoading] = useState(true);
+  const { playing, currentTime, duration, error, setError, audioRef, toggle, handleTimeUpdate, handleLoadedMetadata, handleError, seek, skip } = useAudio();
+  const [loading, setLoading] = useState(false);
   const [blobUrl, setBlobUrl] = useState(null);
   const protectedMode = !!episodeId;
 
@@ -73,7 +73,7 @@ export default function AudioPlayer({ src, episodeId, large = false, onPlayToggl
       if (!data?.url) throw new Error("No stream url");
       const resp = await fetch(data.url);
       if (!resp.ok) throw new Error("Stream fetch failed");
-      const blob = await resp.blob();
+      const blob = new Blob([await resp.arrayBuffer()], { type: "audio/mpeg" });
       const url = URL.createObjectURL(blob);
       setBlobUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev);
@@ -86,9 +86,17 @@ export default function AudioPlayer({ src, episodeId, large = false, onPlayToggl
       toggle();
       if (onPlayStart) onPlayStart();
       if (onPlayToggle) onPlayToggle(true);
-    } catch {
+    } catch (err) {
       setLoading(false);
-      handleError();
+      if (err?.response?.status === 403) {
+        setError("Active subscription required — renew your subscription to play.");
+      } else if (err?.response?.status === 404) {
+        setError("This episode's audio is not available yet.");
+      } else if (err?.response?.status === 401) {
+        setError("Please log in to play this episode.");
+      } else {
+        setError("Could not load audio. Please check your connection and try again.");
+      }
       if (onPlayToggle) onPlayToggle(false);
     }
   };
