@@ -172,7 +172,11 @@ export async function verify(req, res) {
         subscriptionCode: data.subscription_code,
       });
 
-      await welcomeNewSubscriber(payment.subscriptionId);
+      // Welcome only on the pending → success transition — verify and callback can
+      // both fire for one payment (redirect + client poll), which would double-send.
+      if (payment.status !== "success") {
+        await welcomeNewSubscriber(payment.subscriptionId);
+      }
     }
 
     res.json({ success: !!data });
@@ -216,7 +220,9 @@ export async function callback(req, res) {
         subscriptionCode: data.subscription_code,
       });
 
-      await welcomeNewSubscriber(payment.subscriptionId);
+      if (payment.status !== "success") {
+        await welcomeNewSubscriber(payment.subscriptionId);
+      }
 
       return res.redirect(`${baseUrl}/dashboard?status=success`);
     }
