@@ -44,6 +44,38 @@ describe("Subscription status enforcement (F1)", () => {
     assert.equal(res.status, 400);
   });
 
+  it("updates a pending subscription to the newly clicked plan (monthly → charges 350)", async () => {
+    const user = await createUser({ email: "subplan@test.com", password: "SubPass123!" });
+    const token = await login("subplan@test.com", "SubPass123!");
+    const pending = await createSubscription({ userId: user.id, status: "pending", plan: "weekly" });
+
+    const res = await request(app)
+      .post("/api/subscriptions")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ plan: "monthly" });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.id, pending.id);
+    assert.equal(res.body.plan, "monthly");
+    assert.equal(res.body.status, "pending");
+
+    const days = (new Date(res.body.nextRenewal) - new Date()) / 86400000;
+    assert.ok(days > 25 && days < 31, `expected ~30 day renewal, got ${days}`);
+  });
+
+  it("returns the same pending subscription when the clicked plan is unchanged", async () => {
+    const user = await createUser({ email: "subplansame@test.com", password: "SubPass123!" });
+    const token = await login("subplansame@test.com", "SubPass123!");
+    const pending = await createSubscription({ userId: user.id, status: "pending", plan: "monthly" });
+
+    const res = await request(app)
+      .post("/api/subscriptions")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ plan: "monthly" });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.id, pending.id);
+    assert.equal(res.body.plan, "monthly");
+  });
+
   it("allows pause and resume of an active subscription", async () => {
     const sub = await createSubscription({ userId: userA.id, status: "active" });
     const paused = await request(app)
