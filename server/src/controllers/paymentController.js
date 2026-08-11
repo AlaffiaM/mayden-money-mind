@@ -11,6 +11,23 @@ import {
   ensurePlans,
 } from "../services/paymentService.js";
 import { getPaystackKey } from "../config/paystack.js";
+import { sendWelcomeEmail } from "../services/emailService.js";
+
+// Sends the one-time welcome email after a first subscription is activated.
+// No-op when Brevo isn't configured (dev mode). Renewals never trigger this.
+async function welcomeNewSubscriber(subscriptionId) {
+  const sub = await prisma.subscription.findUnique({
+    where: { id: subscriptionId },
+    include: { user: { select: { fullName: true, email: true } } },
+  });
+  if (!sub?.user?.email) return;
+  await sendWelcomeEmail({
+    to: sub.user.email,
+    fullName: sub.user.fullName,
+    plan: sub.plan,
+    nextRenewal: sub.nextRenewal,
+  });
+}
 
 // Activates a subscription and sets its next renewal date after a successful payment.
 // Auto-renewal only applies when a Paystack subscription code is linked (card payment).
@@ -154,6 +171,8 @@ export async function verify(req, res) {
         planCode: data.plan?.plan_code,
         subscriptionCode: data.subscription_code,
       });
+
+      await welcomeNewSubscriber(payment.subscriptionId);
     }
 
     res.json({ success: !!data });
@@ -196,6 +215,8 @@ export async function callback(req, res) {
         planCode: data.plan?.plan_code,
         subscriptionCode: data.subscription_code,
       });
+
+      await welcomeNewSubscriber(payment.subscriptionId);
 
       return res.redirect(`${baseUrl}/dashboard?status=success`);
     }
