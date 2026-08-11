@@ -7,12 +7,15 @@ import {
   initializePayment,
   verifyPayment,
   disablePaystackSubscription,
+  createPaystackSubscription,
+  ensurePlans,
 } from "../services/paymentService.js";
 import { getPaystackKey } from "../config/paystack.js";
 
 // Activates a subscription and sets its next renewal date after a successful payment.
-// Extras (planCode/subscriptionCode) come from the Paystack verify/webhook payload and
-// link this subscription to the recurring Paystack billing that keeps renewing it.
+// Auto-renewal only applies when a Paystack subscription code is linked (card payment).
+// Extras (planCode/subscriptionCode) come from Paystack recurring-billing events and
+// link this subscription to the Paystack subscription that keeps renewing it.
 async function activateSubscription(subscriptionId, extras = {}) {
   const sub = await prisma.subscription.findUnique({
     where: { id: subscriptionId },
@@ -22,16 +25,56 @@ async function activateSubscription(subscriptionId, extras = {}) {
 
   const data = {
     status: "active",
-    autoRenew: true,
+    autoRenew: sub?.paystackSubscriptionCode ? true : false,
     nextRenewal,
   };
   if (extras.planCode) data.paystackPlanCode = extras.planCode;
-  if (extras.subscriptionCode) data.paystackSubscriptionCode = extras.subscriptionCode;
+  if (extras.subscriptionCode) {
+    data.paystackSubscriptionCode = extras.subscriptionCode;
+    data.autoRenew = true;
+  }
 
   await prisma.subscription.update({
     where: { id: subscriptionId },
     data,
   });
+}
+
+// After a successful payment, links the subscription to a recurring Paystack
+// subscription — but ONLY when the payment was made with a reusable card
+// authorization (Paystack only supports recurring billing via card). Non-card
+// payments stay one-time: autoRenew stays false and the period just expires.
+async function linkCardSubscription(subscriptionId, data) {
+  const auth = data?.authorization;
+  if (!auth || auth.channel !== "card" || !auth.reusable || !auth.authorization_code) return;
+
+  const sub = await prisma.subscription.findUnique({
+    where: { id: subscriptionId },
+  });
+  if (!sub || sub.paystackSubscriptionCode) return;
+
+  const planCodes = await ensurePlans();
+  const planCode = planCodes?.[sub.plan];
+  if (!planCode) return;
+
+  try {
+    const created = await createPaystackSubscription({
+      customer: data.customer?.customer_code,
+      plan: planCode,
+      authorization: auth.authorization_code,
+    });
+    if (created?.subscription_code) {
+      await prisma.subscription.update({
+        where: { id: subscriptionId },
+        data: {
+          paystackSubscriptionCode: created.subscription_code,
+          paystackPlanCode: planCode,
+        },
+      });
+    }
+  } catch (err) {
+    console.error("[link-card] failed to create Paystack subscription:", err.message);
+  }
 }
 
 // Moves an active subscription to past_due and starts the configurable grace window.
@@ -50,7 +93,7 @@ async function markPastDue(subscriptionId) {
 // POST /api/payments/initialize
 export async function initialize(req, res) {
   try {
-    const { subscriptionId } = req.body;
+    const { subscriptionId, forceCard } = req.body;
 
     const sub = await prisma.subscription.findUnique({
       where: { id: subscriptionId },
@@ -66,15 +109,7 @@ export async function initialize(req, res) {
 
     const amount = sub.plan === "weekly" ? parseInt(priceMap.weeklyPrice || "100") : parseInt(priceMap.monthlyPrice || "350");
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
-    const { reference, redirectUrl, planCode } = await initializePayment(user, subscriptionId, amount, sub.plan);
-
-    // Remember which Paystack plan this subscription belongs to (recurring billing)
-    if (planCode && sub.paystackPlanCode !== planCode) {
-      await prisma.subscription.update({
-        where: { id: subscriptionId },
-        data: { paystackPlanCode: planCode },
-      });
-    }
+    const { reference, redirectUrl } = await initializePayment(user, subscriptionId, amount, sub.plan, { forceCard: !!forceCard });
 
     const payment = await prisma.payment.create({
       data: {
@@ -112,6 +147,8 @@ export async function verify(req, res) {
           ...(data.authorization?.last4 ? { last4: data.authorization.last4 } : {}),
         },
       });
+
+      await linkCardSubscription(payment.subscriptionId, data);
 
       await activateSubscription(payment.subscriptionId, {
         planCode: data.plan?.plan_code,
@@ -152,6 +189,8 @@ export async function callback(req, res) {
           ...(data.authorization?.last4 ? { last4: data.authorization.last4 } : {}),
         },
       });
+
+      await linkCardSubscription(payment.subscriptionId, data);
 
       await activateSubscription(payment.subscriptionId, {
         planCode: data.plan?.plan_code,
@@ -233,6 +272,8 @@ export async function webhook(req, res) {
             },
           });
         }
+
+        await linkCardSubscription(payment.subscriptionId, event.data);
 
         await activateSubscription(payment.subscriptionId, {
           planCode: event.data.plan?.plan_code,
