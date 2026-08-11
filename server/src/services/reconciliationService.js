@@ -22,7 +22,7 @@ function esc(value) {
 
 // Emails the CSV to the finance team via Brevo — no-op when not configured.
 // `kind` is "Daily" | "Monthly"; `label` keys the subject/filename (e.g. "2026-08-05" or "2026-07").
-export async function sendReconciliationEmail({ csv, from, kind = "Daily", label }) {
+async function sendReconciliationEmail({ csv, from, kind = "Daily", label }) {
   const labelValue = label || from.toISOString().slice(0, 10);
   const subject = `${kind} Payment Reconciliation — ${labelValue}`;
   const text = `${kind} payment reconciliation report for ${labelValue} attached.`;
@@ -45,7 +45,7 @@ export async function sendReconciliationEmail({ csv, from, kind = "Daily", label
 }
 
 // Builds the reconciliation CSV for payments paid between `from` (inclusive) and `to` (exclusive)
-export async function buildPaymentsCsv({ from, to }) {
+async function buildPaymentsCsv({ from, to }) {
   const payments = await prisma.payment.findMany({
     where: { status: "success", paidAt: { gte: from, lt: to } },
     include: {
@@ -71,7 +71,7 @@ export async function buildPaymentsCsv({ from, to }) {
 }
 
 // Builds + sends the report for an explicit window [from, to). Returns the summary.
-export async function runReconciliationForWindow({ from, to, kind = "Daily", label }) {
+async function runReconciliationForWindow({ from, to, kind = "Daily", label }) {
   const { csv, count } = await buildPaymentsCsv({ from, to });
   const result = await sendReconciliationEmail({ csv, from, kind, label });
   const labelValue = label || from.toISOString().slice(0, 10);
@@ -80,7 +80,7 @@ export async function runReconciliationForWindow({ from, to, kind = "Daily", lab
 }
 
 // Builds + sends the report for a given day (UTC). Returns the summary.
-export async function runDailyReconciliation(day = new Date()) {
+async function runDailyReconciliation(day = new Date()) {
   const start = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate()));
   const end = new Date(start);
   end.setUTCDate(end.getUTCDate() + 1);
@@ -88,14 +88,14 @@ export async function runDailyReconciliation(day = new Date()) {
 }
 
 // Previous calendar month window + label for a given instant (UTC).
-export function previousMonthWindow(now = new Date()) {
+function previousMonthWindow(now = new Date()) {
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
   const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   return { from: start, to: end, label: start.toISOString().slice(0, 7) };
 }
 
 // Builds + sends the report for the previous calendar month. Returns the summary.
-export async function runMonthlyReconciliation(now = new Date()) {
+async function runMonthlyReconciliation(now = new Date()) {
   const { from, to, label } = previousMonthWindow(now);
   return runReconciliationForWindow({ from, to, kind: "Monthly", label });
 }
