@@ -86,10 +86,16 @@ export async function ensurePlans() {
   return codes;
 }
 
+// All supported Paystack payment channels. Recurring subscriptions are only
+// possible with card, so channel choice is deferred to checkout — the saved
+// authorization is enrolled in a subscription after payment if it's a card.
+const ALL_CHANNELS = ["card", "bank", "bank_transfer", "ussd", "qr", "mobile_money", "eft"];
+
 // Initializes a Paystack transaction — returns reference + redirect URL for user checkout.
-// When a Paystack plan exists for the subscription's plan, the transaction enrolls the
-// customer in recurring billing (invoice_limit 0 = renew forever, card charged each period).
-export async function initializePayment(user, subscriptionId, amount, subPlan) {
+// No plan is attached at initialize time so every payment channel stays available;
+// recurring billing (only possible for cards) is enrolled after payment via
+// createPaystackSubscription. Pass forceCard for flows that must use the saved card.
+export async function initializePayment(user, subscriptionId, amount, subPlan, { forceCard = false } = {}) {
   const reference = generateReference();
   const amountInKobo = amount * 100;
   const secret = await getPaystackKey();
@@ -97,25 +103,16 @@ export async function initializePayment(user, subscriptionId, amount, subPlan) {
   // Dev mode bypass: no Paystack key configured, return dummy reference
   if (!secret) {
     assertPaystackConfigured();
-    return { reference, redirectUrl: null, planCode: null };
+    return { reference, redirectUrl: null };
   }
-
-  const planCodes = await ensurePlans();
-  const planCode = planCodes?.[subPlan] || null;
 
   const body = {
     email: user.email,
     amount: amountInKobo,
     reference,
-    channels: ["card", "bank", "bank_transfer", "ussd"],
+    channels: forceCard ? ["card"] : ALL_CHANNELS,
     callback_url: `${(process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "")}/subscription?reference=${reference}`,
   };
-
-  // Enroll in recurring billing — Paystack auto-charges the saved card each interval
-  if (planCode) {
-    body.plan = planCode;
-    body.invoice_limit = 0;
-  }
 
   const response = await fetch(`${PAYSTACK_API}/transaction/initialize`, {
     method: "POST",
@@ -132,7 +129,7 @@ export async function initializePayment(user, subscriptionId, amount, subPlan) {
     throw new Error(data.message || "Paystack initialization failed");
   }
 
-  return { reference, redirectUrl: data.data.authorization_url, planCode };
+  return { reference, redirectUrl: data.data.authorization_url };
 }
 
 // Verifies a payment reference with Paystack — returns the verified transaction
@@ -154,6 +151,29 @@ export async function verifyPayment(reference) {
   const data = await response.json();
   if (data.status && data.data.status === "success") return data.data;
   return null;
+}
+
+// Enrolls a customer in a recurring Paystack subscription (invoice_limit 0 = renew
+// forever, card charged each interval). Only works with reusable card authorizations.
+// No-op in dev mode or when Paystack is not configured.
+export async function createPaystackSubscription({ customer, plan, authorization, invoiceLimit = 0 }) {
+  const secret = await getPaystackKey();
+  if (!secret || !customer || !plan || !authorization) return null;
+
+  const response = await fetch(`${PAYSTACK_API}/subscription`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secret}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ customer, plan, authorization, invoice_limit: invoiceLimit }),
+  });
+
+  const data = await response.json();
+  if (!data.status) {
+    throw new Error(data.message || "Failed to create Paystack subscription");
+  }
+  return data.data;
 }
 
 // Stops future recurring charges for a Paystack subscription (no email_token needed).
