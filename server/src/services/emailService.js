@@ -2,12 +2,13 @@
 // Used by password-reset emails, welcome emails, renewal reminders and payment
 // reconciliation. No-op (with a log) when Brevo isn't configured so local dev
 // works without keys.
+import { FRONTEND_URL } from "../config/env.js";
+
 const SENDER_NAME = "Money & Mind";
 const BREVO_URL = "https://api.brevo.com/v3/smtp/email";
-const APP_URL = (process.env.FRONTEND_URL || "https://mayden-money-mind.vercel.app").replace(/\/+$/, "");
-const LOGO_URL = `${APP_URL}/assets/logo.jpg`;
+const LOGO_URL = `${FRONTEND_URL}/assets/logo.jpg`;
 
-function brevoConfigured() {
+export function brevoConfigured() {
   return Boolean(process.env.BREVO_API_KEY && process.env.BREVO_FROM_EMAIL);
 }
 
@@ -22,7 +23,7 @@ function escapeHtml(value) {
 
 // Branded HTML shell — logo + title + body + footer. `bodyHtml` is inserted as-is,
 // so callers must escape dynamic text themselves (or use sendUserEmail).
-export function emailTemplate({ title, bodyHtml, footerText = "Money & Mind by Mayden Microfinance Bank" }) {
+function emailTemplate({ title, bodyHtml, footerText = "Money & Mind by Mayden Microfinance Bank" }) {
   return `<!doctype html>
 <html lang="en">
   <body style="margin:0;padding:0;background:#f6f4ef;font-family:Georgia,'Times New Roman',serif;color:#1c1a17;">
@@ -77,7 +78,7 @@ export async function sendWelcomeEmail({ to, fullName, plan, nextRenewal }) {
 <p>Your subscription is active:</p>
 <p style="background:#faf6ef;border:1px solid #ece7df;border-radius:10px;padding:12px 16px;"><strong>${escapeHtml(planLabel)}</strong><br/>Next renewal: ${escapeHtml(renewalDate)}</p>
 <p>Your daily audio is ready every morning — tap below to start listening.</p>
-<p><a href="${APP_URL}/dashboard" style="display:inline-block;background:#d63384;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:9999px;font-size:14px;font-weight:bold;">Start Listening</a></p>
+<p><a href="${FRONTEND_URL}/dashboard" style="display:inline-block;background:#d63384;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:9999px;font-size:14px;font-weight:bold;">Start Listening</a></p>
 <p style="font-size:13px;color:#8a8a8a;">You can manage or cancel your subscription anytime from your account.</p>`;
 
   return sendEmail({
