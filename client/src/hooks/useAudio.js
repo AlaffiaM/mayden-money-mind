@@ -21,8 +21,12 @@ export function useAudio() {
       setError(null);
       audioRef.current.play().then(() => {
         setPlaying(true);
-      }).catch(() => {
-        setError("Unable to play audio. The file may be missing or the server is unavailable.");
+      }).catch((err) => {
+        if (err?.name === "NotAllowedError") {
+          setError("Press play again to start audio.");
+        } else {
+          setError("Unable to play audio. The file may be missing or the server is unavailable.");
+        }
         setPlaying(false);
       });
     }
@@ -74,6 +78,7 @@ export function useAudio() {
     currentTime,
     duration,
     error,
+    setError,
     audioRef,
     toggle,
     handleTimeUpdate,
