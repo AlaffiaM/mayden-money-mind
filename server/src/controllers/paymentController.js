@@ -14,19 +14,36 @@ import { getPaystackKey } from "../config/paystack.js";
 import { sendWelcomeEmail } from "../services/emailService.js";
 
 // Sends the one-time welcome email after a first subscription is activated.
-// No-op when Brevo isn't configured (dev mode). Renewals never trigger this.
+// Exactly-once via a Setting marker (same idempotency pattern as the daily
+// reminder): whichever of verify / callback / webhook runs first sends it.
+// Email failures are logged, never thrown — a Brevo outage must not break the
+// payment flow. If the send fails the marker is rolled back so a later
+// delivery attempt (webhook redelivery, retry) gets another chance.
 async function welcomeNewSubscriber(subscriptionId) {
-  const sub = await prisma.subscription.findUnique({
-    where: { id: subscriptionId },
-    include: { user: { select: { fullName: true, email: true } } },
-  });
-  if (!sub?.user?.email) return;
-  await sendWelcomeEmail({
-    to: sub.user.email,
-    fullName: sub.user.fullName,
-    plan: sub.plan,
-    nextRenewal: sub.nextRenewal,
-  });
+  const marker = `welcome-${subscriptionId}`;
+  try {
+    await prisma.setting.create({ data: { key: marker, value: "sent" } });
+  } catch (err) {
+    if (err.code === "P2002") return; // welcome already sent
+    throw err;
+  }
+
+  try {
+    const sub = await prisma.subscription.findUnique({
+      where: { id: subscriptionId },
+      include: { user: { select: { fullName: true, email: true } } },
+    });
+    if (!sub?.user?.email) return;
+    await sendWelcomeEmail({
+      to: sub.user.email,
+      fullName: sub.user.fullName,
+      plan: sub.plan,
+      nextRenewal: sub.nextRenewal,
+    });
+  } catch (err) {
+    console.error("[welcome] email failed:", err.message);
+    await prisma.setting.delete({ where: { key: marker } }).catch(() => {});
+  }
 }
 
 // Activates a subscription and sets its next renewal date after a successful payment.
@@ -172,11 +189,7 @@ export async function verify(req, res) {
         subscriptionCode: data.subscription_code,
       });
 
-      // Welcome only on the pending → success transition — verify and callback can
-      // both fire for one payment (redirect + client poll), which would double-send.
-      if (payment.status !== "success") {
-        await welcomeNewSubscriber(payment.subscriptionId);
-      }
+      await welcomeNewSubscriber(payment.subscriptionId);
     }
 
     res.json({ success: !!data });
@@ -220,9 +233,7 @@ export async function callback(req, res) {
         subscriptionCode: data.subscription_code,
       });
 
-      if (payment.status !== "success") {
-        await welcomeNewSubscriber(payment.subscriptionId);
-      }
+      await welcomeNewSubscriber(payment.subscriptionId);
 
       return res.redirect(`${baseUrl}/dashboard?status=success`);
     }
@@ -298,6 +309,10 @@ export async function webhook(req, res) {
               ...(event.data.authorization?.last4 ? { last4: event.data.authorization.last4 } : {}),
             },
           });
+
+          // Initial payment (webhook is canonical — fires even if the user never
+          // returns to the callback). Renewal charges skip this.
+          await welcomeNewSubscriber(payment.subscriptionId);
         }
 
         await linkCardSubscription(payment.subscriptionId, event.data);
