@@ -343,4 +343,102 @@ describe("Payments (F2 + F3)", () => {
       assert.ok(new Date(updated.nextRenewal) > new Date(oldRenewal));
     });
   });
+
+  describe("welcome email", () => {
+    beforeEach(() => {
+      process.env.PAYSTACK_SECRET_KEY = "sk_test_webhook_abc123";
+      process.env.BREVO_API_KEY = "test-key";
+      process.env.BREVO_FROM_EMAIL = "sender@test.com";
+    });
+    after(() => {
+      delete process.env.PAYSTACK_SECRET_KEY;
+      delete process.env.BREVO_API_KEY;
+      delete process.env.BREVO_FROM_EMAIL;
+    });
+
+    function signedWebhook(event, payload) {
+      const rawBody = JSON.stringify({ event, data: payload });
+      const sig = crypto.createHmac("sha512", process.env.PAYSTACK_SECRET_KEY).update(rawBody).digest("hex");
+      return { rawBody, sig };
+    }
+
+    async function chargeSuccess(reference) {
+      const { rawBody, sig } = signedWebhook("charge.success", { reference, amount: 10000 });
+      return request(app)
+        .post("/api/payments/webhook")
+        .set("Content-Type", "application/json")
+        .set("x-paystack-signature", sig)
+        .send(rawBody);
+    }
+
+    function captureBrevoCalls() {
+      const calls = [];
+      const fetchMock = mock.method(globalThis, "fetch", async (url, options = {}) => {
+        calls.push({ url: String(url), body: JSON.parse(options.body || "{}") });
+        return { ok: true, text: async () => "" };
+      });
+      return { calls, fetchMock };
+    }
+
+    const brevoCalls = (calls) => calls.filter((c) => c.url === "https://api.brevo.com/v3/smtp/email");
+
+    it("sends the welcome email once on the first charge.success", async () => {
+      const user = await createUser({ email: "welcome@test.com", password: "PayPass123!" });
+      const sub = await createSubscription({ userId: user.id, status: "pending" });
+      const payment = await createPayment({ userId: user.id, subscriptionId: sub.id, amount: 100, reference: "WELCOME-REF-001" });
+
+      const { calls, fetchMock } = captureBrevoCalls();
+      try {
+        const res = await chargeSuccess(payment.reference);
+        assert.equal(res.status, 200);
+      } finally {
+        fetchMock.mock.restore();
+      }
+
+      const emails = brevoCalls(calls);
+      assert.equal(emails.length, 1);
+      assert.equal(emails[0].body.subject, "Welcome to Money & Mind");
+      assert.match(emails[0].body.htmlContent, /Welcome to/);
+
+      const marker = await prisma.setting.findUnique({ where: { key: `welcome-${sub.id}` } });
+      assert.equal(marker.value, "sent");
+    });
+
+    it("does not resend on a duplicate webhook delivery", async () => {
+      const user = await createUser({ email: "welcome2@test.com", password: "PayPass123!" });
+      const sub = await createSubscription({ userId: user.id, status: "pending" });
+      const payment = await createPayment({ userId: user.id, subscriptionId: sub.id, amount: 100, reference: "WELCOME-REF-002" });
+
+      const { calls, fetchMock } = captureBrevoCalls();
+      try {
+        assert.equal((await chargeSuccess(payment.reference)).status, 200);
+        assert.equal((await chargeSuccess(payment.reference)).status, 200);
+      } finally {
+        fetchMock.mock.restore();
+      }
+
+      assert.equal(brevoCalls(calls).length, 1);
+      assert.equal(await prisma.setting.count({ where: { key: `welcome-${sub.id}` } }), 1);
+    });
+
+    it("keeps the subscription active and rolls back the marker if the email fails", async () => {
+      const user = await createUser({ email: "welcome3@test.com", password: "PayPass123!" });
+      const sub = await createSubscription({ userId: user.id, status: "pending" });
+      const payment = await createPayment({ userId: user.id, subscriptionId: sub.id, amount: 100, reference: "WELCOME-REF-003" });
+
+      const fetchMock = mock.method(globalThis, "fetch", async () => {
+        throw new Error("brevo down");
+      });
+      try {
+        const res = await chargeSuccess(payment.reference);
+        assert.equal(res.status, 200);
+      } finally {
+        fetchMock.mock.restore();
+      }
+
+      const updated = await prisma.subscription.findUnique({ where: { id: sub.id } });
+      assert.equal(updated.status, "active");
+      assert.equal(await prisma.setting.findUnique({ where: { key: `welcome-${sub.id}` } }), null);
+    });
+  });
 });
