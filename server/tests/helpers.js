@@ -28,7 +28,6 @@ process.env.CLIENT_ORIGINS = "http://localhost:5173";
 process.env.FRONTEND_URL = "http://localhost:5173";
 // No Paystack key by default → dev-mode payment bypass applies (safe outside production)
 delete process.env.PAYSTACK_SECRET_KEY;
-delete process.env.PAYSTACK_PUBLIC_KEY;
 
 // Reset the test schema (tables created fresh) — never touches the default schema.
 execSync("npx prisma db push --force-reset --skip-generate", {
