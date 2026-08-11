@@ -661,7 +661,10 @@ export async function testNotification(req, res, next) {
 // DELETE /api/admin/notifications/:id
 export async function deleteNotification(req, res, next) {
   try {
-    await prisma.notification.delete({ where: { id: parseInt(req.params.id) } });
+    const id = parseInt(req.params.id);
+    // NotificationRead has ON DELETE RESTRICT — clear reads before the row
+    await prisma.notificationRead.deleteMany({ where: { notificationId: id } });
+    await prisma.notification.delete({ where: { id } });
     res.json({ success: true });
   } catch (err) {
     next(err);
@@ -671,6 +674,7 @@ export async function deleteNotification(req, res, next) {
 // DELETE /api/admin/notifications
 export async function clearNotifications(req, res, next) {
   try {
+    await prisma.notificationRead.deleteMany();
     await prisma.notification.deleteMany();
     res.json({ success: true });
   } catch (err) {
