@@ -87,15 +87,24 @@ export async function create(req, res) {
       return res.status(400).json({ error: "Already have an active subscription" });
     }
 
+    const nextRenewal = new Date();
+    nextRenewal.setDate(nextRenewal.getDate() + (plan === "weekly" ? 7 : 30));
+
     const existingPending = await prisma.subscription.findFirst({
       where: { userId: req.user.id, status: "pending" },
     });
     if (existingPending) {
+      // User may have clicked a different plan before finishing payment — update the
+      // pending subscription so the charged amount matches the plan they chose.
+      if (existingPending.plan !== plan) {
+        const updated = await prisma.subscription.update({
+          where: { id: existingPending.id },
+          data: { plan, nextRenewal },
+        });
+        return res.status(200).json(updated);
+      }
       return res.status(200).json(existingPending);
     }
-
-    const nextRenewal = new Date();
-    nextRenewal.setDate(nextRenewal.getDate() + (plan === "weekly" ? 7 : 30));
 
     const sub = await prisma.subscription.create({
       data: {
