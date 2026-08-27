@@ -6,6 +6,7 @@ import { validationResult } from "express-validator";
 import { prisma } from "../config/prisma.js";
 import { JWT_SECRET, FRONTEND_URL } from "../config/env.js";
 import { sendUserEmail } from "../services/emailService.js";
+import logger from "../utils/logger.js";
 
 const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
