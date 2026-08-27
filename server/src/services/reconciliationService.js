@@ -3,6 +3,7 @@
 // The same CSV builder powers the admin on-demand export.
 import { prisma } from "../config/prisma.js";
 import { brevoConfigured, sendEmail } from "./emailService.js";
+import logger from "../utils/logger.js";
 
 const RECONCILIATION_EMAIL = process.env.RECONCILIATION_EMAIL || "";
 const RECONCILIATION_HOUR = parseInt(process.env.RECONCILIATION_HOUR || "23", 10); // 23:00 UTC = midnight Lagos
