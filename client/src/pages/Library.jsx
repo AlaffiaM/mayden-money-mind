@@ -83,9 +83,17 @@ export default function Library() {
                 </span>
                 <h3 className="text-base font-semibold text-mayden-dark mt-2 mb-1">{ep.title}</h3>
                 <p className="text-sm text-gray-500 line-clamp-2">{ep.showNotes}</p>
+                {ep.locked && (
+                  <p className="text-xs text-mayden-magenta mt-1">
+                    Unlocks {dayLabels[ep.dayType]}
+                  </p>
+                )}
               </div>
               <button
                 onClick={() => {
+                  // Prevent playing locked episodes
+                  if (ep.locked) return;
+
                   const isPlaying = playing === ep.id;
                   setPlaying(isPlaying ? null : ep.id);
                   if (!isPlaying && !hasLogged[ep.id]) {
@@ -93,7 +101,7 @@ export default function Library() {
                     setHasLogged((prev) => ({ ...prev, [ep.id]: true }));
                   }
                 }}
-                className="flex-shrink-0 w-12 h-12 rounded-full bg-mayden-magenta text-white flex items-center justify-center hover:bg-mayden-magenta/90 transition-colors"
+                className={`flex-shrink-0 w-12 h-12 rounded-full ${ep.locked ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-mayden-magenta text-white flex items-center justify-center hover:bg-mayden-magenta/90 transition-colors"}`}
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   {playing === ep.id ? (
@@ -102,9 +110,14 @@ export default function Library() {
                     <path d="M8 5v14l11-7z" />
                   )}
                 </svg>
+                {ep.locked && (
+                  <svg className="absolute inset-0" width="24" height="24" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M12 17a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM9.5 8h6V6a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2z"/>
+                  </svg>
+                )}
               </button>
             </div>
-            {playing === ep.id && (
+            {playing === ep.id && !ep.locked && (
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <AudioPlayer episodeId={ep.id} />
               </div>
