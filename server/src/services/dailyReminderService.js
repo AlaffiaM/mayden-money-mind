@@ -3,6 +3,7 @@
 // This replaces the old per-episode "New Episode" notifications: users get a single
 // daily nudge to listen, regardless of how many episodes were dropped that day.
 import { prisma } from "../config/prisma.js";
+import logger from "../utils/logger.js";
 
 // Runs every 15 minutes to catch the release-time boundary
 const CHECK_INTERVAL_MS = 15 * 60 * 1000;
