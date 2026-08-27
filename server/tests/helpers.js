@@ -5,13 +5,9 @@
 // Tests run against a DEDICATED "test" schema on the PostgreSQL database from
 // server/.env, so `prisma db push --force-reset` can never touch real data.
 import "dotenv/config";
-import { execSync } from "node:child_process";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import bcrypt from "bcryptjs";
 import request from "supertest";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { resetTestSchema } from "./testDb.js";
 
 process.env.NODE_ENV = "test";
 
@@ -29,11 +25,10 @@ process.env.FRONTEND_URL = "http://localhost:5173";
 // No Paystack key by default → dev-mode payment bypass applies (safe outside production)
 delete process.env.PAYSTACK_SECRET_KEY;
 
-// Reset the test schema (tables created fresh) — never touches the default schema.
-execSync("npx prisma db push --force-reset --skip-generate", {
-  cwd: path.join(__dirname, ".."),
-  stdio: "pipe",
-});
+// Fast, schema-safe reset of the "test" schema (truncate all tables) — never drops
+// the schema, so a reset can't leave the DB unusable the way `db push --force-reset`
+// could. Gives every test file a clean slate (including the Setting table).
+await resetTestSchema();
 
 // Dynamic imports AFTER env is configured — the shared PrismaClient singleton
 // (config/prisma.js) must be constructed against the test schema.
