@@ -8,6 +8,7 @@ import { prisma } from "./config/prisma.js";
 import { getPaystackKey } from "./config/paystack.js";
 import { PORT } from "./config/env.js";
 import logger from "./utils/logger.js";
+import util from 'util';
 
 // Human-readable database label derived from DATABASE_URL
 function dbLabel() {
@@ -87,6 +88,13 @@ async function main() {
 }
 
 main().catch((err) => {
-  logger.error("Startup failed:", err.stack || err);
+  logger.error(`Startup failed: err=${err}`);
+  logger.error(`typeof err: ${typeof err}`);
+  if (err instanceof Error) {
+    logger.error(`Startup failed: ${err.message}`);
+    logger.error(`Stack: ${err.stack}`);
+  } else {
+    logger.error(`Startup failed: ${util.inspect(err, { depth: null })}`);
+  }
   process.exit(1);
 });
