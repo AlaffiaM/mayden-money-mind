@@ -41,9 +41,9 @@ let autoPublishTimer = null;
 export function startAutoPublisher() {
   if (autoPublishTimer) return;
   // Run immediately on start, then every 15 minutes
-  checkAndPublishEpisodes().catch((err) => console.error("[auto-publish] initial run failed:", err.message));
+  checkAndPublishEpisodes().catch((err) => logger.error("[auto-publish] initial run failed:", err.message));
   autoPublishTimer = setInterval(() => {
-    checkAndPublishEpisodes().catch((err) => console.error("[auto-publish] run failed:", err.message));
+    checkAndPublishEpisodes().catch((err) => logger.error("[auto-publish] run failed:", err.message));
   }, CHECK_INTERVAL_MS);
   autoPublishTimer.unref();
 }
