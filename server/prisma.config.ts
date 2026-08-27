@@ -3,12 +3,24 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+// The CLI uses this URL for `prisma db push` / `migrate`. Render Postgres requires
+// an SSL connection, so append sslmode=require exactly as src/config/prisma.js does,
+// otherwise the CLI cannot reach the database (ECONNRESET / P1001).
+function cliUrl() {
+  let url = process.env["DATABASE_URL"];
+  if (url && !/sslmode=/.test(url) && !url.startsWith("file:")) {
+    const separator = url.includes("?") ? "&" : "?";
+    url += `${separator}sslmode=require`;
+  }
+  return url;
+}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: cliUrl(),
   },
 });
