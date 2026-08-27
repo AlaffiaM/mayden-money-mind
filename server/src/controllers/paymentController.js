@@ -12,6 +12,7 @@ import {
 } from "../services/paymentService.js";
 import { getPaystackKey } from "../config/paystack.js";
 import { sendWelcomeEmail } from "../services/emailService.js";
+import { PrismaClientKnownRequestError } from '@prisma/client';
 
 // Sends the one-time welcome email after a first subscription is activated.
 // Exactly-once via a Setting marker (same idempotency pattern as the daily
@@ -41,7 +42,7 @@ async function welcomeNewSubscriber(subscriptionId) {
       nextRenewal: sub.nextRenewal,
     });
   } catch (err) {
-    console.error("[welcome] email failed:", err.message);
+    logger.error("[welcome] email failed:", err.message);
     await prisma.setting.delete({ where: { key: marker } }).catch(() => {});
   }
 }
@@ -107,7 +108,7 @@ async function linkCardSubscription(subscriptionId, data) {
       });
     }
   } catch (err) {
-    console.error("[link-card] failed to create Paystack subscription:", err.message);
+    logger.error("[link-card] failed to create Paystack subscription:", err.message);
   }
 }
 
@@ -141,7 +142,14 @@ export async function initialize(req, res) {
     const priceMap = {};
     for (const s of priceSettings) priceMap[s.key] = s.value;
 
-    const amount = sub.plan === "weekly" ? parseInt(priceMap.weeklyPrice || "100") : parseInt(priceMap.monthlyPrice || "350");
+    const weeklyPriceStr = priceMap.weeklyPrice || "100";
+    const monthlyPriceStr = priceMap.monthlyPrice || "350";
+    const weeklyPrice = parseInt(weeklyPriceStr, 10);
+    const monthlyPrice = parseInt(monthlyPriceStr, 10);
+    if (isNaN(weeklyPrice) || isNaN(monthlyPrice)) {
+      logger.warn(`Invalid price settings: weeklyPrice=${weeklyPriceStr}, monthlyPrice=${monthlyPriceStr}`);
+    }
+    const amount = sub.plan === "weekly" ? (isNaN(weeklyPrice) ? 100 : weeklyPrice) : (isNaN(monthlyPrice) ? 350 : monthlyPrice);
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     const { reference, redirectUrl } = await initializePayment(user, subscriptionId, amount, sub.plan, { forceCard: !!forceCard });
 
@@ -157,7 +165,7 @@ export async function initialize(req, res) {
 
     res.json({ payment, redirectUrl });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -194,7 +202,7 @@ export async function verify(req, res) {
 
     res.json({ success: !!data });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -280,18 +288,39 @@ export async function webhook(req, res) {
           where: { paystackSubscriptionCode: event.data.subscription_code },
         });
         if (sub) {
-          payment = await prisma.payment.create({
-            data: {
-              userId: sub.userId,
-              subscriptionId: sub.id,
-              amount: (event.data.amount || 0) / 100,
-              reference: reference || `renewal-${Date.now()}`,
-              status: "success",
-              paidAt: new Date(),
-              ...(event.data.authorization?.last4 ? { last4: event.data.authorization.last4 } : {}),
-            },
-          });
-          createdRenewalPayment = true;
+          const ref = reference || `renewal-${Date.now()}`;
+          const paymentData = {
+            userId: sub.userId,
+            subscriptionId: sub.id,
+            amount: (event.data.amount || 0) / 100,
+            reference: ref,
+            status: "success",
+            paidAt: new Date(),
+            ...(event.data.authorization?.last4 ? { last4: event.data.authorization.last4 } : {}),
+          };
+          try {
+            payment = await prisma.payment.create({ data: paymentData });
+            createdRenewalPayment = true;
+          } catch (err) {
+            if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
+              // Another webhook already created the payment; fetch it
+              payment = await prisma.payment.findUnique({ where: { reference: ref } });
+              // Ensure it's marked success (should already be)
+              if (payment && payment.status !== "success") {
+                await prisma.payment.update({
+                  where: { reference: ref },
+                  data: {
+                    status: "success",
+                    paidAt: new Date(),
+                    ...(event.data.authorization?.last4 ? { last4: event.data.authorization.last4 } : {}),
+                  },
+                });
+              }
+              createdRenewalPayment = false;
+            } else {
+              throw err;
+            }
+          }
         }
       }
 
