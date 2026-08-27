@@ -83,12 +83,39 @@ const adminLimiter = rateLimit({
   message: { error: "Too many requests. Please slow down." },
 });
 
+const subscriptionLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false, forwardedHeader: false },
+  message: { error: "Too many requests. Please slow down." },
+});
+
+const audioLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false, forwardedHeader: false },
+  message: { error: "Too many requests. Please slow down." },
+});
+
+const episodesLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  limit: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false, forwardedHeader: false },
+  message: { error: "Too many requests. Please slow down." },
+});
+
 // API route mounting
 app.use("/api/auth", authLimiter, authRoutes);           // Register + login
-app.use("/api/episodes", episodeRoutes);    // Public episode listing + listen logging
-app.use("/api/subscriptions", subscriptionRoutes); // User subscription management
+app.use("/api/episodes", episodesLimiter, episodeRoutes);    // Public episode listing + listen logging
+app.use("/api/subscriptions", subscriptionLimiter, subscriptionRoutes); // User subscription management
 app.use("/api/payments", paymentRoutes);    // Paystack payment init, verify, webhook
-app.use("/api/audio", audioRoutes);         // Signed, access-controlled audio streaming
+app.use("/api/audio", audioLimiter, audioRoutes);         // Signed, access-controlled audio streaming
 app.use("/api/admin", adminLimiter, adminRoutes);         // Admin-only CRUD + stats + notifications
 
 // Health check
@@ -168,7 +195,7 @@ app.use("/api", (req, res) => {
 // Final error handler — never leak internal error messages to clients
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err.stack || err);
+  logger.error("Unhandled error:", err.stack || err);
   if (res.headersSent) return next(err);
   const status = err.status || err.statusCode || 500;
   res.status(status).json({
