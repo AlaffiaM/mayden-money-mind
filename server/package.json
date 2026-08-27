@@ -9,7 +9,7 @@
     "test": "node --test --test-concurrency=1 tests/"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.3",
+    "@prisma/client": "7.10.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -21,7 +21,7 @@
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
     "pino": "^10.3.1",
-    "prisma": "^6.19.3"
+    "prisma": "7.10.0"
   },
   "devDependencies": {
     "node-fetch": "^3.3.2",
