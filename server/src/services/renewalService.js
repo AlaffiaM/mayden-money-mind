@@ -11,6 +11,7 @@
 import { prisma } from "../config/prisma.js";
 import { FRONTEND_URL } from "../config/env.js";
 import { sendUserEmail } from "./emailService.js";
+import logger from "../utils/logger.js";
 
 // How often to check for expired subscriptions (12 hours)
 const REMINDER_INTERVAL_MS = 12 * 60 * 60 * 1000;
