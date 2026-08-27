@@ -32,7 +32,7 @@ async function sendRenewalReminder(sub, { title, body, subject }) {
         body: `${body}\n\nUpdate your payment details anytime in your account: ${FRONTEND_URL}/subscription`,
       });
     } catch (err) {
-      console.error(`[renewal] reminder email to ${sub.user.email} failed:`, err.message);
+      logger.error(`[renewal] reminder email to ${sub.user.email} failed:`, err.message);
     }
   }
 }
@@ -114,8 +114,8 @@ let renewalTimer = null;
 export function startRenewalProcessor() {
   if (renewalTimer) return;
   renewalTimer = setInterval(() => {
-    processExpiredSubscriptions().catch((err) => console.error("[renewal] run failed:", err.message));
+    processExpiredSubscriptions().catch((err) => logger.error("[renewal] run failed:", err.message));
   }, REMINDER_INTERVAL_MS);
   renewalTimer.unref();
-  processExpiredSubscriptions().catch((err) => console.error("[renewal] initial run failed:", err.message));
+  processExpiredSubscriptions().catch((err) => logger.error("[renewal] initial run failed:", err.message));
 }
