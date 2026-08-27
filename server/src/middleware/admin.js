@@ -2,6 +2,7 @@
 // Re-loads the user from the DB on every request so a deleted, demoted, or
 // role-changed admin is blocked immediately instead of trusting a stale JWT.
 import { prisma } from "../config/prisma.js";
+import logger from "../utils/logger.js";
 
 export async function requireAdmin(req, res, next) {
   try {
