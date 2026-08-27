@@ -44,17 +44,36 @@ export async function list(req, res, next) {
 export async function library(req, res, next) {
   try {
     const userId = req.user.id;
-    const logs = await prisma.listenLog.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      select: { episodeId: true, createdAt: true },
-    });
-    const episodeIds = [...new Set(logs.map((l) => l.episodeId))];
-    if (episodeIds.length === 0) return res.json([]);
+
+    // Get today's date at midnight (start of day)
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    // Get all published episodes from the current week (Monday-Friday)
+    // We'll get episodes from the last 7 days to next 7 days to be safe,
+    // then filter to Monday-Friday of the current week
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(todayStart.getDate() - todayStart.getDay() + (todayStart.getDay() === 0 ? -6 : 1)); // Monday of this week
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 4); // Friday of this week
 
     const episodes = await prisma.episode.findMany({
-      where: { id: { in: episodeIds }, status: "published" },
+      where: {
+        status: "published",
+        publishDate: {
+          gte: weekStart,
+          lte: weekEnd,
+        },
+      },
+      orderBy: { publishDate: "asc" }, // Order by day of week (Mon, Tue, Wed, Thu, Fri)
       include: { _count: { select: { listenLogs: true } } },
+    });
+
+    // Get user's listen logs for these episodes to compute lastListened
+    const episodeIds = episodes.map((e) => e.id);
+    const logs = await prisma.listenLog.findMany({
+      where: { userId, episodeId: { in: episodeIds } },
+      select: { episodeId: true, createdAt: true },
     });
 
     const lastListened = {};
@@ -64,11 +83,19 @@ export async function library(req, res, next) {
       }
     }
 
-    const mapped = serialize(episodes).map((e) => ({
-      ...e,
-      lastListened: lastListened[e.id],
-    }));
-    mapped.sort((a, b) => (b.lastListened > a.lastListened ? 1 : -1));
+    const mapped = serialize(episodes).map((e) => {
+      // Determine if episode is locked (publishDate is in the future)
+      const episodeStart = new Date(e.publishDate);
+      episodeStart.setHours(0, 0, 0, 0);
+      const locked = episodeStart > todayStart;
+
+      return {
+        ...e,
+        lastListened: lastListened[e.id],
+        locked: locked,
+      };
+    });
+
     res.json(mapped);
   } catch (err) {
     next(err);
@@ -102,7 +129,8 @@ export async function today(req, res, next) {
 }
 
 // POST /api/episodes/:id/stream — mints a fresh short-lived signed audio URL,
-// but only for users with an active subscription. This is the single entry
+// but only for users with an active subscription AND for episodes that have
+// been unlocked (publish date has passed). This is the single entry
 // point for protected playback, so no reusable URL ever ships in listings.
 export async function stream(req, res, next) {
   try {
@@ -113,8 +141,19 @@ export async function stream(req, res, next) {
     if (!episode) return res.status(404).json({ error: "Episode not found" });
     if (!episode.audioUrl) return res.status(404).json({ error: "No audio assigned to this episode" });
 
+    // Check if user has active subscription
     if (!(await isSubscriber(req.user?.id))) {
       return res.status(403).json({ error: "Active subscription required" });
+    }
+
+    // Check if episode is unlocked (publish date has passed)
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const episodeStart = new Date(episode.publishDate);
+    episodeStart.setHours(0, 0, 0, 0);
+
+    if (episodeStart > todayStart) {
+      return res.status(403).json({ error: "Episode not yet unlocked" });
     }
 
     res.json({ url: signAudioUrl(episode.audioUrl) });
