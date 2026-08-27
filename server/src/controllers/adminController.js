@@ -69,11 +69,37 @@ export async function updateSettings(req, res, next) {
 
     for (const key of SETTINGS_KEYS) {
       if (updates[key] !== undefined) {
+        // Validate specific keys
+        let value = updates[key];
+        if (key === 'weeklyPrice' || key === 'gracePeriodHours') {
+          const num = Number(value);
+          if (isNaN(num) || !isFinite(num)) {
+            return res.status(400).json({ error: `Invalid value for ${key}: must be a number` });
+          }
+          value = String(num);
+        } else if (key === 'dayLabels') {
+          let parsed;
+          try {
+            parsed = JSON.parse(value);
+          } catch (e) {
+            return res.status(400).json({ error: `Invalid value for dayLabels: must be valid JSON` });
+          }
+          const expectedKeys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+          if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+            return res.status(400).json({ error: `Invalid value for dayLabels: must be an object` });
+          }
+          for (const k of expectedKeys) {
+            if (!(k in parsed) || typeof parsed[k] !== 'string') {
+              return res.status(400).json({ error: `Invalid value for dayLabels: missing or non-string key: ${k}` });
+            }
+          }
+          value = JSON.stringify(parsed);
+        }
         ops.push(
           prisma.setting.upsert({
             where: { key },
-            update: { value: String(updates[key]) },
-            create: { key, value: String(updates[key]) },
+            update: { value },
+            create: { key, value },
           })
         );
       }
