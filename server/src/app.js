@@ -86,7 +86,7 @@ const adminLimiter = rateLimit({
 
 const subscriptionLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  limit: 10,
+  limit: process.env.NODE_ENV === 'test' ? 100 : 10,
   standardHeaders: true,
   legacyHeaders: false,
   validate: { xForwardedForHeader: false, forwardedHeader: false },
@@ -95,7 +95,7 @@ const subscriptionLimiter = rateLimit({
 
 const audioLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  limit: 30,
+  limit: process.env.NODE_ENV === 'test' ? 100 : 30,
   standardHeaders: true,
   legacyHeaders: false,
   validate: { xForwardedForHeader: false, forwardedHeader: false },
@@ -104,7 +104,7 @@ const audioLimiter = rateLimit({
 
 const episodesLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  limit: 100,
+  limit: process.env.NODE_ENV === 'test' ? 100 : 100,
   standardHeaders: true,
   legacyHeaders: false,
   validate: { xForwardedForHeader: false, forwardedHeader: false },
