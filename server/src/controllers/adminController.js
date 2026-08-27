@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import { prisma } from "../config/prisma.js";
 import { getUploadUrl } from "../services/audioStorageService.js";
 import { signAudioUrl } from "../utils/audioAccessControl.js";
+import logger from "../utils/logger.js";
 
 // Admin-facing preview URLs use a longer TTL so the admin list/modal previews
 // stay playable while working in the dashboard (subscriber playback stays at 60s).
