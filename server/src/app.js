@@ -16,6 +16,7 @@ import { startAutoPublisher } from "./services/autoPublishService.js";
 import { startDailyReminderProcessor } from "./services/dailyReminderService.js";
 import { startReconciliationProcessor } from "./services/reconciliationService.js";
 import { authenticate } from "./middleware/auth.js";
+import logger from "./utils/logger.js";
 
 const app = express();
 
