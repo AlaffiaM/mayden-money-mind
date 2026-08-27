@@ -5,12 +5,20 @@ import { defineConfig } from "prisma/config";
 
 // The CLI uses this URL for `prisma db push` / `migrate`. Render Postgres requires
 // an SSL connection, so append sslmode=require exactly as src/config/prisma.js does,
-// otherwise the CLI cannot reach the database (ECONNRESET / P1001).
+// otherwise the CLI cannot reach the database (ECONNRESET / P1001). Local hosts
+// (localhost / 127.0.0.1 / ::1) are skipped the same way src/config/prisma.js skips
+// them, so an SSL-less local Postgres keeps working, instead of failing with
+// "The server does not support SSL connections".
 function cliUrl() {
   let url = process.env["DATABASE_URL"];
   if (url && !/sslmode=/.test(url) && !url.startsWith("file:")) {
-    const separator = url.includes("?") ? "&" : "?";
-    url += `${separator}sslmode=require`;
+    let host = "host";
+    try { host = new URL(url).hostname.toLowerCase(); } catch {}
+    const isLocal = host === "localhost" || host === "127.0.0.1" || host === "::1";
+    if (!isLocal) {
+      const separator = url.includes("?") ? "&" : "?";
+      url += `${separator}sslmode=require`;
+    }
   }
   return url;
 }
