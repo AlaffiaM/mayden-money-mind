@@ -3,6 +3,7 @@
 // reconciliation. No-op (with a log) when Brevo isn't configured so local dev
 // works without keys.
 import { FRONTEND_URL } from "../config/env.js";
+import logger from "../utils/logger.js";
 
 const SENDER_NAME = "Money & Mind";
 const BREVO_URL = "https://api.brevo.com/v3/smtp/email";
