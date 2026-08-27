@@ -375,6 +375,21 @@ export async function createEpisode(req, res, next) {
   try {
     const { title, dayType, runTimeSeconds, showNotes, publishDate, status } = req.body;
     const audioUrl = req.file ? getUploadUrl(req.file.filename) : req.body.audioUrl;
+
+    const publish = new Date(publishDate);
+
+    // Idempotency guard: refuse to create a second episode for the same weekday.
+    // The batch scheduler can be (and historically was) double-submitted, which
+    // silently created full duplicate weeks. The DB unique index on
+    // (dayType, publishDate) is the hard backstop; this gives a clean 409 here first.
+    const existing = await prisma.episode.findFirst({
+      where: { dayType, publishDate: publish },
+      select: { id: true },
+    });
+    if (existing) {
+      return res.status(409).json({ error: `An episode for ${dayType} on ${publish.toISOString().slice(0, 10)} already exists` });
+    }
+
     const episode = await prisma.episode.create({
       data: {
         title,
@@ -382,7 +397,7 @@ export async function createEpisode(req, res, next) {
         audioUrl,
         runTimeSeconds: parseInt(runTimeSeconds) || 0,
         showNotes: showNotes || "",
-        publishDate: new Date(publishDate),
+        publishDate: publish,
         status: status || "scheduled",
       },
     });
