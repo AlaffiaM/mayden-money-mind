@@ -12,7 +12,9 @@ import {
 } from "../services/paymentService.js";
 import { getPaystackKey } from "../config/paystack.js";
 import { sendWelcomeEmail } from "../services/emailService.js";
-import { PrismaClientKnownRequestError } from '@prisma/client';
+import PrismaClient from '@prisma/client';
+const { PrismaClientKnownRequestError } = PrismaClient;
+import logger from "../utils/logger.js";
 
 // Sends the one-time welcome email after a first subscription is activated.
 // Exactly-once via a Setting marker (same idempotency pattern as the daily
