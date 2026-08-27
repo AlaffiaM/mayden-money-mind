@@ -7,8 +7,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
+
 
 // Registered users — both subscribers and admins
 model User {
@@ -85,6 +85,12 @@ model Episode {
   listenCount    Int         @default(0)
   createdAt      DateTime    @default(now())
   listenLogs     ListenLog[]
+
+  // One episode per day per week. This makes a duplicate insert fail loudly
+  // (instead of silently creating a second row for the same weekday) and is the
+  // root-cause guard against the duplicate episodes that came from double-running
+  // the admin batch scheduler.
+  @@unique([dayType, publishDate])
 }
 
 // Tracks each time a user listens to an episode
