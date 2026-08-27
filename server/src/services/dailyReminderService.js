@@ -72,11 +72,11 @@ let reminderTimer = null;
 export function startDailyReminderProcessor() {
   if (reminderTimer) return;
   reminderTimer = setInterval(() => {
-    sendDailyReminder().catch((err) => console.error("[daily-reminder] run failed:", err.message));
+    sendDailyReminder().catch((err) => logger.error("[daily-reminder] run failed:", err.message));
   }, CHECK_INTERVAL_MS);
   reminderTimer.unref();
   // Catch up on a missed day at boot, but skip the side-effect in tests
   if (process.env.NODE_ENV !== "test") {
-    sendDailyReminder().catch((err) => console.error("[daily-reminder] initial run failed:", err.message));
+    sendDailyReminder().catch((err) => logger.error("[daily-reminder] initial run failed:", err.message));
   }
 }
