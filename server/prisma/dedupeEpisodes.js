@@ -3,8 +3,9 @@
 // double-running the admin batch scheduler.
 //
 // For each duplicate (dayType, publishDate) pair this keeps ONE row and deletes the rest:
-//   1. Prefer a row that has any listenLogs (listens) over one that has none.
-//   2. Otherwise keep the row with the oldest createdAt.
+//   1. Prefer the row with the most listenLogs (listens).
+//   2. If listens are tied, prefer status=published over status=scheduled.
+//   3. Only if status is also tied, keep the row with the NEWEST createdAt.
 //
 // USAGE
 //   DRY-RUN (default, does NOT modify anything — prints exactly what would be deleted):
@@ -50,14 +51,16 @@ const toDelete = [];
 for (const [key, group] of groups) {
   if (group.length < 2) continue; // not a duplicate
 
-  // Sort: prefer the row with the most listens (preserves as much listen attribution
-  // as possible), then the older createdAt. This keeps a listened row over an unlistened
-  // one, and the higher-listen row when both have listens.
+  // Sort: prefer the most listens; on a listen tie prefer published over scheduled;
+  // only if status is also tied, keep the NEWER createdAt.
   const sorted = [...group].sort((a, b) => {
     const aL = listensByEpisode.get(a.id) || 0;
     const bL = listensByEpisode.get(b.id) || 0;
     if (aL !== bL) return bL - aL;
-    return new Date(a.createdAt) - new Date(b.createdAt);
+    const aPub = a.status === "published" ? 1 : 0;
+    const bPub = b.status === "published" ? 1 : 0;
+    if (aPub !== bPub) return bPub - aPub; // published preferred over scheduled
+    return new Date(b.createdAt) - new Date(a.createdAt); // newer createdAt kept as final tiebreak
   });
 
   const keep = sorted[0];
@@ -67,23 +70,49 @@ for (const [key, group] of groups) {
 
 console.log(`\nMODE: ${isDryRun ? "DRY RUN (no changes made)" : "APPLY (deleting rows)"}`);
 console.log(`Total episodes: ${episodes.length}`);
-console.log(`Duplicate groups found: ${groups.size > 0 ? [...groups.values()].filter((g) => g.length > 1).length : 0}`);
+console.log(`Duplicate groups found: ${[...groups.values()].filter((g) => g.length > 1).length}`);
 console.log(`Rows to DELETE: ${toDelete.length}`);
 console.log(`Rows to KEEP:   ${survivors.length}\n`);
 
-for (const d of toDelete) {
-  const keepId = survivors.find(
-    (s) => s.dayType === d.dayType && new Date(s.publishDate).getTime() === new Date(d.publishDate).getTime()
-  ).id;
-  const keptListens = listensByEpisode.get(keepId) || 0;
-  const delListens = listensByEpisode.get(d.id) || 0;
-  const day = new Date(d.publishDate).toISOString().slice(0, 10);
-  console.log(
-    `DELETE ${d.id} | ${String(d.dayType).padEnd(9)} | ${day} | status=${String(d.status).padEnd(9)} | ` +
-    `created=${new Date(d.createdAt).toISOString().slice(0, 19)}Z | listens=${delListens} | "${d.title}"` +
-    (delListens > 0 ? "  <-- HAS LISTENS" : "") +
-    `  (keep ${keepId}, kept listens=${keptListens})`
-  );
+// Map each duplicate group to its chosen KEEP row, and build ordered pair list.
+const keptByKey = new Map(survivors.map((s) => [`${s.dayType}|${new Date(s.publishDate).getTime()}`, s]));
+
+const fmtDay = (d) => new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(d));
+const fmtCreated = (d) => new Date(d).toISOString().slice(0, 19) + "Z";
+const listensOf = (e) => listensByEpisode.get(e.id) || 0;
+
+const pairs = [];
+for (const [key, group] of groups.entries()) {
+  if (group.length < 2) continue;
+  const keep = keptByKey.get(key);
+  const deleted = group.filter((r) => r.id !== keep.id);
+  pairs.push({ key, keep, deleted });
+}
+
+for (let i = 0; i < pairs.length; i++) {
+  const { keep, deleted } = pairs[i];
+  const pub = fmtDay(keep.publishDate);
+  const weekday = String(keep.dayType).padEnd(9);
+  const keepL = listensOf(keep);
+  const delL = listensOf(deleted[0]);
+  const del = deleted[0];
+  let note;
+  if (keepL !== delL) {
+    note = `kept = higher listens (${keepL} vs ${delL})`;
+  } else if ((keep.status === "published") !== (del.status === "published")) {
+    note = `listen tie (${keepL}) -> kept = ${keep.status === "published" ? "PUBLISHED" : del.status.toUpperCase()} row`;
+  } else {
+    note = "listen + status tie -> kept = NEWER createdAt";
+  }
+
+  console.log(`\n${String(i + 1).padStart(2)}. ${weekday} ${pub}   [${note}]`);
+  const show = (tag, row) =>
+    console.log(
+      `      ${tag}  ${row.id}\n` +
+      `            listens=${listensOf(row).toString().padEnd(3)} createdAt=${fmtCreated(row.createdAt)} status=${String(row.status).padEnd(9)} "${row.title}"`
+    );
+  show("KEEP  ", keep);
+  for (const d of deleted) show("DELETE", d);
 }
 
 if (!isDryRun && toDelete.length > 0) {
