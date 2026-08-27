@@ -160,19 +160,19 @@ export async function update(req, res) {
       }
       updateData.pausedAt = null;
     } else if (status === "cancelled") {
-      // Guard: one-time subscriptions cannot be cancelled (they end automatically)
       if (!sub.autoRenew || !sub.paystackSubscriptionCode) {
         return res.status(400).json({
           error: `This subscription does not auto-renew and cannot be cancelled — it will end automatically on ${sub.nextRenewal.toISOString().split('T')[0]}`,
         });
       }
-      // Stop future recurring charges at Paystack, then cancel locally
-      if (sub.paystackSubscriptionCode) {
-        try {
-          await disablePaystackSubscription(sub.paystackSubscriptionCode);
-        } catch (err) {
-          console.error("[cancel] failed to disable Paystack subscription:", err.message);
-        }
+      // Stop future recurring charges at Paystack FIRST — only update local state if this succeeds
+      try {
+        await disablePaystackSubscription(sub.paystackSubscriptionCode);
+      } catch (err) {
+        console.error("[cancel] failed to disable Paystack subscription:", err.message);
+        return res.status(502).json({
+          error: "Failed to cancel subscription with payment provider — please try again",
+        });
       }
       updateData.autoRenew = false;
     }
