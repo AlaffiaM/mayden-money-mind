@@ -1,5 +1,6 @@
 // Auto-publish service — checks for scheduled episodes and publishes them at the configured release time
 import { prisma } from "../config/prisma.js";
+import logger from "../utils/logger.js";
 
 // Runs every 15 minutes to check for episodes ready to publish
 const CHECK_INTERVAL_MS = 15 * 60 * 1000;
