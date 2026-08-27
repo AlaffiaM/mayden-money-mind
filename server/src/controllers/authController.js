@@ -56,7 +56,7 @@ export async function register(req, res) {
 
     res.status(201).json({ token: issueToken(user), user: serializeUser(user) });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -79,7 +79,7 @@ export async function login(req, res) {
 
     res.json({ token: issueToken(user), user: serializeUser(user) });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -120,13 +120,13 @@ export async function forgotPassword(req, res) {
 
       // Dev mode: email is skipped without Brevo keys — log the link instead
       if (!result.sent) {
-        console.log(`[password-reset] link (email skipped): ${resetUrl}`);
+        logger.info(`[password-reset] email sending attempted, sent=${result.sent}`);
       }
     }
 
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -156,7 +156,7 @@ export async function resetPassword(req, res) {
 
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 }
