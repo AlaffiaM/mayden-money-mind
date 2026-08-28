@@ -156,10 +156,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        <a href="https://moneyandmind.alaffiaradio.com/?utm_source=mayden_website&utm_medium=website_button&utm_campaign=mayden_launch"
-   style="display:inline-block;padding:14px 28px;background:#e91e63;color:#ffffff;border-radius:8px;text-decoration:none;font-weight:600;font-family:Arial,Helvetica,sans-serif;">
-  Subscribe to Money &amp; Mind
-</a>
 
         {/* Episodes — grouped by day pillar, or flat list when searching */}
         {vaultSearch ? (
