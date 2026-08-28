@@ -11,7 +11,7 @@ import SubscriberLayout from "../components/layout/SubscriberLayout";
 
 export default function Subscription() {
   const navigate = useNavigate();
-  const { subscription, loading, subscribe, update, setAutoRenew } = useSubscription();
+  const { subscription, loading, subscribe, update, setAutoRenew, refetch } = useSubscription();
   const { pricing } = usePricing();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlStatus = searchParams.get("status");
@@ -75,6 +75,26 @@ export default function Subscription() {
       return () => clearTimeout(timer);
     }
   }, [urlStatus, setSearchParams]);
+
+  useEffect(() => {
+    if (!subscription) return;
+
+    const checkExpiration = () => {
+      const now = new Date();
+      const nextRenewal = new Date(subscription.nextRenewal);
+      if (nextRenewal < now) {
+        // Potential expiration; refetch to get latest status from backend
+        refetch().catch(() => {});
+      }
+    };
+
+    // Run immediately
+    checkExpiration();
+
+    // Check every hour
+    const intervalId = setInterval(checkExpiration, 3600000);
+    return () => clearInterval(intervalId);
+  }, [subscription, refetch]);
 
   const handleSubscribe = async (plan) => {
     try {
