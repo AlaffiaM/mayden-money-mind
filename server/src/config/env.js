@@ -7,6 +7,7 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 export const PORT = process.env.PORT || 5000;
 export const JWT_SECRET = process.env.JWT_SECRET;
 export const FRONTEND_URL = (process.env.FRONTEND_URL || "https://mayden-money-mind.vercel.app").replace(/\/+$/, "");
+export const EXTERNAL_API_BASE_URL = process.env.EXTERNAL_API_BASE_URL || "https://culture-concierge.onrender.com";
 
 function assertSecureConfig() {
   if (NODE_ENV !== "production") return;
