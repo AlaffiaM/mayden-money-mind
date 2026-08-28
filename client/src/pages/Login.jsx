@@ -29,8 +29,12 @@ export default function Login() {
             alt="Money & Mind"
             className="w-16 h-16 object-contain mx-auto mb-4"
           />
-          <h1 className="font-serif text-2xl font-bold text-mayden-dark">Welcome back</h1>
-          <p className="text-sm text-gray-500 mt-1">Sign in to continue your journey</p>
+          <h1 className="font-serif text-2xl font-bold text-mayden-dark">
+            Welcome back
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Sign in to continue your journey
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -41,9 +45,17 @@ export default function Login() {
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1.5"
+            >
+              Email
+            </label>
             <div className="relative">
-              <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Mail
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
               <input
                 id="email"
                 type="email"
@@ -79,13 +91,26 @@ export default function Login() {
 
         <p className="text-sm text-gray-500 text-center mt-6">
           Don't have an account?{" "}
-          <Link to="/register" className="text-mayden-magenta font-semibold hover:underline">
+          <Link
+            to="/register"
+            className="text-mayden-magenta font-semibold hover:underline"
+          >
             Create one
           </Link>
         </p>
 
+        <a
+          href="https://moneyandmind.alaffiaradio.com/?utm_source=mayden_website&utm_medium=website_button&utm_campaign=mayden_launch"
+          style="display:inline-block;padding:14px 28px;background:#e91e63;color:#ffffff;border-radius:8px;text-decoration:none;font-weight:600;font-family:Arial,Helvetica,sans-serif;"
+        >
+          Subscribe to Money &amp; Mind
+        </a>
+
         <p className="text-sm text-gray-500 text-center mt-3">
-          <Link to="/forgot-password" className="text-mayden-magenta font-semibold hover:underline">
+          <Link
+            to="/forgot-password"
+            className="text-mayden-magenta font-semibold hover:underline"
+          >
             Forgot password?
           </Link>
         </p>
