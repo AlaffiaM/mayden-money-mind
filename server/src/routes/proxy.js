@@ -3,8 +3,8 @@ import { EXTERNAL_API_BASE_URL } from "../config/env.js";
 
 const router = express.Router();
 
-// Proxy GET /api/proxy/venues -> external API /api/venues
-router.get("/venues", async (req, res) => {
+// Proxy handler for GET /venues
+const handleGetVenues = async (req, res) => {
   try {
     const externalUrl = `${EXTERNAL_API_BASE_URL}/api/venues`;
     const response = await fetch(externalUrl, {
@@ -26,10 +26,10 @@ router.get("/venues", async (req, res) => {
     console.error("Proxy error:", err);
     res.status(502).json({ error: "Bad Gateway", details: err.message });
   }
-});
+};
 
-// Proxy POST /api/proxy/subscribe -> external API /api/subscribe
-router.post("/subscribe", async (req, res) => {
+// Proxy handler for POST /subscribe
+const handlePostSubscribe = async (req, res) => {
   try {
     const externalUrl = `${EXTERNAL_API_BASE_URL}/api/subscribe`;
     const response = await fetch(externalUrl, {
@@ -54,6 +54,12 @@ router.post("/subscribe", async (req, res) => {
     console.error("Proxy error:", err);
     res.status(502).json({ error: "Bad Gateway", details: err.message });
   }
-});
+};
 
-export default router;
+// Proxy GET /api/proxy/venues -> external API /api/venues
+router.get("/venues", handleGetVenues);
+
+// Proxy POST /api/proxy/subscribe -> external API /api/subscribe
+router.post("/subscribe", handlePostSubscribe);
+
+export { router, handleGetVenues, handlePostSubscribe };
