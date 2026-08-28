@@ -28,7 +28,7 @@ app.set("trust proxy", 1);
 // CORS — only allow the configured frontend origins. The production frontend is
 // always allowed so direct cross-origin calls keep working even if the Render
 // env var is missing; CLIENT_ORIGINS can add more (e.g. a staging preview).
-const defaultOrigins = ["http://localhost:5173", "https://mayden-money-mind.vercel.app"];
+const defaultOrigins = ["http://localhost:5173", "https://mayden-money-mind.vercel.app", "https://moneyandmind.alaffiaradio.com"];
 const envOrigins = (process.env.CLIENT_ORIGINS || "")
   .split(",")
   .map((o) => o.trim())
