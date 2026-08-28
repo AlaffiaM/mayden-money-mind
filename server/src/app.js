@@ -11,7 +11,7 @@ import subscriptionRoutes from "./routes/subscriptions.js";
 import paymentRoutes from "./routes/payments.js";
 import adminRoutes from "./routes/admin.js";
 import audioRoutes from "./routes/audio.js";
-import proxyRoutes from "./routes/proxy.js";
+import { router as proxyRoutes, handleGetVenues, handlePostSubscribe } from "./routes/proxy.js";
 import { startRenewalProcessor } from "./services/renewalService.js";
 import { startAutoPublisher } from "./services/autoPublishService.js";
 import { startDailyReminderProcessor } from "./services/dailyReminderService.js";
@@ -120,6 +120,10 @@ app.use("/api/payments", paymentRoutes);    // Paystack payment init, verify, we
 app.use("/api/audio", audioLimiter, audioRoutes);         // Signed, access-controlled audio streaming
 app.use("/api/admin", adminLimiter, adminRoutes);         // Admin-only CRUD + stats + notifications
 app.use("/api/proxy", proxyRoutes);                       // Proxy routes for external APIs
+
+// Direct API routes for external APIs (proxied)
+app.get("/api/venues", handleGetVenues);
+app.post("/api/subscribe", handlePostSubscribe);
 
 // Health check
 app.get("/api/health", (req, res) => {
