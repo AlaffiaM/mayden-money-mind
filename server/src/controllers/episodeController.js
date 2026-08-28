@@ -34,7 +34,31 @@ export async function list(req, res, next) {
       orderBy: { publishDate: "desc" },
       include: { _count: { select: { listenLogs: true } } },
     });
-    res.json(serialize(episodes));
+
+    // Deduplicate episodes by title and publishDate (keeping the most recently created version)
+    // This prevents showing multiple versions of the same episode in the full list
+    const episodeMap = new Map();
+    for (const episode of episodes) {
+      // Create a key based on title and publish date (normalized to date only)
+      // Handle null/undefined titles safely
+      const safeTitle = (episode.title || '').trim();
+      const dateKey = new Date(episode.publishDate);
+      dateKey.setHours(0, 0, 0, 0);
+      const key = `${safeTitle}-${dateKey.toISOString()}`;
+
+      // If we haven't seen this episode title/date combination, or if this one is newer
+      if (!episodeMap.has(key) ||
+          (episodeMap.get(key).createdAt < episode.createdAt)) {
+        episodeMap.set(key, episode);
+      }
+    }
+
+    // Convert map back to array, sorted by publishDate (descending to match original order)
+    const uniqueEpisodes = Array.from(episodeMap.values()).sort((a, b) =>
+      new Date(b.publishDate) - new Date(a.publishDate)
+    );
+
+    res.json(serialize(uniqueEpisodes));
   } catch (err) {
     next(err);
   }
@@ -69,8 +93,30 @@ export async function library(req, res, next) {
       include: { _count: { select: { listenLogs: true } } },
     });
 
+    // Deduplicate episodes by title and publishDate (keeping the most recently created version)
+    const episodeMap = new Map();
+    for (const episode of episodes) {
+      // Create a key based on title and publish date (normalized to date only)
+      // Handle null/undefined titles safely
+      const safeTitle = (episode.title || '').trim();
+      const dateKey = new Date(episode.publishDate);
+      dateKey.setHours(0, 0, 0, 0);
+      const key = `${safeTitle}-${dateKey.toISOString()}`;
+
+      // If we haven't seen this episode title/date combination, or if this one is newer
+      if (!episodeMap.has(key) ||
+          (episodeMap.get(key).createdAt < episode.createdAt)) {
+        episodeMap.set(key, episode);
+      }
+    }
+
+    // Convert map back to array, sorted by publishDate
+    const uniqueEpisodes = Array.from(episodeMap.values()).sort((a, b) =>
+      new Date(a.publishDate) - new Date(b.publishDate)
+    );
+
     // Get user's listen logs for these episodes to compute lastListened
-    const episodeIds = episodes.map((e) => e.id);
+    const episodeIds = uniqueEpisodes.map((e) => e.id);
     const logs = await prisma.listenLog.findMany({
       where: { userId, episodeId: { in: episodeIds } },
       select: { episodeId: true, createdAt: true },
@@ -83,7 +129,7 @@ export async function library(req, res, next) {
       }
     }
 
-    const mapped = serialize(episodes).map((e) => {
+    const mapped = serialize(uniqueEpisodes).map((e) => {
       // Determine if episode is locked (publishDate is in the future)
       const episodeStart = new Date(e.publishDate);
       episodeStart.setHours(0, 0, 0, 0);
