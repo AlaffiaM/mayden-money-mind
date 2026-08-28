@@ -16,6 +16,18 @@ export function useSubscription() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Refetch subscription
+  const refetch = async () => {
+    try {
+      const { data } = await api.get("/subscriptions/mine");
+      setSubscription(data);
+      return data;
+    } catch (err) {
+      setSubscription(null);
+      throw err;
+    }
+  };
+
   // Create a new subscription (weekly/monthly)
   const subscribe = async (plan) => {
     const { data } = await api.post("/subscriptions", { plan });
@@ -37,5 +49,5 @@ export function useSubscription() {
     return data;
   };
 
-  return { subscription, loading, subscribe, update, setAutoRenew };
+  return { subscription, loading, subscribe, update, setAutoRenew, refetch };
 }
