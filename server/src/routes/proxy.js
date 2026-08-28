@@ -10,11 +10,36 @@ router.get("/venues", async (req, res) => {
     const response = await fetch(externalUrl, {
       method: "GET",
       headers: {
-        // Forward any relevant headers from the incoming request if needed
-        // For example, you could forward Authorization, etc.
-        // Accept: response type
         Accept: "application/json",
       },
+    });
+
+    if (!response.ok) {
+      return res
+        .status(response.status)
+        .json({ error: `External API error: ${response.statusText}` });
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error("Proxy error:", err);
+    res.status(502).json({ error: "Bad Gateway", details: err.message });
+  }
+});
+
+// Proxy POST /api/proxy/subscribe -> external API /api/subscribe
+router.post("/subscribe", async (req, res) => {
+  try {
+    const externalUrl = `${EXTERNAL_API_BASE_URL}/api/subscribe`;
+    const response = await fetch(externalUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // Forward any relevant headers from the incoming request if needed
+        ...req.headers,
+      },
+      body: JSON.stringify(req.body),
     });
 
     if (!response.ok) {
