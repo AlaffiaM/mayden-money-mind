@@ -11,3 +11,4 @@ node_modules
 # SQLite dev artifact (Postgres is the DB now)
 /prisma/dev.db
 *.db
+/tests
