@@ -1,4 +1,4 @@
-// Library page — searchable episode list with mood-tag quick filters
+// Library page — the user's PERSONAL saved library (episodes they've listened to)
 // Episodes expand inline with an audio player when play is clicked
 import { useState, useEffect } from "react";
 import api from "../services/api";
@@ -15,6 +15,14 @@ const moodTags = [
   { label: "I want to celebrate", query: "friday" },
 ];
 
+const dayLabels = {
+  monday: "Monday",
+  tuesday: "Tuesday",
+  wednesday: "Wednesday",
+  thursday: "Thursday",
+  friday: "Friday",
+};
+
 export default function Library() {
   const [episodes, setEpisodes] = useState([]);
   const [search, setSearch] = useState("");
@@ -22,7 +30,7 @@ export default function Library() {
   const [hasLogged, setHasLogged] = useState({});
 
   useEffect(() => {
-    api.get("/episodes/library").then(({ data }) => setEpisodes(data)).catch(() => {});
+    api.get("/episodes/my-library").then(({ data }) => setEpisodes(data)).catch(() => {});
   }, []);
 
   const dayTypes = ["monday", "tuesday", "wednesday", "thursday", "friday"];
@@ -36,20 +44,27 @@ export default function Library() {
           ep.showNotes?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const dayLabels = {
-    monday: "Monday",
-    tuesday: "Tuesday",
-    wednesday: "Wednesday",
-    thursday: "Thursday",
-    friday: "Friday",
+  const formatDate = (iso) => {
+    if (!iso) return "";
+    return new Date(iso).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   };
+
+  const canPlay = (ep) => ep.status === "published";
 
   return (
     <SubscriberLayout>
       <div className="mb-6">
-        <h1 className="text-2xl lg:text-3xl font-serif font-bold text-mayden-dark mb-4">
-          The Mayden Library
+        <h1 className="text-2xl lg:text-3xl font-serif font-bold text-mayden-dark mb-2">
+          My Library
         </h1>
+        <p className="text-sm text-gray-500 mb-4">
+          Episodes you've listened to. Your library stays with you even if your
+          subscription lapses — renew to play again.
+        </p>
         <div className="flex flex-wrap gap-2 mb-4">
           {moodTags.map((tag) => (
             <button
@@ -65,7 +80,7 @@ export default function Library() {
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Search episodes..."
+            placeholder="Search your library..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20 focus:border-mayden-magenta"
@@ -83,16 +98,20 @@ export default function Library() {
                 </span>
                 <h3 className="text-base font-semibold text-mayden-dark mt-2 mb-1">{ep.title}</h3>
                 <p className="text-sm text-gray-500 line-clamp-2">{ep.showNotes}</p>
-                {ep.locked && (
-                  <p className="text-xs text-mayden-magenta mt-1">
-                    Unlocks {dayLabels[ep.dayType]}
+                {ep.lastListened && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Last listened: {formatDate(ep.lastListened)}
+                  </p>
+                )}
+                {!canPlay(ep) && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Saved — playback requires an active subscription.
                   </p>
                 )}
               </div>
               <button
                 onClick={() => {
-                  // Prevent playing locked episodes
-                  if (ep.locked) return;
+                  if (!canPlay(ep)) return;
 
                   const isPlaying = playing === ep.id;
                   setPlaying(isPlaying ? null : ep.id);
@@ -101,7 +120,7 @@ export default function Library() {
                     setHasLogged((prev) => ({ ...prev, [ep.id]: true }));
                   }
                 }}
-                className={`flex-shrink-0 w-12 h-12 rounded-full ${ep.locked ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-mayden-magenta text-white flex items-center justify-center hover:bg-mayden-magenta/90 transition-colors"}`}
+                className={`flex-shrink-0 w-12 h-12 rounded-full ${!canPlay(ep) ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-mayden-magenta text-white flex items-center justify-center hover:bg-mayden-magenta/90 transition-colors"}`}
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   {playing === ep.id ? (
@@ -110,14 +129,14 @@ export default function Library() {
                     <path d="M8 5v14l11-7z" />
                   )}
                 </svg>
-                {ep.locked && (
+                {!canPlay(ep) && (
                   <svg className="absolute inset-0" width="24" height="24" viewBox="0 0 24 24">
                     <path fill="currentColor" d="M12 17a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM9.5 8h6V6a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2z"/>
                   </svg>
                 )}
               </button>
             </div>
-            {playing === ep.id && !ep.locked && (
+            {playing === ep.id && canPlay(ep) && (
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <AudioPlayer episodeId={ep.id} />
               </div>
@@ -125,7 +144,11 @@ export default function Library() {
           </div>
         ))}
         {filtered.length === 0 && (
-          <p className="text-center text-gray-400 py-12">No episodes match your search.</p>
+          <p className="text-center text-gray-400 py-12">
+            {episodes.length === 0
+              ? "Your library is empty. Start listening from the dashboard to build it."
+              : "No episodes match your search."}
+          </p>
         )}
       </div>
     </SubscriberLayout>
