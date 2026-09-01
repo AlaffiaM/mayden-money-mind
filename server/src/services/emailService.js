@@ -89,6 +89,25 @@ export async function sendWelcomeEmail({ to, fullName, plan, nextRenewal }) {
   });
 }
 
+// Verification email sent immediately after registration. The link points at the
+// frontend /verify-email route, which verifies and then resends-expires.
+export async function sendVerificationEmail({ to, fullName, token }) {
+  const verifyUrl = `${FRONTEND_URL}/verify-email?token=${encodeURIComponent(token)}`;
+  const bodyHtml = `
+<p>Hi ${escapeHtml(fullName)},</p>
+<p>Thanks for creating your <strong>Money &amp; Mind</strong> account. Please confirm your email address to finish signing up and unlock your daily audio.</p>
+<p>Your verification link is valid for <strong>24 hours</strong>:</p>
+<p><a href="${verifyUrl}" style="display:inline-block;background:#d63384;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:9999px;font-size:14px;font-weight:bold;">Verify my email</a></p>
+<p style="font-size:13px;color:#8a8a8a;">If the button doesn't work, copy and paste this link into your browser:<br/>${escapeHtml(verifyUrl)}</p>
+<p style="font-size:13px;color:#8a8a8a;">If you didn't create an account, you can safely ignore this email.</p>`;
+
+  return sendEmail({
+    to,
+    subject: "Confirm your email — Money & Mind",
+    htmlContent: emailTemplate({ title: "Verify your email", bodyHtml }),
+  });
+}
+
 // Sends a transactional email via the Brevo SMTP API.
 // `to` is a single email address (string). Optional `attachment`:
 // { name, content } where content is base64. Resolves with { sent, via, reason }.
