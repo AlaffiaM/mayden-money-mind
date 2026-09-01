@@ -10,6 +10,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
+import VerifyEmailSent from "./pages/VerifyEmailSent";
 import Dashboard from "./pages/Dashboard";
 import Library from "./pages/Library";
 import Subscription from "./pages/Subscription";
@@ -56,6 +58,8 @@ function SubscriberRoute({ children }) {
   }, [user, logout]);
 
   if (!user) return <Navigate to="/login" replace />;
+  // Unverified users are not allowed into the protected area — send them to verify.
+  if (user.role !== "admin" && !user.emailVerified) return <Navigate to="/verify-email-sent" replace />;
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -85,6 +89,8 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/verify-email-sent" element={<VerifyEmailSent />} />
 
       {/* Subscriber-only routes (requires active subscription) */}
       <Route path="/dashboard" element={<SubscriberRoute><Dashboard /></SubscriberRoute>} />
