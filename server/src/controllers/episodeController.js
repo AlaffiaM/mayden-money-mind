@@ -174,6 +174,35 @@ export async function today(req, res, next) {
   }
 }
 
+// GET /api/episodes/my-library
+// Returns the current user's PERSONAL listening library: the distinct episodes
+// they have listened to, each with its lastListenedAt. This is private to the
+// requesting user (filtered strictly by req.user.id). audioUrl is always null —
+// playback is still gated through the /stream endpoint (active subscription).
+// Saved items are returned even if the episode was later unpublished or the
+// user's subscription has lapsed — they can view their history, but playback
+// remains controlled by /stream.
+export async function myLibrary(req, res, next) {
+  try {
+    const logs = await prisma.listenLog.findMany({
+      where: { userId: req.user.id },
+      orderBy: { lastListenedAt: "desc" },
+      include: { episode: true },
+    });
+
+    const items = logs.map((log) => ({
+      ...log.episode,
+      lastListened: log.lastListenedAt,
+      audioUrl: null,
+      _count: undefined,
+    }));
+
+    res.json(items);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // POST /api/episodes/:id/stream — mints a fresh short-lived signed audio URL,
 // but only for users with an active subscription AND for episodes that have
 // been unlocked (publish date has passed). This is the single entry
@@ -222,6 +251,10 @@ export async function getById(req, res, next) {
 }
 
 // POST /api/episodes/:id/listen
+// Records that the user listened to this episode. Because ListenLog has a unique
+// constraint on (userId, episodeId), repeated listens upsert the same row instead
+// of creating duplicates — the row is the user's Library item (createdAt = first
+// listened, lastListenedAt = most recent).
 export async function listen(req, res, next) {
   try {
     const episodeId = req.params.id;
@@ -230,8 +263,10 @@ export async function listen(req, res, next) {
     const episode = await prisma.episode.findUnique({ where: { id: episodeId } });
     if (!episode) return res.status(404).json({ error: "Episode not found" });
 
-    await prisma.listenLog.create({
-      data: { userId, episodeId },
+    await prisma.listenLog.upsert({
+      where: { userId_episodeId: { userId, episodeId } },
+      update: { lastListenedAt: new Date() },
+      create: { userId, episodeId, lastListenedAt: new Date() },
     });
 
     res.json({ success: true });
