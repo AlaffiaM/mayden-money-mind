@@ -21,7 +21,7 @@ async function main() {
     const passwordHash = await bcrypt.hash(adminPassword, 10);
     await prisma.user.update({
       where: { email: adminEmail },
-      data: { passwordHash, role: "admin" },
+      data: { passwordHash, role: "admin", emailVerified: existing.emailVerified || new Date() },
     });
     console.log(`Admin user updated with the password from ADMIN_PASSWORD: ${adminEmail}`);
     return;
@@ -35,6 +35,7 @@ async function main() {
       email: adminEmail,
       passwordHash,
       role: "admin",
+      emailVerified: new Date(), // admins are trusted — created by seed, not self-serve
     },
   });
 
