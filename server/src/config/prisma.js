@@ -13,7 +13,13 @@ const isRemote = !/localhost|127\.0\.0\.1|::1/i.test(baseUrl.hostname);
 baseUrl.searchParams.set("connection_limit", isProd ? "10" : "5");
 baseUrl.searchParams.set("connect_timeout", "8");
 baseUrl.searchParams.set("pool_timeout", "10");
-if (isRemote) baseUrl.searchParams.set("sslmode", "verify-full");
+// Render's managed Postgres uses TLS with a certificate issued by Render's own
+// internal CA (not a public root CA), so verify-full fails. Encrypt in transit
+// (sslmode=require) and accept that internal CA (sslaccept=accept_invalid_certs).
+if (isRemote) {
+  baseUrl.searchParams.set("sslmode", "require");
+  baseUrl.searchParams.set("sslaccept", "accept_invalid_certs");
+}
 const connectionString = baseUrl.toString();
 
 const adapter = new PrismaPg({ connectionString });
