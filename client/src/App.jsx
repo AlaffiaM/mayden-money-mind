@@ -71,6 +71,16 @@ function SubscriberRoute({ children }) {
   return children;
 }
 
+// Requires a logged-in, email-verified account. Unlike SubscriberRoute this does
+// NOT require an active subscription, so an expired subscriber can still view
+// their saved Library (playback stays gated by the backend /stream endpoint).
+function VerifiedRoute({ children }) {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== "admin" && !user.emailVerified) return <Navigate to="/verify-email-sent" replace />;
+  return children;
+}
+
 // Requires admin role — wraps content in AdminLayout sidebar
 function AdminRoute({ children }) {
   const { user } = useAuth();
@@ -94,7 +104,9 @@ function AppRoutes() {
 
       {/* Subscriber-only routes (requires active subscription) */}
       <Route path="/dashboard" element={<SubscriberRoute><Dashboard /></SubscriberRoute>} />
-      <Route path="/library" element={<SubscriberRoute><Library /></SubscriberRoute>} />
+      {/* Library is accessible to any verified user (even expired) so they can
+          view their saved items; playback itself is server-enforced via /stream */}
+      <Route path="/library" element={<VerifiedRoute><Library /></VerifiedRoute>} />
       <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
 
       {/* Admin routes (requires admin role, wrapped in AdminLayout) */}
