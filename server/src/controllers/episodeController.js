@@ -4,6 +4,7 @@
 // play via POST /api/episodes/:id/stream, so copied links expire within seconds.
 import { prisma } from "../config/prisma.js";
 import { signAudioUrl } from "../utils/audioAccessControl.js";
+import { businessDateStr, businessDayOfWeek, businessToday } from "../utils/businessTime.js";
 
 // Returns true if the given user has an active subscription
 async function isSubscriber(userId) {
@@ -42,9 +43,7 @@ export async function list(req, res, next) {
       // Create a key based on title and publish date (normalized to date only)
       // Handle null/undefined titles safely
       const safeTitle = (episode.title || '').trim();
-      const dateKey = new Date(episode.publishDate);
-      dateKey.setHours(0, 0, 0, 0);
-      const key = `${safeTitle}-${dateKey.toISOString()}`;
+      const key = `${safeTitle}-${businessDateStr(new Date(episode.publishDate))}`;
 
       // If we haven't seen this episode title/date combination, or if this one is newer
       if (!episodeMap.has(key) ||
@@ -69,24 +68,23 @@ export async function library(req, res, next) {
   try {
     const userId = req.user.id;
 
-    // Get today's date at midnight (start of day)
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-
-    // Get all published episodes from the current week (Monday-Friday)
-    // We'll get episodes from the last 7 days to next 7 days to be safe,
-    // then filter to Monday-Friday of the current week
-    const weekStart = new Date(todayStart);
-    weekStart.setDate(todayStart.getDate() - todayStart.getDay() + (todayStart.getDay() === 0 ? -6 : 1)); // Monday of this week
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 4); // Friday of this week
+    // Get all published episodes from the current business week (Monday-Friday,
+    // Africa/Lagos). weekStart = Lagos Monday midnight, weekEndExclusive =
+    // Lagos Saturday midnight, so in the half-open range [weekStart,
+    // weekEndExclusive) the stored UTC-midnight publishDates for Mon-Fri land
+    // exactly on their Lagos calendar day.
+    const weekStart = new Date(businessToday()); // Lagos midnight of today
+    const todayDow = businessDayOfWeek(weekStart);
+    weekStart.setUTCDate(weekStart.getUTCDate() + (todayDow === 0 ? -6 : 1 - todayDow)); // Lagos Monday midnight
+    const weekEndExclusive = new Date(weekStart);
+    weekEndExclusive.setUTCDate(weekEndExclusive.getUTCDate() + 5); // Lagos Saturday midnight
 
     const episodes = await prisma.episode.findMany({
       where: {
         status: "published",
         publishDate: {
           gte: weekStart,
-          lte: weekEnd,
+          lt: weekEndExclusive,
         },
       },
       orderBy: { publishDate: "asc" }, // Order by day of week (Mon, Tue, Wed, Thu, Fri)
@@ -99,9 +97,7 @@ export async function library(req, res, next) {
       // Create a key based on title and publish date (normalized to date only)
       // Handle null/undefined titles safely
       const safeTitle = (episode.title || '').trim();
-      const dateKey = new Date(episode.publishDate);
-      dateKey.setHours(0, 0, 0, 0);
-      const key = `${safeTitle}-${dateKey.toISOString()}`;
+      const key = `${safeTitle}-${businessDateStr(new Date(episode.publishDate))}`;
 
       // If we haven't seen this episode title/date combination, or if this one is newer
       if (!episodeMap.has(key) ||
@@ -130,10 +126,10 @@ export async function library(req, res, next) {
     }
 
     const mapped = serialize(uniqueEpisodes).map((e) => {
-      // Determine if episode is locked (publishDate is in the future)
-      const episodeStart = new Date(e.publishDate);
-      episodeStart.setHours(0, 0, 0, 0);
-      const locked = episodeStart > todayStart;
+      // Determine if episode is locked (its Lagos publish date is in the future).
+      // Uses the shared business calendar so an episode is unlocked from Lagos
+      // midnight on its publish date, regardless of the server host timezone.
+      const locked = businessDateStr(new Date(e.publishDate)) > businessDateStr(new Date());
 
       return {
         ...e,
@@ -151,14 +147,15 @@ export async function library(req, res, next) {
 // GET /api/episodes/today
 export async function today(req, res, next) {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Business "today" = Lagos midnight of the current Lagos date, so the
+    // business date rolls over at Lagos 00:00 (UTC 23:00 the previous day).
+    const todayStart = businessToday(); // Lagos midnight today
+    const tomorrow = new Date(todayStart);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1); // Lagos midnight tomorrow
 
     const episode = await prisma.episode.findFirst({
       where: {
-        publishDate: { gte: today, lt: tomorrow },
+        publishDate: { gte: todayStart, lt: tomorrow },
         status: "published",
       },
       orderBy: { createdAt: "desc" },
@@ -221,13 +218,13 @@ export async function stream(req, res, next) {
       return res.status(403).json({ error: "Active subscription required" });
     }
 
-    // Check if episode is unlocked (publish date has passed)
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const episodeStart = new Date(episode.publishDate);
-    episodeStart.setHours(0, 0, 0, 0);
+    // Check if episode is unlocked (its Lagos publish date has passed). Uses the
+    // shared business calendar so playback unlocks at Lagos midnight on the
+    // publish date (e.g. a Tue Sep 1 episode is playable from Lagos 00:00 on
+    // Sep 1, which is still UTC Aug 31 23:00).
+    const unlocked = businessDateStr(new Date(episode.publishDate)) <= businessDateStr(new Date());
 
-    if (episodeStart > todayStart) {
+    if (!unlocked) {
       return res.status(403).json({ error: "Episode not yet unlocked" });
     }
 
