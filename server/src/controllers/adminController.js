@@ -36,6 +36,26 @@ const SETTINGS_KEYS = [
   "notificationTime", "enableInApp", "enableWhatsApp", "enableEmail",
 ];
 
+// Sensitive settings must never be exposed to the client. Matches a key if it
+// hints at a secret (token, key, password, credential, etc.) so a stray
+// sensitive Setting row can never leak through the settings endpoints.
+const SENSITIVE_SETTING_RE =
+  /(secret|password|passwd|token|api[_-]?key|private[_-]?key|credential|webhook|signature|hash)$/i;
+
+function isSensitiveSettingKey(key) {
+  return SENSITIVE_SETTING_RE.test(key);
+}
+
+// Returns the settings map with any sensitive keys stripped out.
+async function getSafeSettings() {
+  const settings = await prisma.setting.findMany();
+  const map = {};
+  for (const s of settings) {
+    if (!isSensitiveSettingKey(s.key)) map[s.key] = s.value;
+  }
+  return { ...DEFAULT_SETTINGS, ...map };
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUDIO_DIR = path.join(__dirname, "../../storage/audio");
 const UPLOADS_DIR = path.join(__dirname, "../../uploads");
@@ -53,10 +73,7 @@ const AUDIO_EXT_RE = /\.(mp3|mpeg|wav|m4a|ogg|aac)$/i;
 // GET /api/admin/settings
 export async function getSettings(req, res, next) {
   try {
-    const settings = await prisma.setting.findMany();
-    const map = {};
-    for (const s of settings) map[s.key] = s.value;
-    res.json({ ...DEFAULT_SETTINGS, ...map });
+    res.json(await getSafeSettings());
   } catch (err) {
     next(err);
   }
@@ -108,10 +125,7 @@ export async function updateSettings(req, res, next) {
 
     await Promise.all(ops);
 
-    const settings = await prisma.setting.findMany();
-    const map = {};
-    for (const s of settings) map[s.key] = s.value;
-    res.json({ ...DEFAULT_SETTINGS, ...map });
+    res.json(await getSafeSettings());
   } catch (err) {
     next(err);
   }
@@ -370,13 +384,75 @@ export async function overrideUser(req, res, next) {
   }
 }
 
+// Day types represent the five weekdays (Mon-Fri) that make up the weekly
+// calendar. Each maps to a JS getDay() value (1=Monday .. 5=Friday).
+const WEEKDAY_KEYS = ["monday", "tuesday", "wednesday", "thursday", "friday"];
+const WEEKDAY_TO_DAYNUM = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5 };
+
+// Format a Date as "YYYY-MM-DD" using LOCAL time (mirrors the admin frontend's
+// toLocalDateStr so the backend fallback computes identical dates).
+function toLocalDateStr(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+// Compute the next available calendar date for a weekday (Mon-Fri), starting at
+// today and skipping any date that already has an episode at (dayType, publishDate).
+// Used as a server-side fallback/validation so the backend is the source of truth
+// for scheduling even when a client omits or miscomputes publishDate.
+export async function computeNextAvailableWeekDate(dayType, excludeDate) {
+  const dayNum = WEEKDAY_TO_DAYNUM[dayType];
+  if (!dayNum) {
+    throw Object.assign(new Error(`dayType must be one of: ${WEEKDAY_KEYS.join(", ")}`), { status: 400 });
+  }
+
+  const [existing] = await prisma.$transaction([
+    prisma.episode.findMany({ where: { dayType, publishDate: { not: null } }, select: { publishDate: true } }),
+  ]);
+  const taken = new Set(existing.map((e) => toLocalDateStr(new Date(e.publishDate))));
+  if (excludeDate) taken.add(toLocalDateStr(new Date(excludeDate)));
+
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const dayOfWeek = start.getDay();
+  let diff = dayNum - dayOfWeek;
+  if (diff < 0) diff += 7;
+  const candidate = new Date(start);
+  candidate.setDate(candidate.getDate() + diff);
+  while (taken.has(toLocalDateStr(candidate))) {
+    candidate.setDate(candidate.getDate() + 7);
+  }
+  return candidate;
+}
+
 // POST /api/admin/episodes
 export async function createEpisode(req, res, next) {
   try {
     const { title, dayType, runTimeSeconds, showNotes, publishDate, status } = req.body;
     const audioUrl = req.file ? getUploadUrl(req.file.filename) : req.body.audioUrl;
 
-    const publish = new Date(publishDate);
+    if (!WEEKDAY_KEYS.includes(dayType)) {
+      return res.status(400).json({ error: `dayType must be one of: ${WEEKDAY_KEYS.join(", ")}` });
+    }
+
+    // Resolve the publish date: honor a supplied valid date, otherwise compute
+    // the next available weekday date server-side. Rejects any date whose weekday
+    // doesn't match dayType or that isn't a real calendar date.
+    let publish = new Date(publishDate);
+    const publishInvalid = Number.isNaN(publish.getTime());
+    if (publishInvalid) {
+      publish = await computeNextAvailableWeekDate(dayType);
+    } else {
+      const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.test(String(publishDate).split("T")[0]);
+      if (!dateMatch) {
+        return res.status(400).json({ error: "publishDate must be a valid date (YYYY-MM-DD)" });
+      }
+      if (publish.getDay() !== WEEKDAY_TO_DAYNUM[dayType]) {
+        return res.status(400).json({ error: `publishDate ${toLocalDateStr(publish)} is not a ${dayType}` });
+      }
+    }
 
     // Idempotency guard: refuse to create a second episode for the same weekday.
     // The batch scheduler can be (and historically was) double-submitted, which
@@ -387,7 +463,7 @@ export async function createEpisode(req, res, next) {
       select: { id: true },
     });
     if (existing) {
-      return res.status(409).json({ error: `An episode for ${dayType} on ${publish.toISOString().slice(0, 10)} already exists` });
+      return res.status(409).json({ error: `An episode for ${dayType} on ${toLocalDateStr(publish)} already exists` });
     }
 
     const episode = await prisma.episode.create({
@@ -416,8 +492,33 @@ export async function updateEpisode(req, res, next) {
     if (dayType !== undefined) updateData.dayType = dayType;
     if (runTimeSeconds !== undefined) updateData.runTimeSeconds = parseInt(runTimeSeconds) || 0;
     if (showNotes !== undefined) updateData.showNotes = showNotes;
-    if (publishDate !== undefined) updateData.publishDate = new Date(publishDate);
     if (status !== undefined) updateData.status = status;
+
+    const current = await prisma.episode.findUnique({ where: { id: req.params.id } });
+
+    // Resolve publish date for the (possibly new) dayType:
+    //  - an explicit valid publishDate is honored,
+    //  - else if dayType changed (or a new dayType implies a new date), compute
+    //    the next available weekday date for that dayType,
+    //  - else keep the existing date (no change).
+    let publish = null;
+    if (publishDate !== undefined) {
+      publish = new Date(publishDate);
+      if (Number.isNaN(publish.getTime())) {
+        return res.status(400).json({ error: "publishDate must be a valid date (YYYY-MM-DD)" });
+      }
+      const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.test(String(publishDate).split("T")[0]);
+      if (!dateMatch) {
+        return res.status(400).json({ error: "publishDate must be a valid date (YYYY-MM-DD)" });
+      }
+      const targetDay = dayType || current?.dayType;
+      if (targetDay && publish.getDay() !== WEEKDAY_TO_DAYNUM[targetDay]) {
+        return res.status(400).json({ error: `publishDate ${toLocalDateStr(publish)} is not a ${targetDay}` });
+      }
+    } else if (dayType !== undefined && current && current.dayType !== dayType) {
+      publish = await computeNextAvailableWeekDate(dayType, current.publishDate);
+    }
+    if (publish) updateData.publishDate = publish;
     if (req.file) updateData.audioUrl = getUploadUrl(req.file.filename);
     else if (req.body.audioUrl) updateData.audioUrl = req.body.audioUrl;
 
