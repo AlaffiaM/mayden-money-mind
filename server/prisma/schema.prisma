@@ -25,19 +25,36 @@ model User {
   utmContent      String?
   resetPasswordToken    String?  @unique // sha256 hash of a one-time password reset token
   resetPasswordExpires  DateTime? // expiry for the reset token (1 hour)
+  emailVerified   DateTime? // set to the verification time once the email is confirmed (null = unverified)
   createdAt       DateTime         @default(now())
   subscriptions   Subscription[]
   payments        Payment[]
   listenLogs      ListenLog[]
   notificationReads NotificationRead[]
+  verificationTokens VerificationToken[]
+}
+
+// One-time email verification tokens — only the sha256 hash is stored. Single-use
+// via usedAt, expiry via expiresAt. type currently "email" (reserved for future use).
+model VerificationToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   @default("email") // email
+  tokenHash String   @unique // sha256 hash of the raw token — raw token is never stored
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, type])
 }
 
 // Subscription lifecycle: pending → active → past_due → cancelled/expired
 model Subscription {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  user        User      @relation(fields: [userId], references: [id])
-  plan        String    // weekly | monthly
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id])
+  plan      String    // weekly | monthly
   status      String    @default("pending") // pending | active | past_due | paused | cancelled | expired
   startDate   DateTime  @default(now())
   nextRenewal DateTime
