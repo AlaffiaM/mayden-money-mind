@@ -244,6 +244,11 @@ export default function Register() {
             {loading && <Loader2 size={16} className="animate-spin" />}
             {loading ? "Creating account..." : "Create Account"}
           </button>
+
+          <p className="text-xs text-gray-400 text-center">
+            We'll send you a link to verify your email before you can access your
+            account.
+          </p>
         </form>
 
         <p className="text-sm text-gray-500 text-center mt-6">
