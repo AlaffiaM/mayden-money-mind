@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import { prisma } from "../config/prisma.js";
 import { getUploadUrl } from "../services/audioStorageService.js";
 import { signAudioUrl } from "../utils/audioAccessControl.js";
+import { businessDateStr, businessDayOfWeek, businessToday } from "../utils/businessTime.js";
 import logger from "../utils/logger.js";
 
 // Admin-facing preview URLs use a longer TTL so the admin list/modal previews
@@ -385,44 +386,37 @@ export async function overrideUser(req, res, next) {
 }
 
 // Day types represent the five weekdays (Mon-Fri) that make up the weekly
-// calendar. Each maps to a JS getDay() value (1=Monday .. 5=Friday).
+// calendar. Each maps to the JS getDay() value (1=Monday .. 5=Friday).
 const WEEKDAY_KEYS = ["monday", "tuesday", "wednesday", "thursday", "friday"];
 const WEEKDAY_TO_DAYNUM = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5 };
 
-// Format a Date as "YYYY-MM-DD" using LOCAL time (mirrors the admin frontend's
-// toLocalDateStr so the backend fallback computes identical dates).
-function toLocalDateStr(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-// Compute the next available calendar date for a weekday (Mon-Fri), starting at
-// today and skipping any date that already has an episode at (dayType, publishDate).
-// Used as a server-side fallback/validation so the backend is the source of truth
-// for scheduling even when a client omits or miscomputes publishDate.
+// Compute the next available Lagos-calendar date for a weekday (Mon-Fri),
+// starting today and skipping any date that already has an episode at
+// (dayType, publishDate). Used as a server-side fallback/validation so the
+// backend is the source of truth for scheduling even when a client omits or
+// miscomputes publishDate. All date math uses the shared business timezone so
+// it never drifts with the server/browser local timezone.
 export async function computeNextAvailableWeekDate(dayType, excludeDate) {
   const dayNum = WEEKDAY_TO_DAYNUM[dayType];
   if (!dayNum) {
     throw Object.assign(new Error(`dayType must be one of: ${WEEKDAY_KEYS.join(", ")}`), { status: 400 });
   }
 
-  const [existing] = await prisma.$transaction([
-    prisma.episode.findMany({ where: { dayType, publishDate: { not: null } }, select: { publishDate: true } }),
-  ]);
-  const taken = new Set(existing.map((e) => toLocalDateStr(new Date(e.publishDate))));
-  if (excludeDate) taken.add(toLocalDateStr(new Date(excludeDate)));
+  const existing = await prisma.episode.findMany({
+    where: { dayType, publishDate: { not: null } },
+    select: { publishDate: true },
+  });
+  const taken = new Set(existing.map((e) => businessDateStr(new Date(e.publishDate))));
+  if (excludeDate) taken.add(businessDateStr(new Date(excludeDate)));
 
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const dayOfWeek = start.getDay();
-  let diff = dayNum - dayOfWeek;
+  const start = businessToday(); // Lagos midnight of today
+  const todayDow = businessDayOfWeek(start);
+  let diff = dayNum - todayDow;
   if (diff < 0) diff += 7;
   const candidate = new Date(start);
-  candidate.setDate(candidate.getDate() + diff);
-  while (taken.has(toLocalDateStr(candidate))) {
-    candidate.setDate(candidate.getDate() + 7);
+  candidate.setUTCDate(candidate.getUTCDate() + diff);
+  while (taken.has(businessDateStr(candidate))) {
+    candidate.setUTCDate(candidate.getUTCDate() + 7);
   }
   return candidate;
 }
@@ -449,8 +443,8 @@ export async function createEpisode(req, res, next) {
       if (!dateMatch) {
         return res.status(400).json({ error: "publishDate must be a valid date (YYYY-MM-DD)" });
       }
-      if (publish.getDay() !== WEEKDAY_TO_DAYNUM[dayType]) {
-        return res.status(400).json({ error: `publishDate ${toLocalDateStr(publish)} is not a ${dayType}` });
+      if (businessDayOfWeek(publish) !== WEEKDAY_TO_DAYNUM[dayType]) {
+        return res.status(400).json({ error: `publishDate ${businessDateStr(publish)} is not a ${dayType}` });
       }
     }
 
@@ -463,7 +457,7 @@ export async function createEpisode(req, res, next) {
       select: { id: true },
     });
     if (existing) {
-      return res.status(409).json({ error: `An episode for ${dayType} on ${toLocalDateStr(publish)} already exists` });
+      return res.status(409).json({ error: `An episode for ${dayType} on ${businessDateStr(publish)} already exists` });
     }
 
     const episode = await prisma.episode.create({
@@ -512,8 +506,8 @@ export async function updateEpisode(req, res, next) {
         return res.status(400).json({ error: "publishDate must be a valid date (YYYY-MM-DD)" });
       }
       const targetDay = dayType || current?.dayType;
-      if (targetDay && publish.getDay() !== WEEKDAY_TO_DAYNUM[targetDay]) {
-        return res.status(400).json({ error: `publishDate ${toLocalDateStr(publish)} is not a ${targetDay}` });
+      if (targetDay && businessDayOfWeek(publish) !== WEEKDAY_TO_DAYNUM[targetDay]) {
+        return res.status(400).json({ error: `publishDate ${businessDateStr(publish)} is not a ${targetDay}` });
       }
     } else if (dayType !== undefined && current && current.dayType !== dayType) {
       publish = await computeNextAvailableWeekDate(dayType, current.publishDate);
