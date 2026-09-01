@@ -10,6 +10,7 @@ import EpisodeCard from "../components/ui/EpisodeCard";
 import InstallBanner from "../components/ui/InstallBanner";
 import SubscriberLayout from "../components/layout/SubscriberLayout";
 import { ChevronDown, ChevronUp, CreditCard, Calendar } from "lucide-react";
+import { businessDayOfWeek } from "../utils/businessTime.js";
 
 // Day-based mood search tags for The Vault
 const moodTags = [
@@ -38,6 +39,11 @@ const dayNames = {
   friday: "Friday",
 };
 
+// Business-calendar weekday names (Africa/Lagos), indexed by businessDayOfWeek
+// (0=Sunday..6=Saturday). Used only for the fallback hero label when no episode
+// exists for today, so it stays in the same timezone as the rest of the app.
+const businessWeekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { subscription } = useSubscription();
@@ -62,7 +68,7 @@ export default function Dashboard() {
     : episodes;
 
   // Build dynamic hero title: "Today: Tactical Tuesday – The Peace of Mind Fund"
-  const todayDayName = dayNames[todayEpisode?.dayType] || new Date().toLocaleDateString("en-US", { weekday: "long" });
+  const todayDayName = dayNames[todayEpisode?.dayType] || businessWeekdayNames[businessDayOfWeek(new Date())];
   const heroTitle = todayEpisode
     ? `Today: ${todayDayName} – ${todayEpisode.title}`
     : "";
