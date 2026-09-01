@@ -1,6 +1,7 @@
 // JWT authentication middleware — verifies Bearer token and attaches decoded user to req.user
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config/env.js";
+import { prisma } from "../config/prisma.js";
 
 export function authenticate(req, res, next) {
   const header = req.headers.authorization;
@@ -32,4 +33,25 @@ export function optionalAuth(req, res, next) {
     }
   }
   next();
+}
+
+// Requires the request to be from a verified, non-admin account. Run AFTER
+// authenticate(). Admins always bypass — they are created by seed, not self-serve.
+export async function requireVerified(req, res, next) {
+  try {
+    if (req.user?.role === "admin") return next();
+    if (!req.user?.id) return res.status(401).json({ error: "No token provided" });
+
+    const dbUser = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { emailVerified: true, role: true },
+    });
+    // Treat a missing row / never-verified account as unverified.
+    if (!dbUser || dbUser.role !== "admin" && !dbUser.emailVerified) {
+      return res.status(403).json({ error: "Please verify your email to continue." });
+    }
+    return next();
+  } catch {
+    return res.status(500).json({ error: "Internal server error" });
+  }
 }
