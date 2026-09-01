@@ -5,6 +5,7 @@ import api from "../../services/api";
 import { Plus, Trash2, Play, Pause, Calendar, Headphones, X, ChevronLeft, ChevronRight, Send, Music, Clock, Link2, Check } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { BUSINESS_UTC_OFFSET_MIN, businessDateStr as toLocalDateStr, businessDayOfWeek, businessToday } from "../../utils/businessTime.js";
 
 // Day pillar categories matching the subscriber Vault
 const DAY_TYPES = [
@@ -32,12 +33,28 @@ function formatRuntime(seconds) {
   return `${min} min ${sec} sec`;
 }
 
-// Format a Date as "YYYY-MM-DD" using LOCAL time (avoids UTC offset bugs with toISOString)
-function toLocalDateStr(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+// Business calendar date helpers (Africa/Lagos) are shared from
+// ../../utils/businessTime.js — toLocalDateStr here is that shared implementation.
+
+// "YYYY-MM-DD" -> "Sep 1" (timezone-safe, no Date parsing needed).
+function formatShort(dateStr) {
+  const [, m, d] = dateStr.split("-").map(Number);
+  return `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m - 1]} ${d}`;
+}
+
+// "YYYY-MM-DD" -> "September 1, 2026" (timezone-safe).
+function formatLong(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return `${["January","February","March","April","May","June","July","August","September","October","November","December"][m - 1]} ${d}, ${y}`;
+}
+
+// Monday of the week (business calendar) containing the given Lagos date,
+// plus weekOffset weeks, returned as a Lagos-midnight instant.
+function businessWeekStart(dateStr, weekOffset) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  const mondayShift = dow === 0 ? -6 : 1 - dow;
+  return new Date(Date.UTC(y, m - 1, d + mondayShift + weekOffset * 7) - BUSINESS_UTC_OFFSET_MIN * 60000);
 }
 
 // TipTap rich text editor with bold, italic, lists, quote, and link support
@@ -91,13 +108,11 @@ function RichTextEditor({ value, onChange }) {
 
 // Weekly calendar showing episodes by day with publish buttons
 function WeekCalendar({ episodes, weekOffset, onPublish }) {
-  const startOfWeek = new Date();
-  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + 1 + weekOffset * 7);
-  startOfWeek.setHours(0, 0, 0, 0);
+  const startOfWeek = businessWeekStart(toLocalDateStr(new Date()), weekOffset);
 
   const days = DAY_TYPES.map((dt, i) => {
     const date = new Date(startOfWeek);
-    date.setDate(date.getDate() + i);
+    date.setUTCDate(date.getUTCDate() + i);
     const dateStr = toLocalDateStr(date);
     const ep = episodes.find((e) => {
       const epDate = toLocalDateStr(new Date(e.publishDate));
@@ -112,7 +127,7 @@ function WeekCalendar({ episodes, weekOffset, onPublish }) {
         <div key={day.key} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 min-h-[180px]">
           <div className="flex items-center justify-between mb-3">
             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${day.color}`}>{day.label}</span>
-            <span className="text-xs text-gray-400">{day.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+            <span className="text-xs text-gray-400">{formatShort(day.dateStr)}</span>
           </div>
           {day.episode ? (
             <div>
@@ -186,16 +201,15 @@ export default function Episodes() {
     if (idx === -1) return toLocalDateStr(new Date());
     const taken = new Set(episodes.map((e) => toLocalDateStr(new Date(e.publishDate))));
     if (excludeDate) taken.add(excludeDate);
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const dayOfWeek = start.getDay();
+    const start = businessToday();
+    const dayOfWeek = businessDayOfWeek(start);
     const targetDay = idx + 1; // Monday=1, Tuesday=2, ... Friday=5
     let diff = targetDay - dayOfWeek;
     if (diff < 0) diff += 7;
     const candidate = new Date(start);
-    candidate.setDate(candidate.getDate() + diff);
+    candidate.setUTCDate(candidate.getUTCDate() + diff);
     while (taken.has(toLocalDateStr(candidate))) {
-      candidate.setDate(candidate.getDate() + 7);
+      candidate.setUTCDate(candidate.getUTCDate() + 7);
     }
     return toLocalDateStr(candidate);
   };
@@ -505,7 +519,7 @@ export default function Episodes() {
         <button onClick={() => setWeekOffset(weekOffset - 1)} className="p-2 rounded-lg hover:bg-gray-100"><ChevronLeft size={18} /></button>
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Calendar size={16} />
-          <span>Week of {new Date(new Date().setDate(new Date().getDate() - new Date().getDay() + 1 + weekOffset * 7)).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
+          <span>Week of {formatLong(toLocalDateStr(businessWeekStart(toLocalDateStr(new Date()), weekOffset)))}</span>
         </div>
         <button onClick={() => setWeekOffset(weekOffset + 1)} className="p-2 rounded-lg hover:bg-gray-100"><ChevronRight size={18} /></button>
         {weekOffset !== 0 && (
@@ -550,14 +564,14 @@ export default function Episodes() {
         </div>
 
         {(() => {
-          // Group episodes by week (Monday of each week)
+          // Group episodes by week (Monday of each week in the business calendar)
           const weekMap = {};
           for (const ep of episodes) {
             const d = new Date(ep.publishDate);
-            const day = d.getDay();
+            const day = businessDayOfWeek(d);
             const mondayOffset = day === 0 ? -6 : 1 - day;
-            const monday = new Date(d);
-            monday.setDate(monday.getDate() + mondayOffset);
+            const monday = new Date(ep.publishDate);
+            monday.setUTCDate(monday.getUTCDate() + mondayOffset);
             const weekKey = toLocalDateStr(monday);
             if (!weekMap[weekKey]) weekMap[weekKey] = [];
             weekMap[weekKey].push(ep);
@@ -569,10 +583,11 @@ export default function Episodes() {
           }
 
           return weeks.map(([weekKey, weekEps]) => {
-            const monday = new Date(weekKey + "T00:00:00");
-            const friday = new Date(monday);
-            friday.setDate(friday.getDate() + 4);
-            const weekLabel = `${monday.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${friday.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+            const mondayStr = weekKey;
+            const friday = new Date(`${mondayStr}T00:00:00Z`);
+            friday.setUTCDate(friday.getUTCDate() + 4);
+            const fridayStr = toLocalDateStr(friday);
+            const weekLabel = `${formatShort(mondayStr)} – ${formatLong(fridayStr)}`;
 
             const weekDayEps = DAY_TYPES.map((dt) => {
               const ep = weekEps.find((e) => e.dayType === dt.key);
