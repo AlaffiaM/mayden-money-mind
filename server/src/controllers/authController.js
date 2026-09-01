@@ -5,7 +5,8 @@ import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
 import { prisma } from "../config/prisma.js";
 import { JWT_SECRET, FRONTEND_URL } from "../config/env.js";
-import { sendUserEmail } from "../services/emailService.js";
+import { sendUserEmail, sendVerificationEmail } from "../services/emailService.js";
+import { createVerificationToken } from "../services/verificationService.js";
 import logger from "../utils/logger.js";
 
 const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
@@ -15,7 +16,14 @@ function issueToken(user) {
 }
 
 function serializeUser(user) {
-  return { id: user.id, fullName: user.fullName, email: user.email, phone: user.phone, role: user.role };
+  return {
+    id: user.id,
+    fullName: user.fullName,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    emailVerified: user.emailVerified ? true : false,
+  };
 }
 
 // Password reset tokens are stored as sha256 hashes so a DB leak can't be used to take over accounts
@@ -47,6 +55,8 @@ export async function register(req, res) {
         email,
         phone,
         passwordHash,
+        // New self-service accounts start unverified (emailVerified = null).
+        // Admins are created via seed and auto-verified there.
         utmSource: req.body.utmSource || null,
         utmMedium: req.body.utmMedium || null,
         utmCampaign: req.body.utmCampaign || null,
@@ -54,6 +64,17 @@ export async function register(req, res) {
         utmContent: req.body.utmContent || null,
       },
     });
+
+    // Send a verification email for self-serve accounts.
+    if (user.role !== "admin") {
+      const token = await createVerificationToken(user.id);
+      try {
+        await sendVerificationEmail({ to: user.email, fullName: user.fullName, token });
+      } catch (err) {
+        // A mail outage must not block account creation — the user can resend later.
+        logger.error("[verify] welcome verification email failed:", err.message);
+      }
+    }
 
     res.status(201).json({ token: issueToken(user), user: serializeUser(user) });
   } catch (err) {
