@@ -110,14 +110,20 @@ model Episode {
   @@unique([dayType, publishDate])
 }
 
-// Tracks each time a user listens to an episode
+// Tracks a user's personal listening history. Doubles as the user's Library:
+// one row per (user, episode) — the first time they listend (createdAt) and the
+// most recent time (lastListenedAt). A unique constraint prevents duplicates
+// when the same user listens to the same episode repeatedly.
 model ListenLog {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  episodeId String
-  episode   Episode  @relation(fields: [episodeId], references: [id])
-  createdAt DateTime @default(now())
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id])
+  episodeId      String
+  episode        Episode  @relation(fields: [episodeId], references: [id])
+  createdAt      DateTime @default(now())
+  lastListenedAt DateTime @updatedAt
+
+  @@unique([userId, episodeId])
 }
 
 // In-app notifications — sent by admin or system events
