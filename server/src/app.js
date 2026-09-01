@@ -130,12 +130,15 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// Public pricing endpoint — used by the landing page and subscription page
+// Public pricing endpoint — used by the landing page and subscription page.
+// Only pricing keys are returned; no other settings (and never sensitive ones)
+// are exposed to unauthenticated clients.
 const DEFAULT_PRICING = { weeklyPrice: "100", monthlyPrice: "350", currency: "NGN" };
+const PRICING_KEYS = ["weeklyPrice", "monthlyPrice", "currency"];
 
 app.get("/api/settings/pricing", async (req, res, next) => {
   try {
-    const settings = await prisma.setting.findMany();
+    const settings = await prisma.setting.findMany({ where: { key: { in: PRICING_KEYS } } });
     const map = {};
     for (const s of settings) map[s.key] = s.value;
     res.json({ ...DEFAULT_PRICING, ...map });
