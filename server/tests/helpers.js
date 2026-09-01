@@ -30,7 +30,8 @@ process.env.FRONTEND_URL = "http://localhost:5173";
 delete process.env.PAYSTACK_SECRET_KEY;
 
 // Reset the test schema (tables created fresh) — never touches the default schema.
-execSync("npx prisma db push --force-reset --skip-generate", {
+// Prisma 7 removed the --skip-generate flag, so generate once beforehand instead.
+execSync("npx prisma db push --force-reset", {
   cwd: path.join(__dirname, ".."),
   stdio: "pipe",
 });
@@ -50,10 +51,20 @@ async function hashPassword(password) {
   return bcrypt.hash(password, 10);
 }
 
-// Creates a user directly in the DB and returns the full row
-export async function createUser({ fullName = "Test User", email, phone, password = "Password123!", role = "user" } = {}) {
+// Creates a user directly in the DB and returns the full row.
+// Defaults to emailVerified=now so non-verification tests (subscriptions, payments)
+// can call protected endpoints. Pass `emailVerified: null` to simulate a
+// self-registered, unverified account for the verification tests.
+export async function createUser({ fullName = "Test User", email, phone, password = "Password123!", role = "user", emailVerified = new Date() } = {}) {
   return prisma.user.create({
-    data: { fullName, email, phone, passwordHash: await hashPassword(password), role },
+    data: {
+      fullName,
+      email,
+      phone,
+      passwordHash: await hashPassword(password),
+      role,
+      emailVerified: emailVerified || null,
+    },
   });
 }
 
