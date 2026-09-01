@@ -13,12 +13,12 @@ const isRemote = !/localhost|127\.0\.0\.1|::1/i.test(baseUrl.hostname);
 baseUrl.searchParams.set("connection_limit", isProd ? "10" : "5");
 baseUrl.searchParams.set("connect_timeout", "8");
 baseUrl.searchParams.set("pool_timeout", "10");
-// Render's managed Postgres uses TLS with a certificate issued by Render's own
-// internal CA (not a public root CA), so verify-full fails. Encrypt in transit
-// (sslmode=require) and accept that internal CA (sslaccept=accept_invalid_certs).
+// Render's managed Postgres serves a TLS certificate signed by Render's own
+// internal CA (not a public root CA), so verify-full fails. pg-connection-string's
+// default branch ignores `sslaccept`; `sslmode=no-verify` is what actually sets
+// ssl.rejectUnauthorized=false while keeping the TLS connection encrypted.
 if (isRemote) {
-  baseUrl.searchParams.set("sslmode", "require");
-  baseUrl.searchParams.set("sslaccept", "accept_invalid_certs");
+  baseUrl.searchParams.set("sslmode", "no-verify");
 }
 const connectionString = baseUrl.toString();
 
