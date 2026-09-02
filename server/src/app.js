@@ -130,6 +130,20 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+// Debug route to check emailVerified column existence (remove after use)
+app.get("/api/debug/emailVerified", async (req, res) => {
+  try {
+    const result = await prisma.$queryRaw`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'User' AND column_name = 'emailVerified'
+    `;
+    res.json({ exists: result.length > 0, column: result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Public pricing endpoint — used by the landing page and subscription page.
 // Only pricing keys are returned; no other settings (and never sensitive ones)
 // are exposed to unauthenticated clients.
