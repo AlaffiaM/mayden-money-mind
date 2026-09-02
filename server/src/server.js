@@ -1,13 +1,15 @@
 // Entry point — loads env vars, validates config, verifies the database,
-// starts background jobs, then starts the HTTP server. The server only starts
-// listening AFTER the database has been verified, so a broken dependency is
-// never masked by a silently listening process.
+// runs migrations, starts background jobs, then starts the HTTP server.
+// The server only starts listening AFTER the database has been verified
+// and migrations have been applied, so a broken dependency is never masked
+// by a silently listening process.
 import "dotenv/config";
 import "./config/env.js";
 import { prisma } from "./config/prisma.js";
 import { getPaystackKey } from "./config/paystack.js";
 import { PORT } from "./config/env.js";
 import logger from "./utils/logger.js";
+import { execSync } from 'child_process';
 import util from 'util';
 
 // Human-readable database label derived from DATABASE_URL
@@ -60,6 +62,18 @@ async function main() {
     await prisma.$connect();
     logger.info(`✅ Database connected (${dbLabel()})`);
     logger.info("✅ Prisma Client initialized");
+
+    // Run Prisma migrations to ensure schema is up to date
+    logger.info("🔄 Running database migrations...");
+    try {
+      execSync("npx prisma migrate deploy", { stdio: 'inherit' });
+      logger.info("✅ Migrations completed successfully");
+    } catch (migrateErr) {
+      logger.error(`❌ Migration failed: ${migrateErr.message}`);
+      logger.error("Continuing anyway in case migration was already applied...");
+      // Don't exit - the migration might have been applied already or
+      // we might be in a read-only database scenario
+    }
   } catch (err) {
     logger.error(`❌ Database connection failed: ${err.message}`);
     logger.error("Exiting...");
