@@ -1,6 +1,6 @@
 // "Check your inbox" page — shown right after registering (or logging in while
 // unverified). Auto-sends the verification email on mount and shows a 60-second
-// cooldown before the Resend button becomes active again.
+// cooldown, based on a start timestamp so the countdown is always accurate.
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -19,10 +19,22 @@ export default function VerifyEmailSent() {
   const email = user?.email || "";
   const [status, setStatus] = useState("idle"); // idle | sending | sent | error
   const [msg, setMsg] = useState("");
+  const [cooldownStart, setCooldownStart] = useState(null); // timestamp ms
   const [countdown, setCountdown] = useState(0);
   const sentRef = useRef(false);
 
-  // Auto-send once on mount — inline async to avoid stale handleResend closure
+  // Keep the countdown fresh while a cooldown is active
+  useEffect(() => {
+    if (cooldownStart === null) return;
+    const id = setInterval(() => {
+      const remaining = Math.max(0, RESEND_COOLDOWN - Math.floor((Date.now() - cooldownStart) / 1000));
+      setCountdown(remaining);
+      if (remaining <= 0) clearInterval(id);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [cooldownStart]);
+
+  // Auto-send once on mount — inline async, no stale closure
   useEffect(() => {
     if (!email || sentRef.current) return;
     sentRef.current = true;
@@ -33,21 +45,13 @@ export default function VerifyEmailSent() {
         await resendVerification(email);
         setStatus("sent");
         setCountdown(RESEND_COOLDOWN);
+        setCooldownStart(Date.now());
       } catch {
         setStatus("error");
       }
     };
     send();
   }, [email, resendVerification]);
-
-  // Countdown timer — ticks every second while countdown > 0
-  useEffect(() => {
-    if (countdown <= 0) return;
-    const id = setInterval(() => {
-      setCountdown((c) => (c > 0 ? c - 1 : 0));
-    }, 1000);
-    return () => clearInterval(id);
-  }, [countdown]);
 
   const handleResend = async () => {
     if (!email || status === "sending" || countdown > 0) return;
@@ -58,6 +62,7 @@ export default function VerifyEmailSent() {
       setStatus("sent");
       setMsg("Verification email sent — check your inbox (and spam folder).");
       setCountdown(RESEND_COOLDOWN);
+      setCooldownStart(Date.now());
     } catch (err) {
       setStatus("error");
       setMsg(err.response?.data?.error || "Couldn't send a new link. Please try again shortly.");
