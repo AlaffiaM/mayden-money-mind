@@ -99,6 +99,17 @@ export async function login(req, res) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
+    // Send verification email for unverified self-serve accounts, matching
+    // the registration flow so the "check your inbox" page is always accurate.
+    if (user.role !== "admin" && !user.emailVerified) {
+      const token = await createVerificationToken(user.id);
+      try {
+        await sendVerificationEmail({ to: user.email, fullName: user.fullName, token });
+      } catch (err) {
+        logger.error("[verify] login verification email failed:", err.message);
+      }
+    }
+
     res.json({ token: issueToken(user), user: serializeUser(user) });
   } catch (err) {
     logger.error(err);
