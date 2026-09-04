@@ -1,39 +1,76 @@
 // "Check your inbox" page — shown right after registering (or logging in while
-// unverified). Auto-sends the verification email on mount so the user never has
-// to click "Resend" to get the first link. The button stays for retries.
+// unverified). Auto-sends the verification email on mount and shows a 60-second
+// cooldown before the Resend button becomes active again.
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { Mail, RefreshCw, Loader2, CheckCircle } from "lucide-react";
+import { Mail, RefreshCw, Loader2, CheckCircle, Clock } from "lucide-react";
+
+const RESEND_COOLDOWN = 60;
+
+function formatCountdown(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
 
 export default function VerifyEmailSent() {
   const { user, resendVerification } = useAuth();
   const email = user?.email || "";
   const [status, setStatus] = useState("idle"); // idle | sending | sent | error
   const [msg, setMsg] = useState("");
+  const [countdown, setCountdown] = useState(0);
   const sentRef = useRef(false);
 
+  // Auto-send once on mount — inline async to avoid stale handleResend closure
+  useEffect(() => {
+    if (!email || sentRef.current) return;
+    sentRef.current = true;
+
+    const send = async () => {
+      setStatus("sending");
+      try {
+        await resendVerification(email);
+        setStatus("sent");
+        setCountdown(RESEND_COOLDOWN);
+      } catch {
+        setStatus("error");
+      }
+    };
+    send();
+  }, [email, resendVerification]);
+
+  // Countdown timer — ticks every second while countdown > 0
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const id = setInterval(() => {
+      setCountdown((c) => (c > 0 ? c - 1 : 0));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [countdown]);
+
   const handleResend = async () => {
-    if (!email || status === "sending") return;
+    if (!email || status === "sending" || countdown > 0) return;
     setStatus("sending");
     setMsg("");
     try {
       await resendVerification(email);
       setStatus("sent");
       setMsg("Verification email sent — check your inbox (and spam folder).");
+      setCountdown(RESEND_COOLDOWN);
     } catch (err) {
       setStatus("error");
       setMsg(err.response?.data?.error || "Couldn't send a new link. Please try again shortly.");
     }
   };
 
-  // Auto-send once on mount so the user doesn't have to click anything
-  useEffect(() => {
-    if (!email || sentRef.current) return;
-    sentRef.current = true;
-    handleResend();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email]);
+  const buttonDisabled = status === "sending" || countdown > 0;
+  const buttonLabel =
+    status === "sending"
+      ? "Sending…"
+      : countdown > 0
+        ? `Resend in ${formatCountdown(countdown)}`
+        : "Resend verification email";
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
@@ -50,7 +87,7 @@ export default function VerifyEmailSent() {
           Verify your email
         </h1>
         <p className="text-sm text-gray-500 mt-2">
-          We're sending a verification link to{" "}
+          We've sent a verification link to{" "}
           <span className="font-semibold text-mayden-dark">{email || "your email"}</span>.
         </p>
         <p className="text-xs text-gray-400 mt-2 max-w-xs">
@@ -77,14 +114,21 @@ export default function VerifyEmailSent() {
           </div>
         )}
 
+        {/* Resend button with cooldown */}
         <button
           type="button"
           onClick={handleResend}
-          disabled={status === "sending"}
-          className="mt-4 w-full py-3 rounded-lg border border-gray-200 text-gray-600 font-semibold text-sm hover:border-mayden-magenta hover:text-mayden-magenta transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          disabled={buttonDisabled}
+          className="mt-4 w-full py-3 rounded-lg border border-gray-200 text-gray-600 font-semibold text-sm hover:border-mayden-magenta hover:text-mayden-magenta transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          <RefreshCw size={16} />
-          Resend verification email
+          {status === "sending" ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : countdown > 0 ? (
+            <Clock size={16} />
+          ) : (
+            <RefreshCw size={16} />
+          )}
+          {buttonLabel}
         </button>
 
         <p className="text-sm text-gray-500 mt-6">
