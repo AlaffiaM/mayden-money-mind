@@ -1,16 +1,17 @@
 // "Check your inbox" page — shown right after registering (or logging in while
-// unverified). Lets the user resend the verification email and explains why they
-// can't access their dashboard yet.
-import { useState } from "react";
+// unverified). Auto-sends the verification email on mount so the user never has
+// to click "Resend" to get the first link. The button stays for retries.
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { Mail, RefreshCw, Loader2 } from "lucide-react";
+import { Mail, RefreshCw, Loader2, CheckCircle } from "lucide-react";
 
 export default function VerifyEmailSent() {
   const { user, resendVerification } = useAuth();
   const email = user?.email || "";
   const [status, setStatus] = useState("idle"); // idle | sending | sent | error
   const [msg, setMsg] = useState("");
+  const sentRef = useRef(false);
 
   const handleResend = async () => {
     if (!email || status === "sending") return;
@@ -19,12 +20,20 @@ export default function VerifyEmailSent() {
     try {
       await resendVerification(email);
       setStatus("sent");
-      setMsg("A new verification link has been sent. It's valid for 24 hours.");
+      setMsg("Verification email sent — check your inbox (and spam folder).");
     } catch (err) {
       setStatus("error");
       setMsg(err.response?.data?.error || "Couldn't send a new link. Please try again shortly.");
     }
   };
+
+  // Auto-send once on mount so the user doesn't have to click anything
+  useEffect(() => {
+    if (!email || sentRef.current) return;
+    sentRef.current = true;
+    handleResend();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email]);
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
@@ -41,30 +50,42 @@ export default function VerifyEmailSent() {
           Verify your email
         </h1>
         <p className="text-sm text-gray-500 mt-2">
-          We've sent a verification link to{" "}
+          We're sending a verification link to{" "}
           <span className="font-semibold text-mayden-dark">{email || "your email"}</span>.
         </p>
         <p className="text-xs text-gray-400 mt-2 max-w-xs">
           Once you confirm your email you'll be able to access your subscription and
-          daily audio. The link expires in 24 hours. Check your spam folder if you
-          don't see it.
+          daily audio. The link expires in 24 hours.
         </p>
+
+        {/* Status banner */}
+        {status === "sending" && (
+          <div className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-mayden-magenta/5 text-mayden-magenta text-sm font-medium">
+            <Loader2 size={16} className="animate-spin" />
+            Sending verification email…
+          </div>
+        )}
+        {status === "sent" && (
+          <div className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-green-50 text-green-700 text-sm font-medium">
+            <CheckCircle size={16} />
+            {msg || "Verification email sent — check your inbox."}
+          </div>
+        )}
+        {status === "error" && (
+          <div className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium">
+            {msg}
+          </div>
+        )}
 
         <button
           type="button"
           onClick={handleResend}
           disabled={status === "sending"}
-          className="mt-6 w-full py-3 rounded-lg bg-mayden-magenta text-white font-semibold text-sm hover:bg-mayden-magenta/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          className="mt-4 w-full py-3 rounded-lg border border-gray-200 text-gray-600 font-semibold text-sm hover:border-mayden-magenta hover:text-mayden-magenta transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          {status === "sending" ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <RefreshCw size={16} />
-          )}
-          {status === "sending" ? "Sending…" : "Resend verification email"}
+          <RefreshCw size={16} />
+          Resend verification email
         </button>
-
-        {msg && <p className="mt-3 text-sm text-gray-600">{msg}</p>}
 
         <p className="text-sm text-gray-500 mt-6">
           Already verified?{" "}
