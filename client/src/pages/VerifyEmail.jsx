@@ -1,12 +1,13 @@
 // Email verification page — consumes the single-use token from the link and shows
 // success, expired, used, or invalid states. Failed states offer a resend action.
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const token = searchParams.get("token") || "";
   const storedEmail = (() => {
     try {
@@ -43,6 +44,14 @@ export default function VerifyEmail() {
     // run once per token
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  // After a successful verification, briefly show the success state, then take
+  // the user straight to the dashboard — no extra click, no re-login needed.
+  useEffect(() => {
+    if (status !== "success") return;
+    const id = setTimeout(() => navigate("/dashboard", { replace: true }), 1500);
+    return () => clearTimeout(id);
+  }, [status, navigate]);
 
   const handleResend = async () => {
     setResendMsg("");
@@ -83,6 +92,9 @@ export default function VerifyEmail() {
         >
           Go to Dashboard
         </Link>
+        <p className="text-sm text-gray-500 text-center mt-3">
+          Taking you to your dashboard…
+        </p>
       </Centered>
     );
   }
