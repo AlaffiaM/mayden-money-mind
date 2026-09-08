@@ -1,5 +1,5 @@
-// Logout button — opens an in-app confirmation modal before clearing the session.
-// Used in the subscriber header and the admin sidebar.
+
+
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { LogOut } from "lucide-react";
