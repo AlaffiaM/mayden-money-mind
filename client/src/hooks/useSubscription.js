@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from "react";
 import api from "../services/api";
 
@@ -7,7 +5,6 @@ export function useSubscription() {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  
   useEffect(() => {
     api
       .get("/subscriptions/mine")
@@ -16,7 +13,6 @@ export function useSubscription() {
       .finally(() => setLoading(false));
   }, []);
 
-  
   const refetch = async () => {
     try {
       const { data } = await api.get("/subscriptions/mine");
@@ -28,21 +24,18 @@ export function useSubscription() {
     }
   };
 
-  
   const subscribe = async (plan) => {
     const { data } = await api.post("/subscriptions", { plan });
     setSubscription(data);
     return data;
   };
 
-  
   const update = async (id, updates) => {
     const { data } = await api.patch(`/subscriptions/${id}`, updates);
     setSubscription(data);
     return data;
   };
 
-  
   const setAutoRenew = async (id, autoRenew) => {
     const { data } = await api.patch(`/subscriptions/${id}/auto-renew`, { autoRenew });
     setSubscription(data);
