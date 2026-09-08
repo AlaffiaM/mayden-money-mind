@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Mail, RefreshCw, Loader2, CheckCircle, Clock } from "lucide-react";
+import VerifyCodeForm from "../components/ui/VerifyCodeForm";
 
 const RESEND_COOLDOWN = 60;
 
@@ -13,11 +14,13 @@ function formatCountdown(secs) {
 
 export default function VerifyEmailSent() {
   const { user, resendVerification } = useAuth();
+  const navigate = useNavigate();
   const email = user?.email || "";
   const [status, setStatus] = useState("idle");
   const [msg, setMsg] = useState("");
   const [cooldownStart, setCooldownStart] = useState(null);
   const [countdown, setCountdown] = useState(0);
+  const [verified, setVerified] = useState(false);
   const sentRef = useRef(false);
 
   useEffect(() => {
@@ -29,6 +32,12 @@ export default function VerifyEmailSent() {
     }, 1000);
     return () => clearInterval(id);
   }, [cooldownStart]);
+
+  useEffect(() => {
+    if (!verified) return;
+    const id = setTimeout(() => navigate("/dashboard", { replace: true }), 1500);
+    return () => clearTimeout(id);
+  }, [verified, navigate]);
 
   useEffect(() => {
     if (!email || sentRef.current) return;
@@ -49,7 +58,7 @@ export default function VerifyEmailSent() {
   }, [email, resendVerification]);
 
   const handleResend = async () => {
-    if (!email || status === "sending" || countdown > 0) return;
+    if (!email || status === "sending" || countdown > 0 || verified) return;
     setStatus("sending");
     setMsg("");
     try {
@@ -60,11 +69,11 @@ export default function VerifyEmailSent() {
       setCooldownStart(Date.now());
     } catch (err) {
       setStatus("error");
-      setMsg(err.response?.data?.error || "Couldn't send a new link. Please try again shortly.");
+      setMsg(err.response?.data?.error || "Couldn't send a new code. Please try again shortly.");
     }
   };
 
-  const buttonDisabled = status === "sending" || countdown > 0;
+  const buttonDisabled = status === "sending" || countdown > 0 || verified;
   const buttonLabel =
     status === "sending"
       ? "Sending…"
@@ -87,12 +96,12 @@ export default function VerifyEmailSent() {
           Verify your email
         </h1>
         <p className="text-sm text-gray-500 mt-2">
-          We've sent a verification link to{" "}
+          We've sent a 6-digit verification code to{" "}
           <span className="font-semibold text-mayden-dark">{email || "your email"}</span>.
         </p>
         <p className="text-xs text-gray-400 mt-2 max-w-xs">
           Once you confirm your email you'll be able to access your subscription and
-          daily audio. The link expires in 24 hours.
+          daily audio. The code expires in 30 minutes.
         </p>
 
         {status === "sending" && (
@@ -110,6 +119,18 @@ export default function VerifyEmailSent() {
         {status === "error" && (
           <div className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium">
             {msg}
+          </div>
+        )}
+
+        {!verified && (
+          <div className="mt-2 w-full">
+            <VerifyCodeForm email={email} onSuccess={() => setVerified(true)} />
+          </div>
+        )}
+        {verified && (
+          <div className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-green-50 text-green-700 text-sm font-medium">
+            <CheckCircle size={16} />
+            Email verified! Taking you to your dashboard…
           </div>
         )}
 
