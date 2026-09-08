@@ -1,4 +1,3 @@
-
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -20,12 +19,7 @@ import logger from "./utils/logger.js";
 
 const app = express();
 
-
-
 app.set("trust proxy", 1);
-
-
-
 
 const defaultOrigins = ["http://localhost:5173", "https://mayden-money-mind.vercel.app", "https://moneyandmind.alaffiaradio.com"];
 const envOrigins = (process.env.CLIENT_ORIGINS || "")
@@ -37,7 +31,7 @@ const allowedOrigins = [...defaultOrigins, ...envOrigins];
 app.use(
   cors({
     origin(origin, callback) {
-      
+
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
@@ -46,13 +40,9 @@ app.use(
   })
 );
 
-
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 
-
 app.use(morgan("dev"));
-
-
 
 app.use(
   express.json({
@@ -63,10 +53,8 @@ app.use(
   })
 );
 
-
-
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
+  windowMs: 15 * 60 * 1000,
   limit: 30,
   standardHeaders: true,
   legacyHeaders: false,
@@ -74,9 +62,8 @@ const authLimiter = rateLimit({
   message: { error: "Too many attempts. Please try again later." },
 });
 
-
 const adminLimiter = rateLimit({
-  windowMs: 60 * 1000, 
+  windowMs: 60 * 1000,
   limit: 120,
   standardHeaders: true,
   legacyHeaders: false,
@@ -85,7 +72,7 @@ const adminLimiter = rateLimit({
 });
 
 const subscriptionLimiter = rateLimit({
-  windowMs: 60 * 1000, 
+  windowMs: 60 * 1000,
   limit: 60,
   standardHeaders: true,
   legacyHeaders: false,
@@ -94,7 +81,7 @@ const subscriptionLimiter = rateLimit({
 });
 
 const audioLimiter = rateLimit({
-  windowMs: 60 * 1000, 
+  windowMs: 60 * 1000,
   limit: 30,
   standardHeaders: true,
   legacyHeaders: false,
@@ -103,7 +90,7 @@ const audioLimiter = rateLimit({
 });
 
 const episodesLimiter = rateLimit({
-  windowMs: 60 * 1000, 
+  windowMs: 60 * 1000,
   limit: 100,
   standardHeaders: true,
   legacyHeaders: false,
@@ -111,19 +98,16 @@ const episodesLimiter = rateLimit({
   message: { error: "Too many requests. Please slow down." },
 });
 
-
-app.use("/api/auth", authLimiter, authRoutes);           
-app.use("/api/episodes", episodesLimiter, episodeRoutes);    
-app.use("/api/subscriptions", subscriptionLimiter, subscriptionRoutes); 
-app.use("/api/payments", paymentRoutes);    
-app.use("/api/audio", audioLimiter, audioRoutes);         
-app.use("/api/admin", adminLimiter, adminRoutes);         
-
+app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/episodes", episodesLimiter, episodeRoutes);
+app.use("/api/subscriptions", subscriptionLimiter, subscriptionRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/audio", audioLimiter, audioRoutes);
+app.use("/api/admin", adminLimiter, adminRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
-
 
 app.get("/api/debug/emailVerified", async (req, res) => {
   try {
@@ -138,9 +122,6 @@ app.get("/api/debug/emailVerified", async (req, res) => {
   }
 });
 
-
-
-
 const DEFAULT_PRICING = { weeklyPrice: "100", monthlyPrice: "350", currency: "NGN" };
 const PRICING_KEYS = ["weeklyPrice", "monthlyPrice", "currency"];
 
@@ -154,9 +135,6 @@ app.get("/api/settings/pricing", async (req, res, next) => {
     next(err);
   }
 });
-
-
-
 
 app.get("/api/notifications/latest", authenticate, async (req, res, next) => {
   try {
@@ -186,7 +164,6 @@ app.get("/api/notifications/latest", authenticate, async (req, res, next) => {
   }
 });
 
-
 app.post("/api/notifications/:id/read", authenticate, async (req, res, next) => {
   try {
     const notificationId = parseInt(req.params.id);
@@ -205,11 +182,9 @@ app.post("/api/notifications/:id/read", authenticate, async (req, res, next) => 
   }
 });
 
-
 app.use("/api", (req, res) => {
   res.status(404).json({ error: "Not found" });
 });
-
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
@@ -221,15 +196,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-
 startRenewalProcessor();
-
 
 startAutoPublisher();
 
-
 startReconciliationProcessor();
-
 
 startDailyReminderProcessor();
 
