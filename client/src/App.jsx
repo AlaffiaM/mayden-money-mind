@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -29,13 +27,11 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Support from "./pages/Support";
 
-
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
   return children;
 }
-
 
 function SubscriberRoute({ children }) {
   const { user, logout } = useAuth();
@@ -58,7 +54,7 @@ function SubscriberRoute({ children }) {
   }, [user, logout]);
 
   if (!user) return <Navigate to="/login" replace />;
-  
+
   if (user.role !== "admin" && !user.emailVerified) return <Navigate to="/verify-email-sent" replace />;
   if (checking) {
     return (
@@ -71,16 +67,12 @@ function SubscriberRoute({ children }) {
   return children;
 }
 
-
-
-
 function VerifiedRoute({ children }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
   if (user.role !== "admin" && !user.emailVerified) return <Navigate to="/verify-email-sent" replace />;
   return children;
 }
-
 
 function AdminRoute({ children }) {
   const { user } = useAuth();
@@ -89,11 +81,9 @@ function AdminRoute({ children }) {
   return <AdminLayout>{children}</AdminLayout>;
 }
 
-
 function AppRoutes() {
   return (
     <Routes>
-      {}
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -102,13 +92,10 @@ function AppRoutes() {
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/verify-email-sent" element={<VerifyEmailSent />} />
 
-      {}
       <Route path="/dashboard" element={<SubscriberRoute><Dashboard /></SubscriberRoute>} />
-      {}
       <Route path="/library" element={<VerifiedRoute><Library /></VerifiedRoute>} />
       <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
 
-      {}
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
       <Route path="/admin/episodes" element={<AdminRoute><AdminEpisodes /></AdminRoute>} />
@@ -118,18 +105,14 @@ function AppRoutes() {
       <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
       <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
 
-      {}
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/support" element={<Support />} />
 
-      {}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
-
-
 
 function NormalizedRoutes() {
   const { pathname, search, hash } = useLocation();
@@ -139,9 +122,8 @@ function NormalizedRoutes() {
   return <AppRoutes />;
 }
 
-
 export default function App() {
-  
+
   useEffect(() => {
     captureUtm();
   }, []);
