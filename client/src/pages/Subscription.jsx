@@ -1,5 +1,5 @@
-// Subscription management page — plan selection, status banners, payment flow
-// Handles Paystack redirect → callback polling → auto-redirect to /dashboard on success
+
+
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useSubscription } from "../hooks/useSubscription";
@@ -53,7 +53,7 @@ export default function Subscription() {
     check();
   }, [navigate, setSearchParams]);
 
-  // Returning from Paystack — verify payment, then poll for activation
+  
   useEffect(() => {
     if (urlReference) {
       setSearchParams({ status: "success" });
@@ -83,15 +83,15 @@ export default function Subscription() {
       const now = new Date();
       const nextRenewal = new Date(subscription.nextRenewal);
       if (nextRenewal < now) {
-        // Potential expiration; refetch to get latest status from backend
+        
         refetch().catch(() => {});
       }
     };
 
-    // Run immediately
+    
     checkExpiration();
 
-    // Check every hour
+    
     const intervalId = setInterval(checkExpiration, 3600000);
     return () => clearInterval(intervalId);
   }, [subscription, refetch]);
@@ -106,7 +106,7 @@ export default function Subscription() {
       if (data.redirectUrl) {
         window.location.href = data.redirectUrl;
       } else {
-        // Dev mode — no Paystack key, verify directly and go to dashboard
+        
         await api.post("/payments/verify", { reference: data.payment.reference });
         navigate("/dashboard", { replace: true });
       }
@@ -131,7 +131,7 @@ export default function Subscription() {
       if (subscription.autoRenew) {
         await setAutoRenew(subscription.id, false);
       } else {
-        // Re-enable: flip the flag, then complete a 1-tap re-checkout with the saved card
+        
         await setAutoRenew(subscription.id, true);
         const { data } = await api.post("/payments/initialize", {
           subscriptionId: subscription.id,
