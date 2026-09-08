@@ -1,4 +1,3 @@
-
 export const LANDING = {
   hero: {
     headlineBold: "Master your money.",
