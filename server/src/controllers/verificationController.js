@@ -1,7 +1,10 @@
 import { prisma } from "../config/prisma.js";
 import logger from "../utils/logger.js";
 import { consumeVerificationCode, createVerificationToken } from "../services/verificationService.js";
-import { sendVerificationEmail } from "../services/emailService.js";
+import {
+  sendVerificationEmail,
+  sendAccountWelcomeEmail,
+} from "../services/emailService.js";
 import { issueToken, serializeUser } from "./authController.js";
 
 export async function verifyEmail(req, res) {
@@ -35,6 +38,9 @@ export async function verifyEmail(req, res) {
         error: "That code isn't correct. Watch for the 6 digits, and note the code expires after 5 wrong attempts.",
       });
     default:
+      sendAccountWelcomeEmail({ to: user.email, fullName: user.fullName }).catch((err) =>
+        logger.error("[verify] welcome email failed:", err.message)
+      );
       return res.json({ success: true, token: issueToken(user), user: serializeUser(user) });
   }
 }
