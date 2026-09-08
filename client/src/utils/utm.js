@@ -1,6 +1,6 @@
-// UTM tracking — captures utm_* params from the landing URL and persists them
-// in sessionStorage so they survive the in-app navigation to the register page.
-// getUtm() returns the captured params for attaching to the signup request.
+
+
+
 const STORAGE_KEY = "utmParams";
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"];
 
@@ -16,7 +16,7 @@ export function captureUtm() {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(captured));
     }
   } catch {
-    // sessionStorage unavailable — UTM capture is best-effort
+    
   }
 }
 
