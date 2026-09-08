@@ -1,10 +1,5 @@
-
 import { prisma } from "../config/prisma.js";
 import { disablePaystackSubscription } from "../services/paymentService.js";
-
-
-
-
 
 const ALLOWED_TRANSITIONS = {
   pending: [],
@@ -14,7 +9,6 @@ const ALLOWED_TRANSITIONS = {
   cancelled: [],
   expired: [],
 };
-
 
 export async function getMine(req, res) {
   try {
@@ -41,7 +35,6 @@ export async function getMine(req, res) {
   }
 }
 
-
 export async function getStatus(req, res) {
   try {
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
@@ -66,7 +59,6 @@ export async function getStatus(req, res) {
     res.status(500).json({ error: "Internal server error" });
   }
 }
-
 
 export async function create(req, res) {
   try {
@@ -94,8 +86,7 @@ export async function create(req, res) {
       where: { userId: req.user.id, status: "pending" },
     });
     if (existingPending) {
-      
-      
+
       if (existingPending.plan !== plan) {
         const updated = await prisma.subscription.update({
           where: { id: existingPending.id },
@@ -121,7 +112,6 @@ export async function create(req, res) {
     res.status(500).json({ error: "Internal server error" });
   }
 }
-
 
 export async function update(req, res) {
   try {
@@ -165,7 +155,7 @@ export async function update(req, res) {
           error: `This subscription does not auto-renew and cannot be cancelled — it will end automatically on ${sub.nextRenewal.toISOString().split('T')[0]}`,
         });
       }
-      
+
       try {
         await disablePaystackSubscription(sub.paystackSubscriptionCode);
       } catch (err) {
@@ -187,10 +177,6 @@ export async function update(req, res) {
     res.status(500).json({ error: "Internal server error" });
   }
 }
-
-
-
-
 
 export async function setAutoRenew(req, res) {
   try {
