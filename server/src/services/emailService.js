@@ -1,7 +1,3 @@
-
-
-
-
 import { FRONTEND_URL } from "../config/env.js";
 import logger from "../utils/logger.js";
 
@@ -21,8 +17,6 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
-
-
 
 function emailTemplate({ title, bodyHtml, footerText = "Money & Mind by Mayden Microfinance Bank" }) {
   return `<!doctype html>
@@ -54,7 +48,6 @@ function emailTemplate({ title, bodyHtml, footerText = "Money & Mind by Mayden M
 </html>`;
 }
 
-
 export async function sendUserEmail({ to, subject, title, body }) {
   return sendEmail({
     to,
@@ -62,7 +55,6 @@ export async function sendUserEmail({ to, subject, title, body }) {
     htmlContent: emailTemplate({ title, bodyHtml: escapeHtml(body) }),
   });
 }
-
 
 export async function sendWelcomeEmail({ to, fullName, plan, nextRenewal }) {
   const planLabel = plan === "weekly" ? "Weekly — ₦100 / week" : "Monthly — ₦350 / month";
@@ -89,8 +81,6 @@ export async function sendWelcomeEmail({ to, fullName, plan, nextRenewal }) {
   });
 }
 
-
-
 export async function sendVerificationEmail({ to, fullName, token }) {
   const verifyUrl = `${FRONTEND_URL}/verify-email?token=${encodeURIComponent(token)}`;
   const bodyHtml = `
@@ -107,9 +97,6 @@ export async function sendVerificationEmail({ to, fullName, token }) {
     htmlContent: emailTemplate({ title: "Verify your email", bodyHtml }),
   });
 }
-
-
-
 
 export async function sendEmail({ to, subject, textContent, htmlContent, attachment }) {
   if (!brevoConfigured()) {
