@@ -83,21 +83,34 @@ export async function sendWelcomeEmail({ to, fullName, plan, nextRenewal }) {
   });
 }
 
-// Email the 24-hour verification link
-export async function sendVerificationEmail({ to, fullName, token }) {
-  const verifyUrl = `${FRONTEND_URL}/verify-email?token=${encodeURIComponent(token)}`;
+// Email the 30-minute verification code
+export async function sendVerificationEmail({ to, fullName, code }) {
   const bodyHtml = `
 <p>Hi ${escapeHtml(fullName)},</p>
-<p>Thanks for creating your <strong>Money &amp; Mind</strong> account. Please confirm your email address to finish signing up and unlock your daily audio.</p>
-<p>Your verification link is valid for <strong>24 hours</strong>:</p>
-<p><a href="${verifyUrl}" style="display:inline-block;background:#d63384;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:9999px;font-size:14px;font-weight:bold;">Verify my email</a></p>
-<p style="font-size:13px;color:#8a8a8a;">If the button doesn't work, copy and paste this link into your browser:<br/>${escapeHtml(verifyUrl)}</p>
+<p>Thanks for creating your <strong>Money &amp; Mind</strong> account. Enter the code below to confirm your email and unlock your daily audio.</p>
+<p style="background:#faf6ef;border:1px solid #ece7df;border-radius:10px;padding:16px;text-align:center;letter-spacing:8px;font-size:30px;font-weight:bold;color:#1c1a17;">${escapeHtml(code)}</p>
+<p>Your code is valid for <strong>30 minutes</strong>.</p>
 <p style="font-size:13px;color:#8a8a8a;">If you didn't create an account, you can safely ignore this email.</p>`;
 
   return sendEmail({
     to,
     subject: "Confirm your email — Money & Mind",
     htmlContent: emailTemplate({ title: "Verify your email", bodyHtml }),
+  });
+}
+
+// Email the 30-minute password reset code
+export async function sendPasswordResetEmail({ to, fullName, code }) {
+  const bodyHtml = `
+<p>Hi ${escapeHtml(fullName)},</p>
+<p>We received a request to reset your <strong>Money &amp; Mind</strong> password. Enter the code below to choose a new one. The code expires in <strong>30 minutes</strong>:</p>
+<p style="background:#faf6ef;border:1px solid #ece7df;border-radius:10px;padding:16px;text-align:center;letter-spacing:8px;font-size:30px;font-weight:bold;color:#1c1a17;">${escapeHtml(code)}</p>
+<p style="font-size:13px;color:#8a8a8a;">If you didn't request this, you can safely ignore this email.</p>`;
+
+  return sendEmail({
+    to,
+    subject: "Reset your Money & Mind password",
+    htmlContent: emailTemplate({ title: "Reset your password", bodyHtml }),
   });
 }
 
