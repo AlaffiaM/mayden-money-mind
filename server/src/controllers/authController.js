@@ -94,15 +94,6 @@ export async function login(req, res) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    if (user.role !== "admin" && !user.emailVerified) {
-      const code = await createVerificationToken(user.id);
-      try {
-        await sendVerificationEmail({ to: user.email, fullName: user.fullName, code });
-      } catch (err) {
-        logger.error("[verify] login verification email failed:", err.message);
-      }
-    }
-
     res.json({ token: issueToken(user), user: serializeUser(user) });
   } catch (err) {
     logger.error(err);
