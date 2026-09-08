@@ -1,6 +1,3 @@
-
-
-
 export default function LogoLockup({ className = "", orientation = "vertical" }) {
   if (orientation === "horizontal") {
     return (
