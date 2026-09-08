@@ -1,5 +1,5 @@
-// Admin routes — dashboard stats, settings CRUD, users, episodes, subscriptions, notifications
-// All routes in this file require admin authentication (middleware applied at top level)
+
+
 import { Router } from "express";
 import { authenticate } from "../middleware/auth.js";
 import { requireAdmin } from "../middleware/admin.js";
@@ -33,7 +33,7 @@ import {
 
 const router = Router();
 
-// Apply auth + admin check to every route in this file
+
 router.use(authenticate, requireAdmin);
 
 router.get("/settings", getSettings);
