@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
-import AudioPlayer from "../components/ui/AudioPlayer";
-import { Search } from "lucide-react";
+import { usePlayer } from "../context/PlayerContext";
+import { Search, Play, Pause } from "lucide-react";
 import SubscriberLayout from "../components/layout/SubscriberLayout";
 
 const moodTags = [
@@ -20,11 +20,29 @@ const dayLabels = {
   friday: "Friday",
 };
 
+const dayColors = {
+  monday: "bg-blue-100 text-blue-600",
+  tuesday: "bg-emerald-100 text-emerald-600",
+  wednesday: "bg-purple-100 text-purple-600",
+  thursday: "bg-amber-100 text-amber-600",
+  friday: "bg-rose-100 text-rose-600",
+};
+
+function EqBars() {
+  const heights = [7, 12, 9, 14];
+  return (
+    <div className="flex h-4 items-end gap-[3px]">
+      {heights.map((h, i) => (
+        <span key={i} className="eq-bar w-[3px] rounded-full bg-mayden-magenta" style={{ height: h }} />
+      ))}
+    </div>
+  );
+}
+
 export default function Library() {
   const [episodes, setEpisodes] = useState([]);
   const [search, setSearch] = useState("");
-  const [playing, setPlaying] = useState(null);
-  const [hasLogged, setHasLogged] = useState({});
+  const { episode: activeEp, playing, playEpisode, toggle } = usePlayer();
 
   useEffect(() => {
     api.get("/episodes/my-library").then(({ data }) => setEpisodes(data)).catch(() => {});
@@ -52,22 +70,30 @@ export default function Library() {
 
   const canPlay = (ep) => ep.status === "published";
 
+  const handleToggle = (ep) => {
+    if (!canPlay(ep)) return;
+    if (activeEp?.id === ep.id) toggle();
+    else playEpisode(ep);
+  };
+
   return (
     <SubscriberLayout>
       <div className="mb-6">
-        <h1 className="text-2xl lg:text-3xl font-serif font-bold text-mayden-dark mb-2">
-          My Library
-        </h1>
-        <p className="text-sm text-gray-500 mb-4">
+        <h1 className="mb-2 text-2xl font-serif font-bold text-mayden-dark lg:text-3xl">My Library</h1>
+        <p className="mb-4 text-sm text-gray-500">
           Episodes you've listened to. Your library stays with you even if your
           subscription lapses — renew to play again.
         </p>
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="mb-4 flex flex-wrap gap-2">
           {moodTags.map((tag) => (
             <button
               key={tag.label}
-              onClick={() => setSearch(tag.query)}
-              className="px-3 py-1.5 text-xs font-medium rounded-full border border-gray-200 text-gray-600 hover:border-mayden-magenta hover:text-mayden-magenta transition-colors"
+              onClick={() => setSearch((s) => (s === tag.query ? "" : tag.query))}
+              className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
+                search === tag.query
+                  ? "bg-mayden-magenta text-white border-mayden-magenta"
+                  : "border-gray-200 text-gray-600 hover:border-mayden-magenta hover:text-mayden-magenta"
+              }`}
             >
               {tag.label}
             </button>
@@ -80,68 +106,68 @@ export default function Library() {
             placeholder="Search your library..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20 focus:border-mayden-magenta"
+            className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm focus:border-mayden-magenta focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20"
           />
         </div>
       </div>
 
-      <div className="space-y-4">
-        {filtered.map((ep) => (
-          <div key={ep.id} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <span className="text-xs font-semibold text-mayden-magenta px-2 py-0.5 rounded-full bg-mayden-magenta/10">
-                  {dayLabels[ep.dayType] || ep.dayType}s
-                </span>
-                <h3 className="text-base font-semibold text-mayden-dark mt-2 mb-1">{ep.title}</h3>
-                <p className="text-sm text-gray-500 line-clamp-2">{ep.showNotes}</p>
-                {ep.lastListened && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    Last listened: {formatDate(ep.lastListened)}
-                  </p>
-                )}
-                {!canPlay(ep) && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    Saved — playback requires an active subscription.
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  if (!canPlay(ep)) return;
-
-                  const isPlaying = playing === ep.id;
-                  setPlaying(isPlaying ? null : ep.id);
-                  if (!isPlaying && !hasLogged[ep.id]) {
-                    api.post(`/episodes/${ep.id}/listen`).catch(() => {});
-                    setHasLogged((prev) => ({ ...prev, [ep.id]: true }));
-                  }
-                }}
-                className={`flex-shrink-0 w-12 h-12 rounded-full ${!canPlay(ep) ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-mayden-magenta text-white flex items-center justify-center hover:bg-mayden-magenta/90 transition-colors"}`}
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  {playing === ep.id ? (
-                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                  ) : (
-                    <path d="M8 5v14l11-7z" />
+      <div className="space-y-3">
+        {filtered.map((ep) => {
+          const isActive = activeEp?.id === ep.id;
+          const isPlaying = isActive && playing;
+          return (
+            <div
+              key={ep.id}
+              className={`rounded-2xl border p-4 transition-all ${
+                isActive
+                  ? "border-mayden-magenta/50 bg-mayden-pink-tint/30 shadow-sm"
+                  : "border-gray-100 bg-white shadow-sm"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-2 flex items-center gap-2">
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        dayColors[ep.dayType] || "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {dayLabels[ep.dayType] || ep.dayType}s
+                    </span>
+                    {isPlaying && <EqBars />}
+                    {isActive && !isPlaying && (
+                      <span className="text-xs font-medium text-mayden-magenta">Paused</span>
+                    )}
+                  </div>
+                  <h3 className="mb-1 text-base font-semibold text-mayden-dark">{ep.title}</h3>
+                  <p className="text-sm text-gray-500 line-clamp-2">{ep.showNotes}</p>
+                  {ep.lastListened && (
+                    <p className="mt-1 text-xs text-gray-400">Last listened: {formatDate(ep.lastListened)}</p>
                   )}
-                </svg>
-                {!canPlay(ep) && (
-                  <svg className="absolute inset-0" width="24" height="24" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M12 17a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM9.5 8h6V6a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2z"/>
-                  </svg>
-                )}
-              </button>
-            </div>
-            {playing === ep.id && canPlay(ep) && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <AudioPlayer episodeId={ep.id} />
+                  {!canPlay(ep) && (
+                    <p className="mt-1 text-xs text-gray-400">
+                      Saved — playback requires an active subscription.
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleToggle(ep)}
+                  disabled={!canPlay(ep)}
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                  className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full transition-all ${
+                    canPlay(ep)
+                      ? "bg-mayden-magenta text-white shadow-md shadow-mayden-magenta/25 hover:scale-105"
+                      : "cursor-not-allowed bg-gray-200 text-gray-400"
+                  }`}
+                >
+                  {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
+                </button>
               </div>
-            )}
-          </div>
-        ))}
+            </div>
+          );
+        })}
         {filtered.length === 0 && (
-          <p className="text-center text-gray-400 py-12">
+          <p className="py-12 text-center text-gray-400">
             {episodes.length === 0
               ? "Your library is empty. Start listening from the dashboard to build it."
               : "No episodes match your search."}
