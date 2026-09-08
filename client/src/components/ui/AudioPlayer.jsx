@@ -1,12 +1,12 @@
-// Audio player component with play/pause, seek, volume, and animated waveform
-//
-// Two modes:
-//  - src: a direct (public) URL, e.g. the free marketing sample on the landing page
-//  - episodeId: protected episode — the player calls POST /episodes/:id/stream to
-//    mint a short-lived signed URL, fetches the audio into a Blob, and plays it
-//    from an opaque blob: URL. The real signed URL never lives in the DOM, and it
-//    expires within seconds anyway. Right-click save, drag, and the native
-//    download control are disabled as extra deterrents.
+
+
+
+
+
+
+
+
+
 import { useState, useEffect } from "react";
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
 import { useAudio } from "../../hooks/useAudio";
@@ -50,7 +50,7 @@ export default function AudioPlayer({ src, episodeId, large = false, onPlayToggl
   const [blobUrl, setBlobUrl] = useState(null);
   const protectedMode = !!episodeId;
 
-  // Revoke the blob URL when the player unmounts to free memory
+  
   useEffect(() => {
     return () => {
       if (blobUrl) URL.revokeObjectURL(blobUrl);
@@ -64,8 +64,8 @@ export default function AudioPlayer({ src, episodeId, large = false, onPlayToggl
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
-  // Protected flow: mint a fresh signed URL, fetch the bytes into a Blob, and
-  // play from a blob: URL so the signed URL is never exposed in the DOM.
+  
+  
   const loadProtected = async () => {
     setLoading(true);
     try {
@@ -141,12 +141,12 @@ export default function AudioPlayer({ src, episodeId, large = false, onPlayToggl
       <div className={`${large ? "flex flex-col items-center" : "flex items-center gap-4"}`}>
         {large && <Waveform playing={playing} />}
 
-        {/* Player controls with radial pulse */}
+        {}
         <div className={`relative flex items-center ${large ? "my-4" : ""}`}>
           {large && <RadialPulse active={playing} />}
 
           <div className="relative z-10 flex items-center gap-3 lg:gap-4">
-            {/* Skip Back */}
+            {}
             {large && (
               <button
                 onClick={() => skip(-15)}
@@ -157,7 +157,7 @@ export default function AudioPlayer({ src, episodeId, large = false, onPlayToggl
               </button>
             )}
 
-            {/* Play/Pause */}
+            {}
             <button
               onClick={handleToggle}
               disabled={loading || !!error}
@@ -174,7 +174,7 @@ export default function AudioPlayer({ src, episodeId, large = false, onPlayToggl
               )}
             </button>
 
-            {/* Skip Forward */}
+            {}
             {large && (
               <button
                 onClick={() => skip(15)}
@@ -187,7 +187,7 @@ export default function AudioPlayer({ src, episodeId, large = false, onPlayToggl
           </div>
         </div>
 
-        {/* Progress bar */}
+        {}
         <div className={`flex-1 ${large ? "w-full mt-2" : ""}`}>
           <div className="flex items-center gap-3">
             <span className="text-xs text-gray-400 w-10 text-right tabular-nums">{formatTime(currentTime)}</span>
