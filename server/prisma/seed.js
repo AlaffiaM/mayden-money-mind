@@ -1,4 +1,4 @@
-// Database seed script that creates the initial admin user
+
 import { prisma } from "../src/config/prisma.js";
 import bcrypt from "bcryptjs";
 
@@ -35,7 +35,7 @@ async function main() {
       email: adminEmail,
       passwordHash,
       role: "admin",
-      emailVerified: new Date(), // admins are trusted — created by seed, not self-serve
+      emailVerified: new Date(), 
     },
   });
 
