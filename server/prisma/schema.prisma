@@ -25,6 +25,7 @@ model User {
   utmContent      String?
   resetPasswordToken    String?  @unique
   resetPasswordExpires  DateTime?
+  resetPasswordAttempts Int      @default(0)
   emailVerified   DateTime?
   createdAt       DateTime         @default(now())
   subscriptions   Subscription[]
@@ -44,6 +45,7 @@ model VerificationToken {
   tokenHash String   @unique
   expiresAt DateTime
   usedAt    DateTime?
+  attempts  Int      @default(0)
   createdAt DateTime @default(now())
 
   @@index([userId, type])
