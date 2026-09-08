@@ -1,4 +1,3 @@
-
 import { Router } from "express";
 import { body } from "express-validator";
 import rateLimit from "express-rate-limit";
@@ -7,9 +6,8 @@ import { verifyEmail, resendVerification } from "../controllers/verificationCont
 
 const router = Router();
 
-
 const forgotPasswordLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
+  windowMs: 15 * 60 * 1000,
   limit: 5,
   standardHeaders: true,
   legacyHeaders: false,
@@ -17,16 +15,14 @@ const forgotPasswordLimiter = rateLimit({
   message: { error: "Too many reset requests. Please try again later." },
 });
 
-
 const resendVerificationLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
+  windowMs: 15 * 60 * 1000,
   limit: 5,
   standardHeaders: true,
   legacyHeaders: false,
   validate: { xForwardedForHeader: false, forwardedHeader: false },
   message: { error: "Too many resend requests. Please try again later." },
 });
-
 
 router.post(
   "/register",
@@ -39,9 +35,7 @@ router.post(
   register
 );
 
-
 router.post("/login", login);
-
 
 router.post(
   "/forgot-password",
@@ -49,7 +43,6 @@ router.post(
   [body("email").isEmail().withMessage("A valid email is required").normalizeEmail().toLowerCase()],
   forgotPassword
 );
-
 
 router.post(
   "/reset-password",
@@ -60,13 +53,11 @@ router.post(
   resetPassword
 );
 
-
 router.post(
   "/verify-email",
   [body("token").isString().withMessage("A verification token is required")],
   verifyEmail
 );
-
 
 router.post(
   "/resend-verification",
