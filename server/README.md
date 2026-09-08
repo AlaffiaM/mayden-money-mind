@@ -47,7 +47,7 @@ Server runs on `http://localhost:5000`.
 | `CLIENT_ORIGINS` | Comma-separated CORS allowlist of browser origins (default `http://localhost:5173`; merged with the hardcoded `https://mayden-money-mind.vercel.app` production origin) |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Credentials for the admin user — `npm run seed` upserts them |
 | `BREVO_API_KEY` | Brevo transactional API key for the reconciliation emails and password-reset emails (Brevo: SMTP & API → API Keys) |
-| `BREVO_FROM_EMAIL` | Verified sender address in Brevo for all outgoing mail (reports + reset links) |
+| `BREVO_FROM_EMAIL` | Verified sender address in Brevo for all outgoing mail (reports + reset codes) |
 | `RECONCILIATION_EMAIL` | Recipient of the daily/monthly payment CSV reports |
 | `RECONCILIATION_HOUR` | Hour (UTC) the daily report runs — default `23` (23:00 UTC = midnight Lagos), reports the previous calendar day |
 | `MONTHLY_REPORT_HOUR` | Hour (UTC) the monthly report runs — default `23` |
@@ -141,8 +141,8 @@ prisma/
 |---|---|---|---|
 | POST | `/api/auth/register` | No | Create account, returns JWT |
 | POST | `/api/auth/login` | No | Login, returns JWT |
-| POST | `/api/auth/forgot-password` | No | Email a one-time password-reset link (no account enumeration) |
-| POST | `/api/auth/reset-password` | No | Set a new password with a valid reset token |
+| POST | `/api/auth/forgot-password` | No | Email a one-time password-reset code (no account enumeration) |
+| POST | `/api/auth/reset-password` | No | Set a new password with a valid reset code |
 
 ### Episodes
 
@@ -235,7 +235,7 @@ prisma/
 - Non-subscribers never see these — `GET /api/notifications/latest` filters them out
 
 ### Password Reset Emails
-- `POST /api/auth/forgot-password` emails a one-time link via Brevo (needs `BREVO_API_KEY` + `BREVO_FROM_EMAIL`). Without Brevo keys the server logs the link instead and still returns success — so local dev works without setup.
+- `POST /api/auth/forgot-password` emails a one-time 6-digit reset code via Brevo (needs `BREVO_API_KEY` + `BREVO_FROM_EMAIL`). Without Brevo keys the server logs the code instead and still returns success — so local dev works without setup.
 
 ## Subscription Lifecycle
 
