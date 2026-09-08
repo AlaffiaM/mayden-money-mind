@@ -1,4 +1,4 @@
-// Login page — email/password form, calls AuthContext.login() which redirects by role
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
