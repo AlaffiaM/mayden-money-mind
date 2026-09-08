@@ -1,4 +1,4 @@
-// Pricing card displaying monthly/weekly plans with features list and trust badge
+
 import { Lock, Check } from "lucide-react";
 
 export default function PricingCard({ plans, note, trust, included }) {
