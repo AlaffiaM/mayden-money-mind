@@ -566,8 +566,13 @@ export async function publishEpisode(req, res, next) {
 
 export async function deleteEpisode(req, res, next) {
   try {
-    await prisma.listenLog.deleteMany({ where: { episodeId: req.params.id } });
-    await prisma.episode.delete({ where: { id: req.params.id } });
+    const existing = await prisma.episode.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ error: "Episode not found" });
+
+    await prisma.$transaction([
+      prisma.listenLog.deleteMany({ where: { episodeId: req.params.id } }),
+      prisma.episode.delete({ where: { id: req.params.id } }),
+    ]);
     res.json({ message: "Deleted" });
   } catch (err) {
     next(err);
