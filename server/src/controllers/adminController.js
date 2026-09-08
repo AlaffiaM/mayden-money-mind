@@ -444,6 +444,70 @@ export async function createEpisode(req, res, next) {
   }
 }
 
+export async function createEpisodesBatch(req, res, next) {
+  try {
+    const items = Array.isArray(req.body?.episodes) ? req.body.episodes : [];
+    if (items.length === 0) {
+      return res.status(400).json({ error: "episodes must be a non-empty array" });
+    }
+
+    const parsed = [];
+    const seen = new Set();
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i] || {};
+      if (!it.title || typeof it.title !== "string") {
+        return res.status(400).json({ error: `episodes[${i}].title is required` });
+      }
+      if (!WEEKDAY_KEYS.includes(it.dayType)) {
+        return res.status(400).json({ error: `episodes[${i}].dayType must be one of: ${WEEKDAY_KEYS.join(", ")}` });
+      }
+      const publish = new Date(it.publishDate);
+      if (Number.isNaN(publish.getTime()) || !/^(\d{4})-(\d{2})-(\d{2})$/.test(String(it.publishDate).split("T")[0])) {
+        return res.status(400).json({ error: `episodes[${i}].publishDate must be a valid date (YYYY-MM-DD)` });
+      }
+      if (businessDayOfWeek(publish) !== WEEKDAY_TO_DAYNUM[it.dayType]) {
+        return res.status(400).json({ error: `episodes[${i}].publishDate ${businessDateStr(publish)} is not a ${it.dayType}` });
+      }
+      const dateKey = businessDateStr(publish);
+      if (seen.has(dateKey)) {
+        return res.status(409).json({ error: `episodes[${i}].publishDate ${dateKey} appears more than once in this batch` });
+      }
+      seen.add(dateKey);
+      parsed.push({
+        title: it.title,
+        dayType: it.dayType,
+        audioUrl: it.audioUrl || "",
+        runTimeSeconds: parseInt(it.runTimeSeconds) || 0,
+        showNotes: it.showNotes || "",
+        publishDate: publish,
+        status: "scheduled",
+      });
+    }
+
+    const created = await prisma.$transaction(async (tx) => {
+      const out = [];
+      for (const item of parsed) {
+        const existing = await tx.episode.findFirst({
+          where: { dayType: item.dayType, publishDate: item.publishDate },
+          select: { id: true },
+        });
+        if (existing) {
+          throw Object.assign(
+            new Error(`An episode for ${item.dayType} on ${businessDateStr(item.publishDate)} already exists`),
+            { status: 409 }
+          );
+        }
+        out.push(await tx.episode.create({ data: item }));
+      }
+      return out;
+    });
+
+    res.status(201).json(created);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function updateEpisode(req, res, next) {
   try {
     const { title, dayType, runTimeSeconds, showNotes, publishDate, status } = req.body;
