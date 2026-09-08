@@ -1,14 +1,14 @@
-// Payment reconciliation — builds CSVs of successful payments and emails them
-// to the finance team: daily (previous calendar day) + monthly (previous month).
-// The same CSV builder powers the admin on-demand export.
+
+
+
 import { prisma } from "../config/prisma.js";
 import { brevoConfigured, sendEmail } from "./emailService.js";
 import logger from "../utils/logger.js";
 
 const RECONCILIATION_EMAIL = process.env.RECONCILIATION_EMAIL || "";
-const RECONCILIATION_HOUR = parseInt(process.env.RECONCILIATION_HOUR || "23", 10); // 23:00 UTC = midnight Lagos
-const MONTHLY_REPORT_HOUR = parseInt(process.env.MONTHLY_REPORT_HOUR || "23", 10); // 23:00 UTC = midnight Lagos
-const MONTHLY_REPORT_DAY = parseInt(process.env.MONTHLY_REPORT_DAY || "1", 10); // 1st of the month
+const RECONCILIATION_HOUR = parseInt(process.env.RECONCILIATION_HOUR || "23", 10); 
+const MONTHLY_REPORT_HOUR = parseInt(process.env.MONTHLY_REPORT_HOUR || "23", 10); 
+const MONTHLY_REPORT_DAY = parseInt(process.env.MONTHLY_REPORT_DAY || "1", 10); 
 
 function esc(value) {
   if (value === null || value === undefined) return "";
