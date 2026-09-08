@@ -1,4 +1,4 @@
-// Prisma schema for Money & Mind — PostgreSQL database (Render)
+// Prisma schema for Money & Mind — PostgreSQL database (Supabase)
 // Models: User, Subscription, Payment, Setting, Episode, ListenLog, Notification, NotificationRead
 
 generator client {
