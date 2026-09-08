@@ -1,4 +1,3 @@
-
 import { Lock, Check } from "lucide-react";
 
 export default function PricingCard({ plans, note, trust, included }) {
