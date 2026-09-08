@@ -63,6 +63,14 @@
     50% { transform: scale(1.15); opacity: 0.2; }
   }
 
+  .eq-bar {
+    animation: eq-bounce 0.7s ease-in-out infinite;
+  }
+  @keyframes eq-bounce {
+    0%, 100% { transform: scaleY(0.4); }
+    50% { transform: scaleY(1); }
+  }
+
   .show-notes a {
     color: #EC268F;
     font-weight: 600;
