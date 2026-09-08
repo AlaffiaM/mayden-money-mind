@@ -1,4 +1,4 @@
-// PWA install banner that prompts users to install the app and can be dismissed
+
 import { useState, useEffect } from "react";
 import { Download, X } from "lucide-react";
 
