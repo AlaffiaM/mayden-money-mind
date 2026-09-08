@@ -1,11 +1,6 @@
-
-
-
-
 import { prisma } from "../config/prisma.js";
 import { signAudioUrl } from "../utils/audioAccessControl.js";
 import { businessDateStr, businessDayOfWeek, businessToday } from "../utils/businessTime.js";
-
 
 async function isSubscriber(userId) {
   if (!userId) return false;
@@ -16,8 +11,6 @@ async function isSubscriber(userId) {
   return !!sub;
 }
 
-
-
 function serialize(episodes) {
   return episodes.map((e) => ({
     ...e,
@@ -27,7 +20,6 @@ function serialize(episodes) {
   }));
 }
 
-
 export async function list(req, res, next) {
   try {
     const episodes = await prisma.episode.findMany({
@@ -36,23 +28,18 @@ export async function list(req, res, next) {
       include: { _count: { select: { listenLogs: true } } },
     });
 
-    
-    
     const episodeMap = new Map();
     for (const episode of episodes) {
-      
-      
+
       const safeTitle = (episode.title || '').trim();
       const key = `${safeTitle}-${businessDateStr(new Date(episode.publishDate))}`;
 
-      
       if (!episodeMap.has(key) ||
           (episodeMap.get(key).createdAt < episode.createdAt)) {
         episodeMap.set(key, episode);
       }
     }
 
-    
     const uniqueEpisodes = Array.from(episodeMap.values()).sort((a, b) =>
       new Date(b.publishDate) - new Date(a.publishDate)
     );
@@ -63,21 +50,15 @@ export async function list(req, res, next) {
   }
 }
 
-
 export async function library(req, res, next) {
   try {
     const userId = req.user.id;
 
-    
-    
-    
-    
-    
-    const weekStart = new Date(businessToday()); 
+    const weekStart = new Date(businessToday());
     const todayDow = businessDayOfWeek(weekStart);
-    weekStart.setUTCDate(weekStart.getUTCDate() + (todayDow === 0 ? -6 : 1 - todayDow)); 
+    weekStart.setUTCDate(weekStart.getUTCDate() + (todayDow === 0 ? -6 : 1 - todayDow));
     const weekEndExclusive = new Date(weekStart);
-    weekEndExclusive.setUTCDate(weekEndExclusive.getUTCDate() + 5); 
+    weekEndExclusive.setUTCDate(weekEndExclusive.getUTCDate() + 5);
 
     const episodes = await prisma.episode.findMany({
       where: {
@@ -87,31 +68,26 @@ export async function library(req, res, next) {
           lt: weekEndExclusive,
         },
       },
-      orderBy: { publishDate: "asc" }, 
+      orderBy: { publishDate: "asc" },
       include: { _count: { select: { listenLogs: true } } },
     });
 
-    
     const episodeMap = new Map();
     for (const episode of episodes) {
-      
-      
+
       const safeTitle = (episode.title || '').trim();
       const key = `${safeTitle}-${businessDateStr(new Date(episode.publishDate))}`;
 
-      
       if (!episodeMap.has(key) ||
           (episodeMap.get(key).createdAt < episode.createdAt)) {
         episodeMap.set(key, episode);
       }
     }
 
-    
     const uniqueEpisodes = Array.from(episodeMap.values()).sort((a, b) =>
       new Date(a.publishDate) - new Date(b.publishDate)
     );
 
-    
     const episodeIds = uniqueEpisodes.map((e) => e.id);
     const logs = await prisma.listenLog.findMany({
       where: { userId, episodeId: { in: episodeIds } },
@@ -126,9 +102,7 @@ export async function library(req, res, next) {
     }
 
     const mapped = serialize(uniqueEpisodes).map((e) => {
-      
-      
-      
+
       const locked = businessDateStr(new Date(e.publishDate)) > businessDateStr(new Date());
 
       return {
@@ -144,14 +118,12 @@ export async function library(req, res, next) {
   }
 }
 
-
 export async function today(req, res, next) {
   try {
-    
-    
-    const todayStart = businessToday(); 
+
+    const todayStart = businessToday();
     const tomorrow = new Date(todayStart);
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1); 
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
     const episode = await prisma.episode.findFirst({
       where: {
@@ -170,14 +142,6 @@ export async function today(req, res, next) {
     next(err);
   }
 }
-
-
-
-
-
-
-
-
 
 export async function myLibrary(req, res, next) {
   try {
@@ -200,10 +164,6 @@ export async function myLibrary(req, res, next) {
   }
 }
 
-
-
-
-
 export async function stream(req, res, next) {
   try {
     const episodeId = req.params.id;
@@ -213,15 +173,10 @@ export async function stream(req, res, next) {
     if (!episode) return res.status(404).json({ error: "Episode not found" });
     if (!episode.audioUrl) return res.status(404).json({ error: "No audio assigned to this episode" });
 
-    
     if (!(await isSubscriber(req.user?.id))) {
       return res.status(403).json({ error: "Active subscription required" });
     }
 
-    
-    
-    
-    
     const unlocked = businessDateStr(new Date(episode.publishDate)) <= businessDateStr(new Date());
 
     if (!unlocked) {
@@ -234,7 +189,6 @@ export async function stream(req, res, next) {
   }
 }
 
-
 export async function getById(req, res, next) {
   try {
     const episode = await prisma.episode.findFirst({
@@ -246,11 +200,6 @@ export async function getById(req, res, next) {
     next(err);
   }
 }
-
-
-
-
-
 
 export async function listen(req, res, next) {
   try {
