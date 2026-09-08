@@ -1,4 +1,4 @@
-// Auth routes — user registration, login, password reset, and email verification
+
 import { Router } from "express";
 import { body } from "express-validator";
 import rateLimit from "express-rate-limit";
@@ -7,9 +7,9 @@ import { verifyEmail, resendVerification } from "../controllers/verificationCont
 
 const router = Router();
 
-// Tighter limit on forgot-password to stop email bombing (the /api/auth mount already limits to 30/15min)
+
 const forgotPasswordLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000, 
   limit: 5,
   standardHeaders: true,
   legacyHeaders: false,
@@ -17,9 +17,9 @@ const forgotPasswordLimiter = rateLimit({
   message: { error: "Too many reset requests. Please try again later." },
 });
 
-// Anti-abuse limit on resend-verification (the /api/auth mount already limits to 30/15min)
+
 const resendVerificationLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000, 
   limit: 5,
   standardHeaders: true,
   legacyHeaders: false,
@@ -27,7 +27,7 @@ const resendVerificationLimiter = rateLimit({
   message: { error: "Too many resend requests. Please try again later." },
 });
 
-// POST /api/auth/register
+
 router.post(
   "/register",
   [
@@ -39,10 +39,10 @@ router.post(
   register
 );
 
-// POST /api/auth/login
+
 router.post("/login", login);
 
-// POST /api/auth/forgot-password
+
 router.post(
   "/forgot-password",
   forgotPasswordLimiter,
@@ -50,7 +50,7 @@ router.post(
   forgotPassword
 );
 
-// POST /api/auth/reset-password
+
 router.post(
   "/reset-password",
   [
@@ -60,14 +60,14 @@ router.post(
   resetPassword
 );
 
-// POST /api/auth/verify-email — public, consumes a single-use verification token
+
 router.post(
   "/verify-email",
   [body("token").isString().withMessage("A verification token is required")],
   verifyEmail
 );
 
-// POST /api/auth/resend-verification — rate limited, enumeration-safe
+
 router.post(
   "/resend-verification",
   resendVerificationLimiter,
