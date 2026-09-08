@@ -1,5 +1,5 @@
-// Forgot password page — user enters their email, a reset link is sent if the
-// account exists (always shows the same success message, never leaks accounts).
+
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
