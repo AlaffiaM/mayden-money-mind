@@ -1,6 +1,6 @@
-// Logo lockup supporting vertical and horizontal orientations
-// Vertical: icon centered above "Money & Mind" above "by Mayden Microfinance Bank"
-// Horizontal: icon + "Money & Mind" + logo image
+
+
+
 export default function LogoLockup({ className = "", orientation = "vertical" }) {
   if (orientation === "horizontal") {
     return (
