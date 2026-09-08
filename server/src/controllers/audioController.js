@@ -1,7 +1,3 @@
-
-
-
-
 import fs from "fs";
 import { verifyAudioToken, resolveAudioFile } from "../utils/audioAccessControl.js";
 
