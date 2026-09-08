@@ -1,5 +1,5 @@
-// App root — defines all routes, route guards, and wraps everything in AuthProvider
-// Route guards: ProtectedRoute (logged in), SubscriberRoute (active sub), AdminRoute (admin role)
+
+
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -29,14 +29,14 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Support from "./pages/Support";
 
-// Redirects unauthenticated users to /login
+
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
   return children;
 }
 
-// Checks if user has an active subscription — redirects to /subscription if not
+
 function SubscriberRoute({ children }) {
   const { user, logout } = useAuth();
   const [checking, setChecking] = useState(true);
@@ -58,7 +58,7 @@ function SubscriberRoute({ children }) {
   }, [user, logout]);
 
   if (!user) return <Navigate to="/login" replace />;
-  // Unverified users are not allowed into the protected area — send them to verify.
+  
   if (user.role !== "admin" && !user.emailVerified) return <Navigate to="/verify-email-sent" replace />;
   if (checking) {
     return (
@@ -71,9 +71,9 @@ function SubscriberRoute({ children }) {
   return children;
 }
 
-// Requires a logged-in, email-verified account. Unlike SubscriberRoute this does
-// NOT require an active subscription, so an expired subscriber can still view
-// their saved Library (playback stays gated by the backend /stream endpoint).
+
+
+
 function VerifiedRoute({ children }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
@@ -81,7 +81,7 @@ function VerifiedRoute({ children }) {
   return children;
 }
 
-// Requires admin role — wraps content in AdminLayout sidebar
+
 function AdminRoute({ children }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/admin/login" replace />;
@@ -89,11 +89,11 @@ function AdminRoute({ children }) {
   return <AdminLayout>{children}</AdminLayout>;
 }
 
-// Route definitions — public, subscriber-only, and admin-only paths
+
 function AppRoutes() {
   return (
     <Routes>
-      {/* Public routes */}
+      {}
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -102,14 +102,13 @@ function AppRoutes() {
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/verify-email-sent" element={<VerifyEmailSent />} />
 
-      {/* Subscriber-only routes (requires active subscription) */}
+      {}
       <Route path="/dashboard" element={<SubscriberRoute><Dashboard /></SubscriberRoute>} />
-      {/* Library is accessible to any verified user (even expired) so they can
-          view their saved items; playback itself is server-enforced via /stream */}
+      {}
       <Route path="/library" element={<VerifiedRoute><Library /></VerifiedRoute>} />
       <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
 
-      {/* Admin routes (requires admin role, wrapped in AdminLayout) */}
+      {}
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
       <Route path="/admin/episodes" element={<AdminRoute><AdminEpisodes /></AdminRoute>} />
@@ -119,19 +118,19 @@ function AppRoutes() {
       <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
       <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
 
-      {/* Footer pages (public) */}
+      {}
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/support" element={<Support />} />
 
-      {/* Catch-all: redirect unknown paths to landing */}
+      {}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 
-// Redirects stray double-slash paths (e.g. //reset-password from a trailing-slash
-// FRONTEND_URL) to the single-slash equivalent so routes still match.
+
+
 function NormalizedRoutes() {
   const { pathname, search, hash } = useLocation();
   if (pathname.startsWith("//")) {
@@ -140,9 +139,9 @@ function NormalizedRoutes() {
   return <AppRoutes />;
 }
 
-// App shell: BrowserRouter → AuthProvider → AppRoutes
+
 export default function App() {
-  // Capture UTM params on first load so signups can be attributed to the source
+  
   useEffect(() => {
     captureUtm();
   }, []);
