@@ -11,6 +11,7 @@ import {
   deleteUser,
   overrideUser,
   createEpisode,
+  createEpisodesBatch,
   updateEpisode,
   publishEpisode,
   deleteEpisode,
@@ -48,6 +49,7 @@ router.post("/users/:id/override", overrideUser);
 
 // Episode management
 router.post("/episodes", upload.single("audio"), createEpisode);
+router.post("/episodes/batch", createEpisodesBatch);
 router.put("/episodes/:id", upload.single("audio"), updateEpisode);
 router.post("/episodes/:id/publish", publishEpisode);
 router.delete("/episodes/:id", deleteEpisode);
