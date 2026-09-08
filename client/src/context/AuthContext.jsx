@@ -64,14 +64,12 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const verifyEmail = async (token) => {
-    const { data } = await api.post("/auth/verify-email", { token });
-    if (data.success) {
-      setUser((prev) => (prev ? { ...prev, emailVerified: true } : prev));
-      const stored = sessionStorage.getItem("user");
-      if (stored) {
-        sessionStorage.setItem("user", JSON.stringify({ ...JSON.parse(stored), emailVerified: true }));
-      }
+  const verifyEmail = async (email, code) => {
+    const { data } = await api.post("/auth/verify-email", { email, code });
+    if (data.success && data.token) {
+      sessionStorage.setItem("token", data.token);
+      sessionStorage.setItem("user", JSON.stringify(data.user));
+      setUser(data.user);
     }
     return data;
   };
