@@ -1,6 +1,3 @@
-
-
-
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -17,13 +14,12 @@ function formatCountdown(secs) {
 export default function VerifyEmailSent() {
   const { user, resendVerification } = useAuth();
   const email = user?.email || "";
-  const [status, setStatus] = useState("idle"); 
+  const [status, setStatus] = useState("idle");
   const [msg, setMsg] = useState("");
-  const [cooldownStart, setCooldownStart] = useState(null); 
+  const [cooldownStart, setCooldownStart] = useState(null);
   const [countdown, setCountdown] = useState(0);
   const sentRef = useRef(false);
 
-  
   useEffect(() => {
     if (cooldownStart === null) return;
     const id = setInterval(() => {
@@ -34,7 +30,6 @@ export default function VerifyEmailSent() {
     return () => clearInterval(id);
   }, [cooldownStart]);
 
-  
   useEffect(() => {
     if (!email || sentRef.current) return;
     sentRef.current = true;
@@ -100,7 +95,6 @@ export default function VerifyEmailSent() {
           daily audio. The link expires in 24 hours.
         </p>
 
-        {}
         {status === "sending" && (
           <div className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-mayden-magenta/5 text-mayden-magenta text-sm font-medium">
             <Loader2 size={16} className="animate-spin" />
@@ -119,7 +113,6 @@ export default function VerifyEmailSent() {
           </div>
         )}
 
-        {}
         <button
           type="button"
           onClick={handleResend}
