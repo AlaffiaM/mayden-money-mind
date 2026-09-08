@@ -47,17 +47,27 @@ export default function ForgotPassword() {
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             {sent
-              ? "Check your inbox for the reset link"
-              : "Enter your email and we'll send you a reset link"}
+              ? "Check your inbox for the reset code"
+              : "Enter your email and we'll send you a reset code"}
           </p>
         </div>
 
         {sent ? (
           <div className="p-4 rounded-lg bg-green-50 border border-green-100 text-sm text-green-700 text-center">
-            If an account exists for{" "}
-            <span className="font-semibold">{email.trim().toLowerCase()}</span>,
-            a password reset link is on its way. The link expires in 30 minutes.
-            <div className="mt-4">
+            {email.trim().toLowerCase() && (
+              <p>
+                If an account exists for{" "}
+                <span className="font-semibold">{email.trim().toLowerCase()}</span>,
+                a 6-digit reset code is on its way. The code expires in 30 minutes.
+              </p>
+            )}
+            <div className="mt-4 flex flex-col gap-2">
+              <Link
+                to={`/reset-password?email=${encodeURIComponent(email.trim().toLowerCase())}`}
+                className="inline-block w-full py-3 rounded-lg bg-mayden-magenta text-white font-semibold text-sm hover:bg-mayden-magenta/90 transition-colors"
+              >
+                Enter the code
+              </Link>
               <Link
                 to="/login"
                 className="inline-block text-mayden-magenta font-semibold hover:underline"
@@ -106,7 +116,7 @@ export default function ForgotPassword() {
               className="w-full py-3 rounded-lg bg-mayden-magenta text-white font-semibold text-sm hover:bg-mayden-magenta/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading && <Loader2 size={16} className="animate-spin" />}
-              {loading ? "Sending..." : "Send Reset Link"}
+              {loading ? "Sending..." : "Send Reset Code"}
             </button>
           </form>
         )}
