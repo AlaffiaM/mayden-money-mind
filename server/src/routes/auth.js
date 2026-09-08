@@ -24,6 +24,7 @@ const resendVerificationLimiter = rateLimit({
   message: { error: "Too many resend requests. Please try again later." },
 });
 
+// Register a new user
 router.post(
   "/register",
   [
@@ -35,8 +36,10 @@ router.post(
   register
 );
 
+// Log in an existing user
 router.post("/login", login);
 
+// Send password reset email
 router.post(
   "/forgot-password",
   forgotPasswordLimiter,
@@ -44,6 +47,7 @@ router.post(
   forgotPassword
 );
 
+// Set new password using reset token
 router.post(
   "/reset-password",
   [
@@ -53,12 +57,14 @@ router.post(
   resetPassword
 );
 
+// Confirm email with verification token
 router.post(
   "/verify-email",
   [body("token").isString().withMessage("A verification token is required")],
   verifyEmail
 );
 
+// Resend email verification
 router.post(
   "/resend-verification",
   resendVerificationLimiter,
