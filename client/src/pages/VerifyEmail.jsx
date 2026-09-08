@@ -1,5 +1,5 @@
-// Email verification page — consumes the single-use token from the link and shows
-// success, expired, used, or invalid states. Failed states offer a resend action.
+
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -18,11 +18,11 @@ export default function VerifyEmail() {
   })();
 
   const { verifyEmail, resendVerification, user } = useAuth();
-  const [status, setStatus] = useState("loading"); // loading | success | expired | used | invalid
+  const [status, setStatus] = useState("loading"); 
   const [resendMsg, setResendMsg] = useState("");
 
-  // Resolve the email we should use for resend: the verified-in-progress token has
-  // no scope; fall back to the logged-in email if present.
+  
+  
   const email = user?.email || storedEmail;
 
   useEffect(() => {
@@ -41,12 +41,12 @@ export default function VerifyEmail() {
         else setStatus("invalid");
       }
     })();
-    // run once per token
+    
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  // After a successful verification, briefly show the success state, then take
-  // the user straight to the dashboard — no extra click, no re-login needed.
+  
+  
   useEffect(() => {
     if (status !== "success") return;
     const id = setTimeout(() => navigate("/dashboard", { replace: true }), 1500);
@@ -99,7 +99,7 @@ export default function VerifyEmail() {
     );
   }
 
-  // expired | used | invalid — all share a failure layout with a resend action
+  
   const messages = {
     expired: {
       title: "Link expired",
@@ -153,7 +153,7 @@ export default function VerifyEmail() {
   );
 }
 
-// Shared centered shell matching the login/register layout
+
 function Centered({ children }) {
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
