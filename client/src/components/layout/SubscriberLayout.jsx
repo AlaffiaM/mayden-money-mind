@@ -1,5 +1,5 @@
-// Subscriber layout — sticky header with logo, notification bell, user greeting, logout
-// Includes tabbed nav bar (Home, Library, Subscription) and notification dropdown
+
+
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
@@ -8,14 +8,14 @@ import LogoutButton from "../ui/LogoutButton";
 import { Link, useLocation } from "react-router-dom";
 import LogoLockup from "../ui/LogoLockup";
 
-// Notification bell dropdown — fetches latest notifications and shows them in a popover
+
 function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const ref = useRef(null);
 
-  // Fetch notifications on mount
+  
   useEffect(() => {
     api.get("/notifications/latest")
       .then(({ data }) => setNotifications(data))
@@ -23,7 +23,7 @@ function NotificationBell() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Close dropdown when clicking outside
+  
   useEffect(() => {
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -34,7 +34,7 @@ function NotificationBell() {
 
   const unread = notifications.filter((n) => !n.read).length;
 
-  // Mark a notification as read when clicked
+  
   const markRead = async (id) => {
     try {
       await api.post(`/notifications/${id}/read`);
@@ -51,7 +51,7 @@ function NotificationBell() {
         className="relative text-gray-400 hover:text-mayden-magenta transition-colors"
       >
         <Bell size={18} />
-        {/* Badge showing unread notification count */}
+        {}
         {unread > 0 && (
           <span className="absolute -top-1 -right-1 w-4 h-4 bg-mayden-magenta text-white text-[9px] font-bold rounded-full flex items-center justify-center">
             {unread > 9 ? "9+" : unread}
@@ -100,12 +100,12 @@ function NotificationBell() {
   );
 }
 
-// Main subscriber layout with header, nav tabs, and content area
+
 export default function SubscriberLayout({ children }) {
   const { user } = useAuth();
   const location = useLocation();
 
-  // Top navigation tabs
+  
   const nav = [
     { to: "/dashboard", label: "Home", icon: Home },
     { to: "/library", label: "Library", icon: Library },
@@ -114,7 +114,7 @@ export default function SubscriberLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-mayden-gray">
-      {/* Sticky header with logo, notification bell, greeting, logout */}
+      {}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/dashboard">
@@ -134,7 +134,7 @@ export default function SubscriberLayout({ children }) {
       </header>
 
       <div className="max-w-5xl mx-auto px-4 py-6">
-        {/* Tabbed navigation — active tab gets magenta background */}
+        {}
         <nav className="flex gap-1 mb-6 bg-white rounded-xl p-1 shadow-sm border border-gray-100">
           {nav.map((item) => {
             const active = location.pathname === item.to;
