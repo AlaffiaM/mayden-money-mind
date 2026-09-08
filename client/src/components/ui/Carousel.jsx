@@ -1,4 +1,4 @@
-// Horizontal scroll carousel with arrow navigation and section title
+
 import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
