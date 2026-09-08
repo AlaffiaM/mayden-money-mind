@@ -26,6 +26,7 @@ const PLAN_SETTING_BY_PLAN = {
   monthly: "paystackPlanMonthly",
 };
 
+// Ensure Paystack plans exist and match current prices
 export async function ensurePlans() {
   const secret = await getPaystackKey();
   if (!secret) return null;
@@ -79,6 +80,7 @@ export async function ensurePlans() {
 
 const ALL_CHANNELS = ["card", "bank", "bank_transfer", "ussd", "qr", "mobile_money", "eft"];
 
+// Start a Paystack transaction for a subscription
 export async function initializePayment(user, subscriptionId, amount, subPlan, { forceCard = false } = {}) {
   const reference = generateReference();
   const amountInKobo = amount * 100;
@@ -115,6 +117,7 @@ export async function initializePayment(user, subscriptionId, amount, subPlan, {
   return { reference, redirectUrl: data.data.authorization_url };
 }
 
+// Confirm a Paystack transaction by reference
 export async function verifyPayment(reference) {
   const secret = await getPaystackKey();
 
@@ -132,6 +135,7 @@ export async function verifyPayment(reference) {
   return null;
 }
 
+// Create a recurring Paystack plan subscription
 export async function createPaystackSubscription({ customer, plan, authorization, invoiceLimit = 0 }) {
   const secret = await getPaystackKey();
   if (!secret || !customer || !plan || !authorization) return null;
@@ -152,6 +156,7 @@ export async function createPaystackSubscription({ customer, plan, authorization
   return data.data;
 }
 
+// Disable a Paystack recurring subscription
 export async function disablePaystackSubscription(subscriptionCode) {
   const secret = await getPaystackKey();
   if (!secret || !subscriptionCode) return null;
