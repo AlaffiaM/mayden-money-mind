@@ -1,11 +1,11 @@
-// Subscription handlers — user-facing subscription management (create, pause, cancel, check status)
+
 import { prisma } from "../config/prisma.js";
 import { disablePaystackSubscription } from "../services/paymentService.js";
 
-// Allowed user-initiated status transitions for a subscription.
-// "pending → active" is NOT allowed here — it may only happen through a verified payment
-// (see payments). Plan changes are also blocked: upgrading/downgrading requires a
-// fresh subscription + payment.
+
+
+
+
 const ALLOWED_TRANSITIONS = {
   pending: [],
   active: ["paused", "cancelled"],
@@ -15,7 +15,7 @@ const ALLOWED_TRANSITIONS = {
   expired: [],
 };
 
-// GET /api/subscriptions/mine
+
 export async function getMine(req, res) {
   try {
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
@@ -41,7 +41,7 @@ export async function getMine(req, res) {
   }
 }
 
-// GET /api/subscriptions/mine/status
+
 export async function getStatus(req, res) {
   try {
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
@@ -67,7 +67,7 @@ export async function getStatus(req, res) {
   }
 }
 
-// POST /api/subscriptions
+
 export async function create(req, res) {
   try {
     const { plan } = req.body;
@@ -94,8 +94,8 @@ export async function create(req, res) {
       where: { userId: req.user.id, status: "pending" },
     });
     if (existingPending) {
-      // User may have clicked a different plan before finishing payment — update the
-      // pending subscription so the charged amount matches the plan they chose.
+      
+      
       if (existingPending.plan !== plan) {
         const updated = await prisma.subscription.update({
           where: { id: existingPending.id },
@@ -122,7 +122,7 @@ export async function create(req, res) {
   }
 }
 
-// PATCH /api/subscriptions/:id — pause, resume, or cancel (ownership enforced)
+
 export async function update(req, res) {
   try {
     const { status } = req.body;
@@ -165,7 +165,7 @@ export async function update(req, res) {
           error: `This subscription does not auto-renew and cannot be cancelled — it will end automatically on ${sub.nextRenewal.toISOString().split('T')[0]}`,
         });
       }
-      // Stop future recurring charges at Paystack FIRST — only update local state if this succeeds
+      
       try {
         await disablePaystackSubscription(sub.paystackSubscriptionCode);
       } catch (err) {
@@ -188,10 +188,10 @@ export async function update(req, res) {
   }
 }
 
-// PATCH /api/subscriptions/:id/auto-renew — turn automatic card renewal on/off.
-// Turning OFF stops future Paystack charges but keeps access until the current
-// paid period (nextRenewal) ends. Turning ON re-enables the flag; the client
-// routes the user through a 1-tap re-checkout with their saved card.
+
+
+
+
 export async function setAutoRenew(req, res) {
   try {
     const { autoRenew } = req.body;
