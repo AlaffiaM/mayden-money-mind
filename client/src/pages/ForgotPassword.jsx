@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
-import { Mail, Loader2, ArrowLeft } from "lucide-react";
+import { Mail, Loader2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
+import AuthLayout from "../components/ui/AuthLayout";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -34,93 +36,76 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <img
-            src="/assets/logo.jpg"
-            alt="Money & Mind"
-            className="w-16 h-16 object-contain mx-auto mb-4"
-          />
-          <h1 className="font-serif text-2xl font-bold text-mayden-dark">
-            Forgot your password?
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {sent
-              ? "Check your inbox for the reset code"
-              : "Enter your email and we'll send you a reset code"}
-          </p>
+    <AuthLayout
+      title="Forgot your password?"
+      subtitle={
+        sent
+          ? "Check your inbox for the reset code"
+          : "Enter your email and we'll send you a reset code"
+      }
+      footer={
+        <p>
+          <Link to="/login" className="text-mayden-magenta font-semibold hover:underline">
+            Back to sign in
+          </Link>
+        </p>
+      }
+    >
+      {sent ? (
+        <div className="rounded-xl border border-green-100 bg-green-50 p-5 text-center text-sm text-green-700">
+          <CheckCircle2 size={24} className="mx-auto mb-2 text-green-600" />
+          {email.trim().toLowerCase() && (
+            <p>
+              If an account exists for{" "}
+              <span className="font-semibold">{email.trim().toLowerCase()}</span>,
+              a 6-digit reset code is on its way. The code expires in 30 minutes.
+            </p>
+          )}
+          <Link
+            to={`/reset-password?email=${encodeURIComponent(email.trim().toLowerCase())}`}
+            className="mt-4 inline-block w-full rounded-lg bg-mayden-magenta py-3 text-sm font-semibold text-white transition-colors hover:bg-mayden-magenta/90"
+          >
+            Enter the code
+          </Link>
         </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          {error && (
+            <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-center text-sm text-red-600">
+              {error}
+            </div>
+          )}
 
-        {sent ? (
-          <div className="p-4 rounded-lg bg-green-50 border border-green-100 text-sm text-green-700 text-center">
-            {email.trim().toLowerCase() && (
-              <p>
-                If an account exists for{" "}
-                <span className="font-semibold">{email.trim().toLowerCase()}</span>,
-                a 6-digit reset code is on its way. The code expires in 30 minutes.
-              </p>
-            )}
-            <div className="mt-4 flex flex-col gap-2">
-              <Link
-                to={`/reset-password?email=${encodeURIComponent(email.trim().toLowerCase())}`}
-                className="inline-block w-full py-3 rounded-lg bg-mayden-magenta text-white font-semibold text-sm hover:bg-mayden-magenta/90 transition-colors"
-              >
-                Enter the code
-              </Link>
-              <Link
-                to="/login"
-                className="inline-block text-mayden-magenta font-semibold hover:underline"
-              >
-                Back to sign in
-              </Link>
+          <div>
+            <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <div className="relative">
+              <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                id="email"
+                type="email"
+                required
+                autoFocus
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 py-2.5 pl-9 pr-4 text-sm focus:border-mayden-magenta focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20"
+                placeholder="you@email.com"
+              />
             </div>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-            {error && (
-              <div className="p-3 rounded-lg bg-red-50 border border-red-100 text-sm text-red-600 text-center">
-                {error}
-              </div>
-            )}
 
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1.5"
-              >
-                Email
-              </label>
-              <div className="relative">
-                <Mail
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  id="email"
-                  type="email"
-                  required
-                  autoFocus
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20 focus:border-mayden-magenta"
-                  placeholder="you@email.com"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-lg bg-mayden-magenta text-white font-semibold text-sm hover:bg-mayden-magenta/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {loading && <Loader2 size={16} className="animate-spin" />}
-              {loading ? "Sending..." : "Send Reset Code"}
-            </button>
-          </form>
-        )}
-      </div>
-    </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-mayden-magenta py-3 text-sm font-semibold text-white transition-colors hover:bg-mayden-magenta/90 disabled:opacity-50"
+          >
+            {loading && <Loader2 size={16} className="animate-spin" />}
+            {loading ? "Sending..." : "Send Reset Code"}
+          </button>
+        </form>
+      )}
+    </AuthLayout>
   );
 }
