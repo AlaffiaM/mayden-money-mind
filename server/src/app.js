@@ -14,6 +14,7 @@ import { startRenewalProcessor } from "./services/renewalService.js";
 import { startAutoPublisher } from "./services/autoPublishService.js";
 import { startDailyReminderProcessor } from "./services/dailyReminderService.js";
 import { startReconciliationProcessor } from "./services/reconciliationService.js";
+import { startSubscribeReminderProcessor } from "./services/subscribeReminderService.js";
 import { authenticate } from "./middleware/auth.js";
 import logger from "./utils/logger.js";
 
@@ -209,5 +210,7 @@ startAutoPublisher();
 startReconciliationProcessor();
 
 startDailyReminderProcessor();
+
+startSubscribeReminderProcessor();
 
 export default app;
