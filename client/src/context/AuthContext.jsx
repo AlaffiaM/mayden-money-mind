@@ -1,6 +1,3 @@
-
-
-
 import { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
@@ -8,7 +5,7 @@ import api from "../services/api";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  
+
   const [user, setUser] = useState(() => {
     const stored = sessionStorage.getItem("user");
     return stored ? JSON.parse(stored) : null;
@@ -16,8 +13,6 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  
-  
   const login = async (email, password, adminLogin = false) => {
     setLoading(true);
     try {
@@ -31,7 +26,6 @@ export function AuthProvider({ children }) {
       sessionStorage.setItem("user", JSON.stringify(data.user));
       setUser(data.user);
 
-      
       if (data.user.role !== "admin" && !data.user.emailVerified) {
         navigate("/verify-email-sent");
         return;
@@ -42,8 +36,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  
-  
   const register = async (fullName, email, phone, password, utm = {}) => {
     setLoading(true);
     try {
@@ -65,15 +57,13 @@ export function AuthProvider({ children }) {
         navigate("/verify-email-sent");
         return;
       }
-      
+
       navigate("/subscription");
     } finally {
       setLoading(false);
     }
   };
 
-  
-  
   const verifyEmail = async (token) => {
     const { data } = await api.post("/auth/verify-email", { token });
     if (data.success) {
@@ -86,12 +76,10 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  
   const resendVerification = async (email) => {
     return api.post("/auth/resend-verification", { email });
   };
 
-  
   const logout = () => {
     sessionStorage.removeItem("token");
     sessionStorage.removeItem("user");
@@ -107,6 +95,5 @@ export function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
-
 
 export const useAuth = () => useContext(AuthContext);
