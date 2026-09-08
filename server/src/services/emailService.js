@@ -83,19 +83,41 @@ export async function sendWelcomeEmail({ to, fullName, plan, nextRenewal }) {
   });
 }
 
+// Welcome email sent right after the user confirms their email
+export async function sendAccountWelcomeEmail({ to, fullName }) {
+  const bodyHtml = `
+<p>Hi ${escapeHtml(fullName)},</p>
+<p>You're in — your email is confirmed and your <strong>Money &amp; Mind</strong> account is ready.</p>
+<p>Every morning you'll get a short, calming two-minute audio to help you think clearly and act with confidence about your money — no jargon, no stress.</p>
+<p><strong>What's next:</strong></p>
+<ul style="margin:0 0 16px;padding-left:20px;">
+  <li>Visit the dashboard to start listening</li>
+  <li>Unlock your full daily library when you subscribe — ₦100/week or ₦350/month</li>
+  <li>Keep going — small steps, every single day</li>
+</ul>
+<p><a href="${FRONTEND_URL}/dashboard" style="display:inline-block;background:#d63384;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:9999px;font-size:14px;font-weight:bold;">Start Listening</a></p>
+<p>Warmly,<br/>The Money &amp; Mind team</p>`;
+
+  return sendEmail({
+    to,
+    subject: "Welcome to Money & Mind",
+    htmlContent: emailTemplate({ title: "Welcome to Money & Mind", bodyHtml }),
+  });
+}
+
 // Email the 30-minute verification code
 export async function sendVerificationEmail({ to, fullName, code }) {
   const bodyHtml = `
 <p>Hi ${escapeHtml(fullName)},</p>
-<p>Thanks for creating your <strong>Money &amp; Mind</strong> account. Enter the code below to confirm your email and unlock your daily audio.</p>
+<p>Welcome to <strong>Money &amp; Mind</strong> — we're glad you're here. To activate your account and unlock your daily audio, enter the 6-digit code below:</p>
 <p style="background:#faf6ef;border:1px solid #ece7df;border-radius:10px;padding:16px;text-align:center;letter-spacing:8px;font-size:30px;font-weight:bold;color:#1c1a17;">${escapeHtml(code)}</p>
 <p>Your code is valid for <strong>30 minutes</strong>.</p>
 <p style="font-size:13px;color:#8a8a8a;">If you didn't create an account, you can safely ignore this email.</p>`;
 
   return sendEmail({
     to,
-    subject: "Confirm your email — Money & Mind",
-    htmlContent: emailTemplate({ title: "Verify your email", bodyHtml }),
+    subject: "Confirm your Money & Mind email",
+    htmlContent: emailTemplate({ title: "Confirm your email", bodyHtml }),
   });
 }
 
@@ -103,14 +125,15 @@ export async function sendVerificationEmail({ to, fullName, code }) {
 export async function sendPasswordResetEmail({ to, fullName, code }) {
   const bodyHtml = `
 <p>Hi ${escapeHtml(fullName)},</p>
-<p>We received a request to reset your <strong>Money &amp; Mind</strong> password. Enter the code below to choose a new one. The code expires in <strong>30 minutes</strong>:</p>
+<p>We received a request to recover your <strong>Money &amp; Mind</strong> password.</p>
+<p>Enter the 6-digit code below to choose a new one — it's valid for <strong>30 minutes</strong>:</p>
 <p style="background:#faf6ef;border:1px solid #ece7df;border-radius:10px;padding:16px;text-align:center;letter-spacing:8px;font-size:30px;font-weight:bold;color:#1c1a17;">${escapeHtml(code)}</p>
-<p style="font-size:13px;color:#8a8a8a;">If you didn't request this, you can safely ignore this email.</p>`;
+<p style="font-size:13px;color:#8a8a8a;">If this wasn't you, you can safely ignore this email — your password stays as it is.</p>`;
 
   return sendEmail({
     to,
-    subject: "Reset your Money & Mind password",
-    htmlContent: emailTemplate({ title: "Reset your password", bodyHtml }),
+    subject: "Recover your Money & Mind password",
+    htmlContent: emailTemplate({ title: "Recover your password", bodyHtml }),
   });
 }
 
