@@ -8,7 +8,7 @@ REST API server for the Money & Mind subscription audio platform. Handles authen
 |---|---|
 | Runtime | Node.js (ES Modules) |
 | Framework | Express 5 |
-| Database | PostgreSQL via Prisma ORM 6 |
+| Database | PostgreSQL via Prisma ORM 7 |
 | Authentication | JWT + bcryptjs |
 | Payments | Paystack |
 | File Uploads | Multer (50MB max, audio only) |
@@ -34,13 +34,12 @@ Server runs on `http://localhost:5000`.
 | `npm run dev` | Start development server with nodemon |
 | `npm start` | Start production server |
 | `npm run seed` | Create or rotate the admin user from env vars (upsert) |
-| `npm test` | Run the test suite (against a dedicated `test` schema in your PostgreSQL database) |
 
 ## Environment Variables
 
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | PostgreSQL connection string (e.g. from Render) |
+| `DATABASE_URL` | PostgreSQL connection string (e.g. from Supabase) |
 | `JWT_SECRET` | Secret key for JWT signing (must be a strong, unique value in production) |
 | `PORT` | Server port (default `5000`) |
 | `PAYSTACK_SECRET_KEY` | Paystack API secret key (live or test) |
@@ -58,7 +57,7 @@ Server runs on `http://localhost:5000`.
 
 The app ships as two services:
 
-- **API → Render** (free web service, `server/`): set `DATABASE_URL` (External URL from the Render Postgres dashboard), `JWT_SECRET`, `PAYSTACK_*`, `FRONTEND_URL=https://mayden-money-mind.vercel.app`, `CLIENT_ORIGINS=https://mayden-money-mind.vercel.app`. After first deploy run `npm run seed` locally against the same `DATABASE_URL`.
+- **API → Render** (free web service, `server/`): set `DATABASE_URL` (connection string from Supabase → Connect → Pooler), `JWT_SECRET`, `PAYSTACK_*`, `FRONTEND_URL=https://mayden-money-mind.vercel.app`, `CLIENT_ORIGINS=https://mayden-money-mind.vercel.app`. After first deploy run `npm run seed` locally against the same `DATABASE_URL`.
 - **Client → Vercel** (`client/`): `client/vercel.json` rewrites `/api/(.*)` → the Render API and adds an SPA fallback to `/index.html` (required for the Paystack return redirect to reach client-side routing).
 
 Paystack dashboard: set the webhook to `https://<render-host>/api/payments/webhook` and the callback to the Vercel app URL.
@@ -113,15 +112,7 @@ src/
     └── audioAccessControl.js # Signed-URL signing/verification
 
 tests/
-├── helpers.js                # Test bootstrap (env, DB reset, factories)
-├── auth.test.js              # Auth + rate limiting + password reset
-├── admin.test.js             # Admin access control
-├── subscriptions.test.js     # Subscription lifecycle enforcement
-├── payments.test.js          # Payment flow + webhook signatures
-├── episodes.test.js          # Episode visibility
-├── audio.test.js             # Audio access control
-├── reminders.test.js         # Daily listen reminder
-└── app.test.js               # Notifications + CORS
+├── (removed)
 
 prisma/
 ├── schema.prisma             # Database schema (8 models)
