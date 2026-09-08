@@ -1,5 +1,3 @@
-
-
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -18,11 +16,9 @@ export default function VerifyEmail() {
   })();
 
   const { verifyEmail, resendVerification, user } = useAuth();
-  const [status, setStatus] = useState("loading"); 
+  const [status, setStatus] = useState("loading");
   const [resendMsg, setResendMsg] = useState("");
 
-  
-  
   const email = user?.email || storedEmail;
 
   useEffect(() => {
@@ -41,12 +37,10 @@ export default function VerifyEmail() {
         else setStatus("invalid");
       }
     })();
-    
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  
-  
   useEffect(() => {
     if (status !== "success") return;
     const id = setTimeout(() => navigate("/dashboard", { replace: true }), 1500);
@@ -99,7 +93,6 @@ export default function VerifyEmail() {
     );
   }
 
-  
   const messages = {
     expired: {
       title: "Link expired",
@@ -152,7 +145,6 @@ export default function VerifyEmail() {
     </Centered>
   );
 }
-
 
 function Centered({ children }) {
   return (
