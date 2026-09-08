@@ -4,6 +4,7 @@ import logger from "../utils/logger.js";
 
 const CHECK_INTERVAL_MS = 15 * 60 * 1000;
 
+// Publish episodes whose scheduled time has passed
 async function checkAndPublishEpisodes() {
   const now = new Date();
 
@@ -33,6 +34,7 @@ async function checkAndPublishEpisodes() {
 
 let autoPublishTimer = null;
 
+// Run auto-publish sweep every 15 minutes
 export function startAutoPublisher() {
   if (autoPublishTimer) return;
 
