@@ -11,6 +11,7 @@ export function hashVerificationToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+// Generate + store token with 24h expiry
 export async function createVerificationToken(userId) {
   const raw = generateVerificationToken();
   await prisma.verificationToken.create({
@@ -24,6 +25,7 @@ export async function createVerificationToken(userId) {
   return raw;
 }
 
+// Validate and consume a verification token
 export async function consumeVerificationToken(raw) {
   if (!raw || typeof raw !== "string") return { ok: false, reason: "invalid" };
 
