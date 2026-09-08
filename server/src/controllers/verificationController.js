@@ -1,13 +1,13 @@
-// Email verification handlers — consume a verification token and resend the email.
+
 import { prisma } from "../config/prisma.js";
 import logger from "../utils/logger.js";
 import { consumeVerificationToken, createVerificationToken } from "../services/verificationService.js";
 import { sendVerificationEmail } from "../services/emailService.js";
 
-// POST /api/auth/verify-email — body: { token }
-// Public (no auth). Consumes a single-use token and marks the user verified.
-// Responses intentionally don't reveal whether the token mapped to a real account
-// beyond the clear success/expired/used/invalid states required by the UI.
+
+
+
+
 export async function verifyEmail(req, res) {
   const { token } = req.body || {};
   const result = await consumeVerificationToken(typeof token === "string" ? token : "");
@@ -24,10 +24,10 @@ export async function verifyEmail(req, res) {
   }
 }
 
-// POST /api/auth/resend-verification — body: { email }
-// Rate limited (see routes). Never reveals whether the email is registered — the
-// response is identical regardless, mirroring the forgot-password anti-enumeration
-// design. Resending also invalidates previously issued tokens (single effective link).
+
+
+
+
 export async function resendVerification(req, res) {
   const email = (req.body?.email || "").toString().trim().toLowerCase();
 
@@ -41,6 +41,6 @@ export async function resendVerification(req, res) {
     }
   }
 
-  // Always 200 — do not reveal whether the account exists.
+  
   res.json({ success: true });
 }
