@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import { Send, Bell, Clock, CheckCircle, Trash2, AlertTriangle } from "lucide-react";
@@ -83,7 +81,6 @@ export default function Notifications() {
       <h1 className="text-2xl font-bold text-mayden-dark">Notifications</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <h2 className="font-semibold text-mayden-dark mb-4">Compose Notification</h2>
 
@@ -109,7 +106,6 @@ export default function Notifications() {
               />
             </div>
 
-            {}
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
               <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Preview</p>
               <div className="bg-white rounded-lg p-3 border border-gray-100 shadow-sm">
@@ -151,7 +147,6 @@ export default function Notifications() {
           </div>
         </div>
 
-        {}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
           <div className="p-5 border-b border-gray-100 flex items-center justify-between">
             <h2 className="font-semibold text-mayden-dark">Notification History</h2>
@@ -202,7 +197,6 @@ export default function Notifications() {
         </div>
       </div>
 
-      {}
       {confirmClearAll && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
