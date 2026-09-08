@@ -1,12 +1,12 @@
-// Paystack payment integration — initialize transactions, verify payments,
-// and manage recurring billing via Paystack Plans & Subscriptions.
-// Falls back to dev mode (always succeeds) when PAYSTACK_SECRET_KEY is not set
+
+
+
 import { prisma } from "../config/prisma.js";
 import { PAYSTACK_API, getPaystackKey } from "../config/paystack.js";
 import { generateReference } from "../utils/helpers.js";
 
-// Dev-mode bypass is ONLY allowed outside production. In production a missing
-// Paystack key is a hard error — silently "succeeding" would let users in free.
+
+
 function assertPaystackConfigured() {
   if (process.env.NODE_ENV === "production") {
     throw new Error("Paystack secret key is not configured");
@@ -26,15 +26,15 @@ async function setSetting(key, value) {
   });
 }
 
-// Paystack Setting keys that cache the plan codes for each subscription tier
+
 const PLAN_SETTING_BY_PLAN = {
   weekly: "paystackPlanWeekly",
   monthly: "paystackPlanMonthly",
 };
 
-// Creates the Weekly and Monthly Paystack Plans (idempotent) and caches their
-// plan codes in the Setting table. Returns { weekly, monthly } plan codes or
-// null in dev mode. Plan amounts follow the current weeklyPrice/monthlyPrice.
+
+
+
 export async function ensurePlans() {
   const secret = await getPaystackKey();
   if (!secret) return null;
@@ -86,21 +86,21 @@ export async function ensurePlans() {
   return codes;
 }
 
-// All supported Paystack payment channels. Recurring subscriptions are only
-// possible with card, so channel choice is deferred to checkout — the saved
-// authorization is enrolled in a subscription after payment if it's a card.
+
+
+
 const ALL_CHANNELS = ["card", "bank", "bank_transfer", "ussd", "qr", "mobile_money", "eft"];
 
-// Initializes a Paystack transaction — returns reference + redirect URL for user checkout.
-// No plan is attached at initialize time so every payment channel stays available;
-// recurring billing (only possible for cards) is enrolled after payment via
-// createPaystackSubscription. Pass forceCard for flows that must use the saved card.
+
+
+
+
 export async function initializePayment(user, subscriptionId, amount, subPlan, { forceCard = false } = {}) {
   const reference = generateReference();
   const amountInKobo = amount * 100;
   const secret = await getPaystackKey();
 
-  // Dev mode bypass: no Paystack key configured, return dummy reference
+  
   if (!secret) {
     assertPaystackConfigured();
     return { reference, redirectUrl: null };
@@ -132,13 +132,13 @@ export async function initializePayment(user, subscriptionId, amount, subPlan, {
   return { reference, redirectUrl: data.data.authorization_url };
 }
 
-// Verifies a payment reference with Paystack — returns the verified transaction
-// data (with subscription_code / plan / authorization for recurring setup) or
-// null if the payment did not succeed. Dev mode returns `true`.
+
+
+
 export async function verifyPayment(reference) {
   const secret = await getPaystackKey();
 
-  // Dev mode bypass: always returns true
+  
   if (!secret) {
     assertPaystackConfigured();
     return true;
@@ -153,9 +153,9 @@ export async function verifyPayment(reference) {
   return null;
 }
 
-// Enrolls a customer in a recurring Paystack subscription (invoice_limit 0 = renew
-// forever, card charged each interval). Only works with reusable card authorizations.
-// No-op in dev mode or when Paystack is not configured.
+
+
+
 export async function createPaystackSubscription({ customer, plan, authorization, invoiceLimit = 0 }) {
   const secret = await getPaystackKey();
   if (!secret || !customer || !plan || !authorization) return null;
@@ -176,8 +176,8 @@ export async function createPaystackSubscription({ customer, plan, authorization
   return data.data;
 }
 
-// Stops future recurring charges for a Paystack subscription (no email_token needed).
-// No-op in dev mode or when the subscription was never linked to Paystack.
+
+
 export async function disablePaystackSubscription(subscriptionCode) {
   const secret = await getPaystackKey();
   if (!secret || !subscriptionCode) return null;
