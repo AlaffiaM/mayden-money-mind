@@ -6,17 +6,17 @@ const isProd = process.env.NODE_ENV === "production";
 
 // Tune the connection via URL query params (pg-native) instead of a PoolConfig
 // object — passing an object to the adapter can corrupt connection-string
-// password parsing. Hosted Postgres (e.g. Render) limits connections, so cap
-// the pool and add timeouts to stop "Server has closed the connection".
+// password parsing. Hosted Postgres limits connections, so cap the pool and add
+// timeouts to stop "Server has closed the connection".
 const baseUrl = new URL(process.env.DATABASE_URL);
 const isRemote = !/localhost|127\.0\.0\.1|::1/i.test(baseUrl.hostname);
 baseUrl.searchParams.set("connection_limit", isProd ? "10" : "5");
 baseUrl.searchParams.set("connect_timeout", "8");
 baseUrl.searchParams.set("pool_timeout", "10");
-// Render's managed Postgres serves a TLS certificate signed by Render's own
-// internal CA (not a public root CA), so verify-full fails. pg-connection-string's
-// default branch ignores `sslaccept`; `sslmode=no-verify` is what actually sets
-// ssl.rejectUnauthorized=false while keeping the TLS connection encrypted.
+// Supabase's pooler serves a TLS certificate not signed by a public root CA, so
+// verify-full fails. pg-connection-string's default branch ignores `sslaccept`;
+// `sslmode=no-verify` is what actually sets ssl.rejectUnauthorized=false while
+// keeping the TLS connection encrypted.
 if (isRemote) {
   baseUrl.searchParams.set("sslmode", "no-verify");
 }
