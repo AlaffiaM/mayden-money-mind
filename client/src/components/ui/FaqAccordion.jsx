@@ -1,4 +1,4 @@
-// FAQ accordion with single-expand behavior and chevron toggle
+
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
