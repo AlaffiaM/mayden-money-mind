@@ -1,4 +1,4 @@
-// Centralized copy and content strings for landing page sections
+
 export const LANDING = {
   hero: {
     headlineBold: "Master your money.",
