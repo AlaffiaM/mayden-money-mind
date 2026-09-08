@@ -1,8 +1,3 @@
-
-
-
-
-
 import "dotenv/config";
 import "./config/env.js";
 import { prisma } from "./config/prisma.js";
@@ -11,7 +6,6 @@ import { PORT } from "./config/env.js";
 import logger from "./utils/logger.js";
 import { execSync } from 'child_process';
 import util from 'util';
-
 
 function dbLabel() {
   const url = process.env.DATABASE_URL || "file:./dev.db";
@@ -39,7 +33,7 @@ async function main() {
   const missing = required.filter((k) => !process.env[k]);
   if (missing.length) {
     logger.warn(`⚠️  Missing env vars: ${missing.join(", ")}`);
-    
+
     if (process.env.NODE_ENV === 'production') {
       logger.error('❌ Fatal: Missing required environment variables');
       process.exit(1);
@@ -63,7 +57,6 @@ async function main() {
     logger.info(`✅ Database connected (${dbLabel()})`);
     logger.info("✅ Prisma Client initialized");
 
-    
     logger.info("🔄 Running database migrations...");
     try {
       execSync("npx prisma migrate deploy", { stdio: 'inherit' });
@@ -71,8 +64,7 @@ async function main() {
     } catch (migrateErr) {
       logger.error(`❌ Migration failed: ${migrateErr.message}`);
       logger.error("Continuing anyway in case migration was already applied...");
-      
-      
+
     }
   } catch (err) {
     logger.error(`❌ Database connection failed: ${err.message}`);
@@ -80,7 +72,6 @@ async function main() {
     process.exit(1);
   }
 
-  
   const { default: app } = await import("./app.js");
 
   logger.info("✅ Background jobs started");
