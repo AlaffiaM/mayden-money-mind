@@ -24,6 +24,24 @@ const resendVerificationLimiter = rateLimit({
   message: { error: "Too many resend requests. Please try again later." },
 });
 
+const verifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false, forwardedHeader: false },
+  message: { error: "Too many verification attempts. Please try again later." },
+});
+
+const resetPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false, forwardedHeader: false },
+  message: { error: "Too many reset attempts. Please try again later." },
+});
+
 // Register a new user
 router.post(
   "/register",
@@ -47,20 +65,26 @@ router.post(
   forgotPassword
 );
 
-// Set new password using reset token
+// Set new password using a reset code
 router.post(
   "/reset-password",
+  resetPasswordLimiter,
   [
-    body("token").notEmpty().withMessage("A reset token is required"),
+    body("email").isEmail().withMessage("A valid email is required").normalizeEmail().toLowerCase(),
+    body("code").matches(/^\d{6}$/).withMessage("Enter the 6-digit code from your email"),
     body("password").isLength({ min: 8 }).withMessage("Password must be at least 8 characters"),
   ],
   resetPassword
 );
 
-// Confirm email with verification token
+// Confirm email with a 6-digit verification code
 router.post(
   "/verify-email",
-  [body("token").isString().withMessage("A verification token is required")],
+  verifyLimiter,
+  [
+    body("email").isEmail().withMessage("A valid email is required").normalizeEmail().toLowerCase(),
+    body("code").matches(/^\d{6}$/).withMessage("Enter the 6-digit code from your email"),
+  ],
   verifyEmail
 );
 
