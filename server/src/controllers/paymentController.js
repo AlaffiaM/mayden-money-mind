@@ -1,6 +1,6 @@
-// Payment handlers — Paystack initialization, verification, callback, and webhook
-// Handles the full payment lifecycle: init → redirect → callback/webhook → activate subscription,
-// plus recurring-billing events (subscription.create, invoice.update, subscription.disable)
+
+
+
 import crypto from "crypto";
 import { prisma } from "../config/prisma.js";
 import {
@@ -16,18 +16,18 @@ import PrismaClient from '@prisma/client';
 const { PrismaClientKnownRequestError } = PrismaClient;
 import logger from "../utils/logger.js";
 
-// Sends the one-time welcome email after a first subscription is activated.
-// Exactly-once via a Setting marker (same idempotency pattern as the daily
-// reminder): whichever of verify / callback / webhook runs first sends it.
-// Email failures are logged, never thrown — a Brevo outage must not break the
-// payment flow. If the send fails the marker is rolled back so a later
-// delivery attempt (webhook redelivery, retry) gets another chance.
+
+
+
+
+
+
 async function welcomeNewSubscriber(subscriptionId) {
   const marker = `welcome-${subscriptionId}`;
   try {
     await prisma.setting.create({ data: { key: marker, value: "sent" } });
   } catch (err) {
-    if (err.code === "P2002") return; // welcome already sent
+    if (err.code === "P2002") return; 
     throw err;
   }
 
@@ -49,10 +49,10 @@ async function welcomeNewSubscriber(subscriptionId) {
   }
 }
 
-// Activates a subscription and sets its next renewal date after a successful payment.
-// Auto-renewal only applies when a Paystack subscription code is linked (card payment).
-// Extras (planCode/subscriptionCode) come from Paystack recurring-billing events and
-// link this subscription to the Paystack subscription that keeps renewing it.
+
+
+
+
 async function activateSubscription(subscriptionId, extras = {}) {
   const sub = await prisma.subscription.findUnique({
     where: { id: subscriptionId },
@@ -77,10 +77,10 @@ async function activateSubscription(subscriptionId, extras = {}) {
   });
 }
 
-// After a successful payment, links the subscription to a recurring Paystack
-// subscription — but ONLY when the payment was made with a reusable card
-// authorization (Paystack only supports recurring billing via card). Non-card
-// payments stay one-time: autoRenew stays false and the period just expires.
+
+
+
+
 async function linkCardSubscription(subscriptionId, data) {
   const auth = data?.authorization;
   if (!auth || auth.channel !== "card" || !auth.reusable || !auth.authorization_code) return;
@@ -114,7 +114,7 @@ async function linkCardSubscription(subscriptionId, data) {
   }
 }
 
-// Moves an active subscription to past_due and starts the configurable grace window.
+
 async function markPastDue(subscriptionId) {
   const graceSettings = await prisma.setting.findUnique({ where: { key: "gracePeriodHours" } });
   const graceHours = parseInt(graceSettings?.value || "48");
@@ -127,7 +127,7 @@ async function markPastDue(subscriptionId) {
   });
 }
 
-// POST /api/payments/initialize
+
 export async function initialize(req, res) {
   try {
     const { subscriptionId, forceCard } = req.body;
@@ -172,7 +172,7 @@ export async function initialize(req, res) {
   }
 }
 
-// POST /api/payments/verify
+
 export async function verify(req, res) {
   try {
     const { reference } = req.body;
@@ -209,7 +209,7 @@ export async function verify(req, res) {
   }
 }
 
-// GET /api/payments/callback
+
 export async function callback(req, res) {
   const { reference } = req.query;
   const baseUrl = process.env.FRONTEND_URL || "http://localhost:5173";
@@ -254,7 +254,7 @@ export async function callback(req, res) {
   }
 }
 
-// POST /api/payments/webhook — Paystack server-to-server webhook
+
 export async function webhook(req, res) {
   try {
     const secret = await getPaystackKey();
@@ -278,13 +278,13 @@ export async function webhook(req, res) {
     const event = req.body;
     const reference = event.data?.reference;
 
-    // charge.success — first payment OR a recurring renewal charge
+    
     if (event.event === "charge.success") {
       let payment = reference ? await prisma.payment.findUnique({ where: { reference } }) : null;
       let createdRenewalPayment = false;
 
-      // Recurring renewal — the reference is new to us; find the subscription via
-      // the Paystack subscription_code and record the renewal payment.
+      
+      
       if (!payment && event.data?.subscription_code) {
         const sub = await prisma.subscription.findFirst({
           where: { paystackSubscriptionCode: event.data.subscription_code },
@@ -305,9 +305,9 @@ export async function webhook(req, res) {
             createdRenewalPayment = true;
           } catch (err) {
             if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
-              // Another webhook already created the payment; fetch it
+              
               payment = await prisma.payment.findUnique({ where: { reference: ref } });
-              // Ensure it's marked success (should already be)
+              
               if (payment && payment.status !== "success") {
                 await prisma.payment.update({
                   where: { reference: ref },
@@ -341,8 +341,8 @@ export async function webhook(req, res) {
             },
           });
 
-          // Initial payment (webhook is canonical — fires even if the user never
-          // returns to the callback). Renewal charges skip this.
+          
+          
           await welcomeNewSubscriber(payment.subscriptionId);
         }
 
@@ -356,7 +356,7 @@ export async function webhook(req, res) {
       return res.sendStatus(200);
     }
 
-    // Payment failed — move to past_due (grace period starts)
+    
     if (event.event === "charge.failed") {
       if (reference) {
         const payment = await prisma.payment.findUnique({ where: { reference } });
@@ -378,7 +378,7 @@ export async function webhook(req, res) {
       return res.sendStatus(200);
     }
 
-    // invoice.update — fired on every recurring renewal attempt
+    
     if (event.event === "invoice.update") {
       const invoice = event.data;
       const subscriptionCode = invoice.subscription?.subscription_code;
@@ -431,8 +431,8 @@ export async function webhook(req, res) {
       return res.sendStatus(200);
     }
 
-    // subscription.create — Paystack created a recurring subscription after first payment.
-    // Link it to the user's subscription (backup to the info captured during verify).
+    
+    
     if (event.event === "subscription.create") {
       const subscriptionCode = event.data?.subscription_code;
       const planCode = event.data?.plan?.plan_code;
@@ -454,8 +454,8 @@ export async function webhook(req, res) {
       return res.sendStatus(200);
     }
 
-    // subscription.disable — Paystack disabled the recurring subscription (payment
-    // failures exhausted retries, or the customer/card was invalidated). Cancel locally.
+    
+    
     if (event.event === "subscription.disable") {
       const { subscription_code: subscriptionCode } = event.data || {};
       if (subscriptionCode) {
@@ -467,7 +467,7 @@ export async function webhook(req, res) {
       return res.sendStatus(200);
     }
 
-    // subscription.not_renew — customer declined renewal at Paystack
+    
     if (event.event === "subscription.not_renew") {
       const { subscription_code: subscriptionCode } = event.data || {};
       if (subscriptionCode) {
