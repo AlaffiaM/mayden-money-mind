@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -98,7 +97,6 @@ export default function Login() {
             Create one
           </Link>
         </p>
-
 
         <p className="text-sm text-gray-500 text-center mt-3">
           <Link
