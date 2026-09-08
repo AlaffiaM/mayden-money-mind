@@ -183,7 +183,7 @@ export async function stream(req, res, next) {
       return res.status(403).json({ error: "Episode not yet unlocked" });
     }
 
-    res.json({ url: signAudioUrl(episode.audioUrl) });
+    res.json({ url: signAudioUrl(episode.audioUrl, { userId: req.user.id }) });
   } catch (err) {
     next(err);
   }
