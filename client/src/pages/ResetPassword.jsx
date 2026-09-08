@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import api from "../services/api";
 import { Loader2, CheckCircle2, Mail, KeyRound } from "lucide-react";
 import PasswordInput from "../components/ui/PasswordInput";
+import AuthLayout from "../components/ui/AuthLayout";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -55,133 +56,120 @@ export default function ResetPassword() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <img
-            src="/assets/logo.jpg"
-            alt="Money & Mind"
-            className="w-16 h-16 object-contain mx-auto mb-4"
-          />
-          <h1 className="font-serif text-2xl font-bold text-mayden-dark">Set a new password</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Enter the 6-digit code from the email, then choose a new password
+  if (done) {
+    return (
+      <AuthLayout
+        title="Password reset"
+        subtitle="Your password has been updated"
+        footer={
+          <p>
+            <Link to="/login" className="text-mayden-magenta font-semibold hover:underline">
+              Go to sign in
+            </Link>
           </p>
+        }
+      >
+        <div className="rounded-xl border border-green-100 bg-green-50 p-5 text-center text-sm text-green-700">
+          <CheckCircle2 size={24} className="mx-auto mb-2 text-green-600" />
+          You can now sign in with your new password.
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  const inputClass = (extra = "") =>
+    `w-full rounded-lg border border-gray-200 py-2.5 pl-9 pr-4 text-sm focus:border-mayden-magenta focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20 ${extra}`;
+
+  return (
+    <AuthLayout
+      title="Set a new password"
+      subtitle="Enter the 6-digit code from the email, then choose a new password"
+      footer={
+        <p>
+          <Link to="/forgot-password" className="text-mayden-magenta font-semibold hover:underline">
+            Request a new code
+          </Link>
+        </p>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        {error && (
+          <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-center text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        <div>
+          <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-700">
+            Email
+          </label>
+          <div className="relative">
+            <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              id="email"
+              type="email"
+              required
+              autoComplete="email"
+              value={form.email}
+              onChange={update("email")}
+              className={inputClass()}
+              placeholder="you@email.com"
+            />
+          </div>
         </div>
 
-        {done ? (
-          <div className="p-4 rounded-lg bg-green-50 border border-green-100 text-sm text-green-700 text-center">
-            <CheckCircle2 size={20} className="mx-auto mb-2" />
-            Your password has been reset. You can now sign in with your new password.
-            <div className="mt-4">
-              <Link
-                to="/login"
-                className="inline-block text-mayden-magenta font-semibold hover:underline"
-              >
-                Go to sign in
-              </Link>
-            </div>
+        <div>
+          <label htmlFor="code" className="mb-1.5 block text-sm font-medium text-gray-700">
+            Verification code
+          </label>
+          <div className="relative">
+            <KeyRound size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              id="code"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              required
+              maxLength={6}
+              value={form.code}
+              onChange={update("code")}
+              className={inputClass("font-mono tracking-[0.3em]")}
+              placeholder="000000"
+            />
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-            {error && (
-              <div className="p-3 rounded-lg bg-red-50 border border-red-100 text-sm text-red-600 text-center">
-                {error}
-              </div>
-            )}
+        </div>
 
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1.5"
-              >
-                Email
-              </label>
-              <div className="relative">
-                <Mail
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  id="email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  value={form.email}
-                  onChange={update("email")}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20 focus:border-mayden-magenta"
-                  placeholder="you@email.com"
-                />
-              </div>
-            </div>
+        <PasswordInput
+          id="password"
+          label="New Password"
+          value={form.password}
+          onChange={update("password")}
+          placeholder="At least 8 characters"
+          autoComplete="new-password"
+          required
+          minLength={8}
+        />
 
-            <div>
-              <label
-                htmlFor="code"
-                className="block text-sm font-medium text-gray-700 mb-1.5"
-              >
-                Verification code
-              </label>
-              <div className="relative">
-                <KeyRound
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  id="code"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  required
-                  maxLength={6}
-                  value={form.code}
-                  onChange={update("code")}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm tracking-[0.3em] font-mono focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20 focus:border-mayden-magenta"
-                  placeholder="000000"
-                />
-              </div>
-            </div>
+        <PasswordInput
+          id="confirmPassword"
+          label="Confirm Password"
+          value={form.confirmPassword}
+          onChange={update("confirmPassword")}
+          placeholder="Re-enter your password"
+          autoComplete="new-password"
+          required
+          minLength={8}
+        />
 
-            <PasswordInput
-              id="password"
-              label="New Password"
-              value={form.password}
-              onChange={update("password")}
-              placeholder="At least 8 characters"
-              autoComplete="new-password"
-              required
-              minLength={8}
-            />
-
-            <PasswordInput
-              id="confirmPassword"
-              label="Confirm Password"
-              value={form.confirmPassword}
-              onChange={update("confirmPassword")}
-              placeholder="Re-enter your password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-            />
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-lg bg-mayden-magenta text-white font-semibold text-sm hover:bg-mayden-magenta/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {loading && <Loader2 size={16} className="animate-spin" />}
-              {loading ? "Resetting..." : "Reset Password"}
-            </button>
-
-            <p className="text-sm text-center text-gray-500">
-              <Link to="/forgot-password" className="text-mayden-magenta font-semibold hover:underline">
-                Request a new code
-              </Link>
-            </p>
-          </form>
-        )}
-      </div>
-    </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-mayden-magenta py-3 text-sm font-semibold text-white transition-colors hover:bg-mayden-magenta/90 disabled:opacity-50"
+        >
+          {loading && <Loader2 size={16} className="animate-spin" />}
+          {loading ? "Resetting..." : "Reset Password"}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }
