@@ -1,4 +1,4 @@
-// Auth handlers — registration, login, and password reset with JWT token generation
+
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -9,7 +9,7 @@ import { sendUserEmail, sendVerificationEmail } from "../services/emailService.j
 import { createVerificationToken } from "../services/verificationService.js";
 import logger from "../utils/logger.js";
 
-const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; 
 
 function issueToken(user) {
   return jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
@@ -26,12 +26,12 @@ function serializeUser(user) {
   };
 }
 
-// Password reset tokens are stored as sha256 hashes so a DB leak can't be used to take over accounts
+
 function hashResetToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
-// POST /api/auth/register
+
 export async function register(req, res) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -55,8 +55,8 @@ export async function register(req, res) {
         email,
         phone,
         passwordHash,
-        // New self-service accounts start unverified (emailVerified = null).
-        // Admins are created via seed and auto-verified there.
+        
+        
         utmSource: req.body.utmSource || null,
         utmMedium: req.body.utmMedium || null,
         utmCampaign: req.body.utmCampaign || null,
@@ -65,13 +65,13 @@ export async function register(req, res) {
       },
     });
 
-    // Send a verification email for self-serve accounts.
+    
     if (user.role !== "admin") {
       const token = await createVerificationToken(user.id);
       try {
         await sendVerificationEmail({ to: user.email, fullName: user.fullName, token });
       } catch (err) {
-        // A mail outage must not block account creation — the user can resend later.
+        
         logger.error("[verify] welcome verification email failed:", err.message);
       }
     }
@@ -83,7 +83,7 @@ export async function register(req, res) {
   }
 }
 
-// POST /api/auth/login
+
 export async function login(req, res) {
   try {
     const email = (req.body.email || "").toString().trim().toLowerCase();
@@ -99,8 +99,8 @@ export async function login(req, res) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    // Send verification email for unverified self-serve accounts, matching
-    // the registration flow so the "check your inbox" page is always accurate.
+    
+    
     if (user.role !== "admin" && !user.emailVerified) {
       const token = await createVerificationToken(user.id);
       try {
@@ -117,7 +117,7 @@ export async function login(req, res) {
   }
 }
 
-// POST /api/auth/forgot-password
+
 export async function forgotPassword(req, res) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -128,7 +128,7 @@ export async function forgotPassword(req, res) {
     const email = (req.body.email || "").toString().trim().toLowerCase();
     const user = await prisma.user.findUnique({ where: { email } });
 
-    // Always respond with success — never reveal whether an account exists
+    
     if (user) {
       const token = crypto.randomBytes(32).toString("hex");
       await prisma.user.update({
@@ -151,7 +151,7 @@ export async function forgotPassword(req, res) {
           `If you didn't request this, you can safely ignore this email.`,
       });
 
-      // Dev mode: email is skipped without Brevo keys — log the link instead
+      
       if (!result.sent) {
         logger.info(`[password-reset] email sending attempted, sent=${result.sent}`);
       }
@@ -164,7 +164,7 @@ export async function forgotPassword(req, res) {
   }
 }
 
-// POST /api/auth/reset-password
+
 export async function resetPassword(req, res) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
