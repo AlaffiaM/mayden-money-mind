@@ -1,5 +1,5 @@
-// Admin episodes page — weekly calendar + table + create/edit modal with audio picker
-// Supports the full episode lifecycle: create → schedule → auto-publish → notify subscribers
+
+
 import { useState, useEffect, useRef } from "react";
 import api from "../../services/api";
 import { Plus, Trash2, Play, Pause, Calendar, Headphones, X, ChevronLeft, ChevronRight, Send, Music, Clock, Link2, Check } from "lucide-react";
@@ -7,7 +7,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { BUSINESS_UTC_OFFSET_MIN, businessDateStr as toLocalDateStr, businessDayOfWeek, businessToday } from "../../utils/businessTime.js";
 
-// Day pillar categories matching the subscriber Vault
+
 const DAY_TYPES = [
   { key: "monday", label: "Monday", pillar: "Motivation & Vision", color: "bg-mayden-coral-tint text-orange-700" },
   { key: "tuesday", label: "Tuesday", pillar: "Money Tactics", color: "bg-mayden-blue-tint text-blue-700" },
@@ -22,7 +22,7 @@ const STATUS_BADGE = {
   published: "bg-emerald-100 text-emerald-700",
 };
 
-// Format seconds to "1 min 30 sec" display
+
 function formatRuntime(seconds) {
   if (!seconds) return "";
   const s = parseInt(seconds);
@@ -33,23 +33,23 @@ function formatRuntime(seconds) {
   return `${min} min ${sec} sec`;
 }
 
-// Business calendar date helpers (Africa/Lagos) are shared from
-// ../../utils/businessTime.js — toLocalDateStr here is that shared implementation.
 
-// "YYYY-MM-DD" -> "Sep 1" (timezone-safe, no Date parsing needed).
+
+
+
 function formatShort(dateStr) {
   const [, m, d] = dateStr.split("-").map(Number);
   return `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m - 1]} ${d}`;
 }
 
-// "YYYY-MM-DD" -> "September 1, 2026" (timezone-safe).
+
 function formatLong(dateStr) {
   const [y, m, d] = dateStr.split("-").map(Number);
   return `${["January","February","March","April","May","June","July","August","September","October","November","December"][m - 1]} ${d}, ${y}`;
 }
 
-// Monday of the week (business calendar) containing the given Lagos date,
-// plus weekOffset weeks, returned as a Lagos-midnight instant.
+
+
 function businessWeekStart(dateStr, weekOffset) {
   const [y, m, d] = dateStr.split("-").map(Number);
   const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
@@ -57,7 +57,7 @@ function businessWeekStart(dateStr, weekOffset) {
   return new Date(Date.UTC(y, m - 1, d + mondayShift + weekOffset * 7) - BUSINESS_UTC_OFFSET_MIN * 60000);
 }
 
-// TipTap rich text editor with bold, italic, lists, quote, and link support
+
 function RichTextEditor({ value, onChange }) {
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
@@ -106,7 +106,7 @@ function RichTextEditor({ value, onChange }) {
   );
 }
 
-// Weekly calendar showing episodes by day with publish buttons
+
 function WeekCalendar({ episodes, weekOffset, onPublish }) {
   const startOfWeek = businessWeekStart(toLocalDateStr(new Date()), weekOffset);
 
@@ -194,8 +194,8 @@ export default function Episodes() {
 
   useEffect(() => { fetchEpisodes(); fetchAudioFiles(); }, []);
 
-  // Find the next available date for a dayType — skips days that already have an episode.
-  // Pass excludeDate (YYYY-MM-DD) to also skip that specific date (used when editing).
+  
+  
   const getNextAvailableDate = (dayTypeKey, excludeDate) => {
     const idx = DAY_TYPES.findIndex((d) => d.key === dayTypeKey);
     if (idx === -1) return toLocalDateStr(new Date());
@@ -203,7 +203,7 @@ export default function Episodes() {
     if (excludeDate) taken.add(excludeDate);
     const start = businessToday();
     const dayOfWeek = businessDayOfWeek(start);
-    const targetDay = idx + 1; // Monday=1, Tuesday=2, ... Friday=5
+    const targetDay = idx + 1; 
     let diff = targetDay - dayOfWeek;
     if (diff < 0) diff += 7;
     const candidate = new Date(start);
@@ -214,8 +214,8 @@ export default function Episodes() {
     return toLocalDateStr(candidate);
   };
 
-  // Get the next `count` available weekly dates for a dayType — one per week,
-  // skipping weeks that already have an episode. Used by the batch scheduler.
+  
+  
   const getWeeklyDatesForDayType = (dayTypeKey, count) => {
     const dates = [];
     let cursor = null;
@@ -227,7 +227,7 @@ export default function Episodes() {
     return dates;
   };
 
-  // Auto-detect audio duration from URL using the browser Audio API
+  
   const detectAudioDuration = (url) => {
     return new Promise((resolve) => {
       const audio = new Audio(url);
@@ -384,8 +384,8 @@ export default function Episodes() {
     if (onlyMissing) targets = targets.filter((e) => !e.audioUrl);
     if (targets.length === 0) return 0;
 
-    // Group by day type, then assign audio files in publish-date order so each
-    // week gets the next file in the folder (Monday 1 → file 1, Monday 2 → file 2, ...)
+    
+    
     const byDay = {};
     for (const ep of targets) {
       (byDay[ep.dayType] = byDay[ep.dayType] || []).push(ep);
@@ -514,7 +514,7 @@ export default function Episodes() {
         </div>
       </div>
 
-      {/* Weekly Calendar */}
+      {}
       <div className="flex items-center gap-4">
         <button onClick={() => setWeekOffset(weekOffset - 1)} className="p-2 rounded-lg hover:bg-gray-100"><ChevronLeft size={18} /></button>
         <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -529,7 +529,7 @@ export default function Episodes() {
 
       <WeekCalendar episodes={episodes} weekOffset={weekOffset} onPublish={handlePublish} />
 
-      {/* All Episodes — grouped by week */}
+      {}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -564,7 +564,7 @@ export default function Episodes() {
         </div>
 
         {(() => {
-          // Group episodes by week (Monday of each week in the business calendar)
+          
           const weekMap = {};
           for (const ep of episodes) {
             const d = new Date(ep.publishDate);
@@ -675,7 +675,7 @@ export default function Episodes() {
         })()}
       </div>
 
-      {/* Create/Edit Modal */}
+      {}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -689,7 +689,7 @@ export default function Episodes() {
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
             </div>
             <div className="p-5 space-y-4">
-              {/* Title */}
+              {}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Episode Title</label>
                 <input
@@ -700,7 +700,7 @@ export default function Episodes() {
                 />
               </div>
 
-              {/* Day Type + Runtime */}
+              {}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Day Type</label>
@@ -728,7 +728,7 @@ export default function Episodes() {
                 </div>
               </div>
 
-              {/* Batch summary — only when creating */}
+              {}
               {!editingEp && batchCount > 0 && (
                 <div className="bg-mayden-magenta/5 border border-mayden-magenta/20 rounded-lg px-4 py-3">
                   <p className="text-sm text-mayden-dark font-medium">{batchCount} {form.dayType} episodes will be created</p>
@@ -744,7 +744,7 @@ export default function Episodes() {
                 </div>
               )}
 
-              {/* Audio Picker */}
+              {}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Audio — {currentDayPillar} ({form.dayType})
@@ -788,7 +788,7 @@ export default function Episodes() {
                 )}
               </div>
 
-              {/* Show Notes — rich text with link support */}
+              {}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Show Notes</label>
                 <p className="text-[10px] text-gray-400 mb-1.5">Appears below the audio player for subscribers. Use the link button to add clickable CTAs (e.g. "Open Mayden App").</p>
@@ -805,7 +805,7 @@ export default function Episodes() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {}
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-sm p-6 text-center">
@@ -822,7 +822,7 @@ export default function Episodes() {
         </div>
       )}
 
-      {/* Bulk Delete Confirmation Modal */}
+      {}
       {bulkDeleteTarget && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-sm p-6 text-center">
@@ -839,7 +839,7 @@ export default function Episodes() {
         </div>
       )}
 
-      {/* Toast */}
+      {}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-all ${toast.type === "error" ? "bg-red-500 text-white" : "bg-emerald-500 text-white"}`}>
           {toast.message}
