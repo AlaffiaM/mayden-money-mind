@@ -9,23 +9,32 @@ export function useAudio() {
   const [error, setError] = useState(null);
   const audioRef = useRef(null);
 
-  const toggle = () => {
+  const play = () => {
     if (!audioRef.current) return;
-    if (playing) {
-      audioRef.current.pause();
+    setError(null);
+    audioRef.current.play().then(() => {
+      setPlaying(true);
+    }).catch((err) => {
+      if (err?.name === "NotAllowedError") {
+        setError("Press play again to start audio.");
+      } else {
+        setError("Unable to play audio. The file may be missing or the server is unavailable.");
+      }
       setPlaying(false);
+    });
+  };
+
+  const pause = () => {
+    if (!audioRef.current) return;
+    audioRef.current.pause();
+    setPlaying(false);
+  };
+
+  const toggle = () => {
+    if (playing) {
+      pause();
     } else {
-      setError(null);
-      audioRef.current.play().then(() => {
-        setPlaying(true);
-      }).catch((err) => {
-        if (err?.name === "NotAllowedError") {
-          setError("Press play again to start audio.");
-        } else {
-          setError("Unable to play audio. The file may be missing or the server is unavailable.");
-        }
-        setPlaying(false);
-      });
+      play();
     }
   };
 
@@ -72,6 +81,8 @@ export function useAudio() {
     error,
     setError,
     audioRef,
+    play,
+    pause,
     toggle,
     handleTimeUpdate,
     handleLoadedMetadata,
