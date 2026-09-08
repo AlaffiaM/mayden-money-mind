@@ -1,8 +1,8 @@
-// Entry point — loads env vars, validates config, verifies the database,
-// runs migrations, starts background jobs, then starts the HTTP server.
-// The server only starts listening AFTER the database has been verified
-// and migrations have been applied, so a broken dependency is never masked
-// by a silently listening process.
+
+
+
+
+
 import "dotenv/config";
 import "./config/env.js";
 import { prisma } from "./config/prisma.js";
@@ -12,7 +12,7 @@ import logger from "./utils/logger.js";
 import { execSync } from 'child_process';
 import util from 'util';
 
-// Human-readable database label derived from DATABASE_URL
+
 function dbLabel() {
   const url = process.env.DATABASE_URL || "file:./dev.db";
   if (url.startsWith("postgres")) {
@@ -39,7 +39,7 @@ async function main() {
   const missing = required.filter((k) => !process.env[k]);
   if (missing.length) {
     logger.warn(`⚠️  Missing env vars: ${missing.join(", ")}`);
-    // In production, missing vars are fatal
+    
     if (process.env.NODE_ENV === 'production') {
       logger.error('❌ Fatal: Missing required environment variables');
       process.exit(1);
@@ -63,7 +63,7 @@ async function main() {
     logger.info(`✅ Database connected (${dbLabel()})`);
     logger.info("✅ Prisma Client initialized");
 
-    // Run Prisma migrations to ensure schema is up to date
+    
     logger.info("🔄 Running database migrations...");
     try {
       execSync("npx prisma migrate deploy", { stdio: 'inherit' });
@@ -71,8 +71,8 @@ async function main() {
     } catch (migrateErr) {
       logger.error(`❌ Migration failed: ${migrateErr.message}`);
       logger.error("Continuing anyway in case migration was already applied...");
-      // Don't exit - the migration might have been applied already or
-      // we might be in a read-only database scenario
+      
+      
     }
   } catch (err) {
     logger.error(`❌ Database connection failed: ${err.message}`);
@@ -80,7 +80,7 @@ async function main() {
     process.exit(1);
   }
 
-  // Start the Express app (and its background jobs) only AFTER the DB is verified
+  
   const { default: app } = await import("./app.js");
 
   logger.info("✅ Background jobs started");
