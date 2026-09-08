@@ -1,5 +1,3 @@
-
-
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useSubscription } from "../hooks/useSubscription";
@@ -53,7 +51,6 @@ export default function Subscription() {
     check();
   }, [navigate, setSearchParams]);
 
-  
   useEffect(() => {
     if (urlReference) {
       setSearchParams({ status: "success" });
@@ -83,15 +80,13 @@ export default function Subscription() {
       const now = new Date();
       const nextRenewal = new Date(subscription.nextRenewal);
       if (nextRenewal < now) {
-        
+
         refetch().catch(() => {});
       }
     };
 
-    
     checkExpiration();
 
-    
     const intervalId = setInterval(checkExpiration, 3600000);
     return () => clearInterval(intervalId);
   }, [subscription, refetch]);
@@ -106,7 +101,7 @@ export default function Subscription() {
       if (data.redirectUrl) {
         window.location.href = data.redirectUrl;
       } else {
-        
+
         await api.post("/payments/verify", { reference: data.payment.reference });
         navigate("/dashboard", { replace: true });
       }
@@ -131,7 +126,7 @@ export default function Subscription() {
       if (subscription.autoRenew) {
         await setAutoRenew(subscription.id, false);
       } else {
-        
+
         await setAutoRenew(subscription.id, true);
         const { data } = await api.post("/payments/initialize", {
           subscriptionId: subscription.id,
