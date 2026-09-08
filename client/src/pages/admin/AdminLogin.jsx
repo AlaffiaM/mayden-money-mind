@@ -1,4 +1,4 @@
-// Admin login page — separate from user login, rejects non-admin accounts
+
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { Mail, Loader2, Shield } from "lucide-react";
