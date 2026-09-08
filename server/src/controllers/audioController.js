@@ -1,7 +1,7 @@
-// Protected audio streaming handler.
-// GET /api/audio?file=<path>&exp=<ts>&sig=<hmac>
-// Serves files only when the HMAC signature is valid and unexpired (or the file
-// is on the public sample whitelist). res.sendFile handles Range requests.
+
+
+
+
 import fs from "fs";
 import { verifyAudioToken, resolveAudioFile } from "../utils/audioAccessControl.js";
 
