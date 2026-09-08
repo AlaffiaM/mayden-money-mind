@@ -1,5 +1,5 @@
-// Shared password input — left icon, show/hide eye toggle, optional inline error.
-// Used by the user login, signup, and admin login forms.
+
+
 import { useState } from "react";
 import { Lock, Eye, EyeOff } from "lucide-react";
 
