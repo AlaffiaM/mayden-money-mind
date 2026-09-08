@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
 import { useAudio } from "../../hooks/useAudio";
-import api from "../../services/api";
+import { usePlayer } from "../../context/PlayerContext";
 
 function Waveform({ playing }) {
   return (
@@ -35,98 +35,127 @@ function RadialPulse({ active }) {
   );
 }
 
-export default function AudioPlayer({ src, episodeId, large = false, onPlayToggle, onPlayStart }) {
-  const { playing, currentTime, duration, error, setError, audioRef, toggle, handleTimeUpdate, handleLoadedMetadata, handleError, seek, skip } = useAudio();
-  const [loading, setLoading] = useState(false);
-  const [blobUrl, setBlobUrl] = useState(null);
-  const protectedMode = !!episodeId;
+const formatTime = (s) => {
+  if (!s || !isFinite(s)) return "0:00";
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+};
 
-  useEffect(() => {
-    return () => {
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
-    };
-  }, [blobUrl]);
+const preventSave = (e) => e.preventDefault();
 
-  const formatTime = (s) => {
-    if (!s || !isFinite(s)) return "0:00";
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return `${m}:${sec.toString().padStart(2, "0")}`;
-  };
+function GlobalPlayer({ episode, large = false }) {
+  const { playing, current, duration, error, loading, episode: activeEp, playEpisode, toggle, seek, skip } = usePlayer();
 
-  const loadProtected = async () => {
-    setLoading(true);
-    try {
-      const { data } = await api.post(`/episodes/${episodeId}/stream`);
-      if (!data?.url) throw new Error("No stream url");
-      const resp = await fetch(data.url);
-      if (!resp.ok) throw new Error("Stream fetch failed");
-      const blob = new Blob([await resp.arrayBuffer()], { type: "audio/mpeg" });
-      const url = URL.createObjectURL(blob);
-      setBlobUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return url;
-      });
-      if (audioRef.current) {
-        audioRef.current.src = url;
-      }
-      setLoading(false);
-      toggle();
-      if (onPlayStart) onPlayStart();
-      if (onPlayToggle) onPlayToggle(true);
-    } catch (err) {
-      setLoading(false);
-      if (err?.response?.status === 403) {
-        setError("Active subscription required — renew your subscription to play.");
-      } else if (err?.response?.status === 404) {
-        setError("This episode's audio is not available yet.");
-      } else if (err?.response?.status === 401) {
-        setError("Please log in to play this episode.");
-      } else {
-        setError("Could not load audio. Please check your connection and try again.");
-      }
-      if (onPlayToggle) onPlayToggle(false);
-    }
-  };
+  const isActive = activeEp?.id === episode.id;
+  const isPlaying = isActive && playing;
+  const displayDuration = isActive ? duration : episode?.runTimeSeconds || 0;
 
   const handleToggle = () => {
-    if (protectedMode && !blobUrl) {
-      loadProtected();
-      return;
-    }
-    toggle();
-    if (!playing && onPlayStart) onPlayStart();
-    if (onPlayToggle) onPlayToggle(!playing);
+    if (!isActive) playEpisode(episode);
+    else toggle();
   };
 
-  const handleCanPlay = () => setLoading(false);
+  return (
+    <div className="w-full select-none" onContextMenu={preventSave} onDragStart={preventSave}>
+      {error && isActive && (
+        <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 text-xs text-red-600">{error}</div>
+      )}
+      <div className={large ? "flex flex-col items-center" : "flex items-center gap-4"}>
+        {large && <Waveform playing={isPlaying} />}
 
-  const preventSave = (e) => e.preventDefault();
+        <div className={`relative flex items-center ${large ? "my-4" : ""}`}>
+          {large && <RadialPulse active={isPlaying} />}
+
+          <div className="relative z-10 flex items-center gap-3 lg:gap-4">
+            {large && (
+              <button
+                onClick={() => skip(-15)}
+                disabled={!isActive}
+                className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-mayden-magenta hover:border-mayden-magenta/30 transition-all flex items-center justify-center shadow-sm"
+              >
+                <SkipBack size={18} />
+                <span className="absolute -bottom-0.5 text-[8px] font-bold text-gray-400">15</span>
+              </button>
+            )}
+
+            <button
+              onClick={handleToggle}
+              disabled={loading}
+              className={`flex-shrink-0 rounded-full bg-mayden-magenta text-white hover:bg-mayden-magenta/90 hover:scale-105 transition-all shadow-lg shadow-mayden-magenta/25 disabled:opacity-50 disabled:cursor-not-allowed ${
+                large ? "w-20 h-20 lg:w-[120px] lg:h-[120px]" : "w-12 h-12"
+              } flex items-center justify-center`}
+            >
+              {loading ? (
+                <div className={`border-2 border-white border-t-transparent rounded-full animate-spin ${large ? "w-8 h-8" : "w-5 h-5"}`} />
+              ) : isPlaying ? (
+                <Pause size={large ? 36 : 20} />
+              ) : (
+                <Play size={large ? 36 : 20} className="ml-1" />
+              )}
+            </button>
+
+            {large && (
+              <button
+                onClick={() => skip(15)}
+                disabled={!isActive}
+                className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-mayden-magenta hover:border-mayden-magenta/30 transition-all flex items-center justify-center shadow-sm"
+              >
+                <SkipForward size={18} />
+                <span className="absolute -bottom-0.5 text-[8px] font-bold text-gray-400">15</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className={`flex-1 ${large ? "w-full mt-2" : ""}`}>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-400 w-10 text-right tabular-nums">{formatTime(isActive ? current : 0)}</span>
+            <div
+              className="flex-1 h-1.5 bg-gray-200 rounded-full cursor-pointer relative overflow-hidden"
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                seek(pct * (duration || displayDuration));
+              }}
+            >
+              <div
+                className="h-full bg-mayden-magenta rounded-full transition-all duration-150"
+                style={{ width: `${duration > 0 ? ((isActive ? current : 0) / duration) * 100 : 0}%` }}
+              />
+            </div>
+            <span className="text-xs text-gray-400 w-10 tabular-nums">{formatTime(isActive ? displayDuration : 0)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PlayerWithSrc({ src, large = false }) {
+  const { playing, currentTime, duration, error, audioRef, toggle, handleTimeUpdate, handleLoadedMetadata, handleError, seek, skip } = useAudio();
+
+  const handleToggle = () => {
+    if (!audioRef.current) return;
+    toggle();
+  };
 
   return (
-    <div
-      className={`w-full select-none ${large ? "" : ""}`}
-      onContextMenu={preventSave}
-      onDragStart={preventSave}
-    >
+    <div className="w-full select-none" onContextMenu={preventSave} onDragStart={preventSave}>
       <audio
         ref={audioRef}
-        src={protectedMode ? blobUrl || undefined : src || undefined}
+        src={src || undefined}
         controlsList="nodownload"
         disablePictureInPicture
         onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={(e) => { handleLoadedMetadata(e); setLoading(false); }}
-        onError={(e) => { handleError(e); setLoading(false); }}
-        onCanPlay={handleCanPlay}
-        preload={protectedMode ? "none" : "metadata"}
+        onLoadedMetadata={handleLoadedMetadata}
+        onError={handleError}
+        preload="metadata"
       />
-      {!protectedMode && !src && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3 text-xs text-amber-600">No audio file assigned to this episode.</div>
-      )}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 text-xs text-red-600">{error}</div>
       )}
-      <div className={`${large ? "flex flex-col items-center" : "flex items-center gap-4"}`}>
+      <div className={large ? "flex flex-col items-center" : "flex items-center gap-4"}>
         {large && <Waveform playing={playing} />}
 
         <div className={`relative flex items-center ${large ? "my-4" : ""}`}>
@@ -145,14 +174,11 @@ export default function AudioPlayer({ src, episodeId, large = false, onPlayToggl
 
             <button
               onClick={handleToggle}
-              disabled={loading || !!error}
-              className={`flex-shrink-0 rounded-full bg-mayden-magenta text-white hover:bg-mayden-magenta/90 hover:scale-105 transition-all shadow-lg shadow-mayden-magenta/25 disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`flex-shrink-0 rounded-full bg-mayden-magenta text-white hover:bg-mayden-magenta/90 hover:scale-105 transition-all shadow-lg shadow-mayden-magenta/25 ${
                 large ? "w-20 h-20 lg:w-[120px] lg:h-[120px]" : "w-12 h-12"
               } flex items-center justify-center`}
             >
-              {loading ? (
-                <div className={`border-2 border-white border-t-transparent rounded-full animate-spin ${large ? "w-8 h-8" : "w-5 h-5"}`} />
-              ) : playing ? (
+              {playing ? (
                 <Pause size={large ? 36 : 20} />
               ) : (
                 <Play size={large ? 36 : 20} className="ml-1" />
@@ -193,4 +219,9 @@ export default function AudioPlayer({ src, episodeId, large = false, onPlayToggl
       </div>
     </div>
   );
+}
+
+export default function AudioPlayer({ episode, src, large = false }) {
+  if (episode) return <GlobalPlayer episode={episode} large={large} />;
+  return <PlayerWithSrc src={src} large={large} />;
 }
