@@ -10,6 +10,7 @@ function dateKey(d = new Date()) {
   return `${y}-${m}-${day}`;
 }
 
+// Send today's episode reminder
 export async function sendDailyReminder() {
   const now = new Date();
 
@@ -58,6 +59,7 @@ export async function sendDailyReminder() {
 
 let reminderTimer = null;
 
+// Run daily reminder sweep
 export function startDailyReminderProcessor() {
   if (reminderTimer) return;
   reminderTimer = setInterval(() => {
