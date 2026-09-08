@@ -1,4 +1,4 @@
-// Episode card displaying day, title, duration, and play button with day-based color coding
+
 import { Play } from "lucide-react";
 
 export default function EpisodeCard({ episode, onPlay }) {
