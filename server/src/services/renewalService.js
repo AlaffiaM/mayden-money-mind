@@ -1,24 +1,9 @@
-
-
-
-
-
-
-
-
-
-
 import { prisma } from "../config/prisma.js";
 import { FRONTEND_URL } from "../config/env.js";
 import { sendUserEmail } from "./emailService.js";
 import logger from "../utils/logger.js";
 
-
 const REMINDER_INTERVAL_MS = 12 * 60 * 60 * 1000;
-
-
-
-
 
 async function sendRenewalReminder(sub, { title, body, subject }) {
   await prisma.notification.create({
@@ -38,12 +23,9 @@ async function sendRenewalReminder(sub, { title, body, subject }) {
   }
 }
 
-
 export async function processExpiredSubscriptions() {
   const now = new Date();
 
-  
-  
   await prisma.subscription.updateMany({
     where: { status: "active", autoRenew: false, nextRenewal: { lte: now } },
     data: { status: "expired" },
@@ -61,7 +43,6 @@ export async function processExpiredSubscriptions() {
     const graceEnd = new Date(sub.nextRenewal);
     graceEnd.setHours(graceEnd.getHours() - graceHours);
 
-    
     if (now > sub.nextRenewal) {
       await prisma.subscription.update({
         where: { id: sub.id },
@@ -79,7 +60,6 @@ export async function processExpiredSubscriptions() {
       continue;
     }
 
-    
     const failedPayments = await prisma.payment.count({
       where: { subscriptionId: sub.id, status: "failed" },
     });
@@ -88,7 +68,6 @@ export async function processExpiredSubscriptions() {
       const timeSinceGrace = now.getTime() - graceEnd.getTime();
       const hoursSinceGrace = timeSinceGrace / (1000 * 60 * 60);
 
-      
       if (hoursSinceGrace >= 12 && failedPayments < 1) {
         await sendRenewalReminder(sub, {
           title: "Payment Reminder",
@@ -97,7 +76,6 @@ export async function processExpiredSubscriptions() {
         });
       }
 
-      
       if (hoursSinceGrace >= 24 && failedPayments < 2) {
         await sendRenewalReminder(sub, {
           title: "Final Payment Reminder",
@@ -110,7 +88,6 @@ export async function processExpiredSubscriptions() {
 }
 
 let renewalTimer = null;
-
 
 export function startRenewalProcessor() {
   if (renewalTimer) return;
