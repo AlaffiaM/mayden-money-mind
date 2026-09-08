@@ -1,12 +1,9 @@
-
-
 import { useState, useEffect, useRef } from "react";
 import api from "../../services/api";
 import { Plus, Trash2, Play, Pause, Calendar, Headphones, X, ChevronLeft, ChevronRight, Send, Music, Clock, Link2, Check } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { BUSINESS_UTC_OFFSET_MIN, businessDateStr as toLocalDateStr, businessDayOfWeek, businessToday } from "../../utils/businessTime.js";
-
 
 const DAY_TYPES = [
   { key: "monday", label: "Monday", pillar: "Motivation & Vision", color: "bg-mayden-coral-tint text-orange-700" },
@@ -22,7 +19,6 @@ const STATUS_BADGE = {
   published: "bg-emerald-100 text-emerald-700",
 };
 
-
 function formatRuntime(seconds) {
   if (!seconds) return "";
   const s = parseInt(seconds);
@@ -33,22 +29,15 @@ function formatRuntime(seconds) {
   return `${min} min ${sec} sec`;
 }
 
-
-
-
-
 function formatShort(dateStr) {
   const [, m, d] = dateStr.split("-").map(Number);
   return `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m - 1]} ${d}`;
 }
 
-
 function formatLong(dateStr) {
   const [y, m, d] = dateStr.split("-").map(Number);
   return `${["January","February","March","April","May","June","July","August","September","October","November","December"][m - 1]} ${d}, ${y}`;
 }
-
-
 
 function businessWeekStart(dateStr, weekOffset) {
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -56,7 +45,6 @@ function businessWeekStart(dateStr, weekOffset) {
   const mondayShift = dow === 0 ? -6 : 1 - dow;
   return new Date(Date.UTC(y, m - 1, d + mondayShift + weekOffset * 7) - BUSINESS_UTC_OFFSET_MIN * 60000);
 }
-
 
 function RichTextEditor({ value, onChange }) {
   const [showLinkInput, setShowLinkInput] = useState(false);
@@ -105,7 +93,6 @@ function RichTextEditor({ value, onChange }) {
     </div>
   );
 }
-
 
 function WeekCalendar({ episodes, weekOffset, onPublish }) {
   const startOfWeek = businessWeekStart(toLocalDateStr(new Date()), weekOffset);
@@ -194,8 +181,6 @@ export default function Episodes() {
 
   useEffect(() => { fetchEpisodes(); fetchAudioFiles(); }, []);
 
-  
-  
   const getNextAvailableDate = (dayTypeKey, excludeDate) => {
     const idx = DAY_TYPES.findIndex((d) => d.key === dayTypeKey);
     if (idx === -1) return toLocalDateStr(new Date());
@@ -203,7 +188,7 @@ export default function Episodes() {
     if (excludeDate) taken.add(excludeDate);
     const start = businessToday();
     const dayOfWeek = businessDayOfWeek(start);
-    const targetDay = idx + 1; 
+    const targetDay = idx + 1;
     let diff = targetDay - dayOfWeek;
     if (diff < 0) diff += 7;
     const candidate = new Date(start);
@@ -214,8 +199,6 @@ export default function Episodes() {
     return toLocalDateStr(candidate);
   };
 
-  
-  
   const getWeeklyDatesForDayType = (dayTypeKey, count) => {
     const dates = [];
     let cursor = null;
@@ -227,7 +210,6 @@ export default function Episodes() {
     return dates;
   };
 
-  
   const detectAudioDuration = (url) => {
     return new Promise((resolve) => {
       const audio = new Audio(url);
@@ -384,8 +366,6 @@ export default function Episodes() {
     if (onlyMissing) targets = targets.filter((e) => !e.audioUrl);
     if (targets.length === 0) return 0;
 
-    
-    
     const byDay = {};
     for (const ep of targets) {
       (byDay[ep.dayType] = byDay[ep.dayType] || []).push(ep);
@@ -514,7 +494,6 @@ export default function Episodes() {
         </div>
       </div>
 
-      {}
       <div className="flex items-center gap-4">
         <button onClick={() => setWeekOffset(weekOffset - 1)} className="p-2 rounded-lg hover:bg-gray-100"><ChevronLeft size={18} /></button>
         <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -529,7 +508,6 @@ export default function Episodes() {
 
       <WeekCalendar episodes={episodes} weekOffset={weekOffset} onPublish={handlePublish} />
 
-      {}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -564,7 +542,7 @@ export default function Episodes() {
         </div>
 
         {(() => {
-          
+
           const weekMap = {};
           for (const ep of episodes) {
             const d = new Date(ep.publishDate);
@@ -675,7 +653,6 @@ export default function Episodes() {
         })()}
       </div>
 
-      {}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -689,7 +666,6 @@ export default function Episodes() {
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
             </div>
             <div className="p-5 space-y-4">
-              {}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Episode Title</label>
                 <input
@@ -700,7 +676,6 @@ export default function Episodes() {
                 />
               </div>
 
-              {}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Day Type</label>
@@ -728,7 +703,6 @@ export default function Episodes() {
                 </div>
               </div>
 
-              {}
               {!editingEp && batchCount > 0 && (
                 <div className="bg-mayden-magenta/5 border border-mayden-magenta/20 rounded-lg px-4 py-3">
                   <p className="text-sm text-mayden-dark font-medium">{batchCount} {form.dayType} episodes will be created</p>
@@ -744,7 +718,6 @@ export default function Episodes() {
                 </div>
               )}
 
-              {}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Audio — {currentDayPillar} ({form.dayType})
@@ -788,7 +761,6 @@ export default function Episodes() {
                 )}
               </div>
 
-              {}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Show Notes</label>
                 <p className="text-[10px] text-gray-400 mb-1.5">Appears below the audio player for subscribers. Use the link button to add clickable CTAs (e.g. "Open Mayden App").</p>
@@ -805,7 +777,6 @@ export default function Episodes() {
         </div>
       )}
 
-      {}
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-sm p-6 text-center">
@@ -822,7 +793,6 @@ export default function Episodes() {
         </div>
       )}
 
-      {}
       {bulkDeleteTarget && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-sm p-6 text-center">
@@ -839,7 +809,6 @@ export default function Episodes() {
         </div>
       )}
 
-      {}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-all ${toast.type === "error" ? "bg-red-500 text-white" : "bg-emerald-500 text-white"}`}>
           {toast.message}
