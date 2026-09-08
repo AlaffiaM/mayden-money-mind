@@ -1,5 +1,3 @@
-
-
 import { Sun, Target, Heart, Users, TrendingUp, Sparkles, Lock, Shield, Clock, ArrowRight, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import LogoLockup from "../components/ui/LogoLockup";
@@ -9,7 +7,6 @@ import PricingCard from "../components/ui/PricingCard";
 import FaqAccordion from "../components/ui/FaqAccordion";
 import { LANDING } from "../constants/copy";
 import { usePricing } from "../hooks/usePricing";
-
 
 const icons = { Sun, Target, Heart, Users, TrendingUp, Lock, Shield, Clock };
 
@@ -22,7 +19,6 @@ export default function Landing() {
 
   return (
     <main className="min-h-screen bg-white text-gray-800 relative pb-20 sm:pb-0">
-      {}
       <div className="absolute top-0 left-0 right-0 z-20 px-4 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-end gap-4">
           <button onClick={() => navigate("/login")} className="text-sm text-gray-500 hover:text-mayden-magenta transition-colors font-medium">Sign In</button>
@@ -30,7 +26,6 @@ export default function Landing() {
         </div>
       </div>
 
-      {}
       <section className="relative overflow-hidden min-h-screen flex items-center px-4 py-20 lg:py-24" style={{ background: "linear-gradient(to bottom, #FFFFFF 0%, #FFFFFF 30%, #FFF5F8 60%, #FFF5F8 80%, #FFFFFF 100%)" }}>
         <div className="absolute inset-0 pointer-events-none opacity-[0.04]">
           <svg className="w-full h-full" viewBox="0 0 1440 900" preserveAspectRatio="none">
@@ -48,7 +43,6 @@ export default function Landing() {
             {LANDING.hero.subheadline}
           </p>
 
-          {}
           <div className="flex flex-wrap items-center justify-center gap-4 lg:gap-8 mb-10">
             {LANDING.hero.trust.map((item, i) => {
               const Icon = icons[item.icon] || Lock;
@@ -68,7 +62,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {}
       <section className="bg-gray-50 border-t border-gray-100 px-4 py-16 lg:py-20">
         <div className="max-w-4xl mx-auto text-center">
           <div className="w-12 h-12 rounded-full bg-mayden-magenta/10 text-mayden-magenta flex items-center justify-center mx-auto mb-6">
@@ -83,7 +76,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {}
       <section className="bg-white px-4 py-12 lg:py-16">
         <div className="max-w-3xl mx-auto">
           <h3 className="text-center text-sm font-semibold text-gray-400 uppercase tracking-wider mb-8">{LANDING.howItWorks.headline}</h3>
@@ -106,7 +98,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {}
       <section id="audio" className="bg-gray-50 px-4 py-16 lg:py-20">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl lg:text-4xl font-serif font-bold text-mayden-dark mb-8">
@@ -124,7 +115,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {}
       <section id="blueprint" className="bg-white px-4 py-16 lg:py-20">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl lg:text-4xl font-serif font-bold text-mayden-dark text-center mb-12">
@@ -150,7 +140,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {}
       <section id="pricing" className="bg-gray-50 border-t border-gray-100 px-4 py-16 lg:py-20">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl lg:text-4xl font-serif font-bold text-mayden-dark mb-10">
@@ -174,7 +163,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {}
       <section className="bg-white px-4 py-16 lg:py-20">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-2xl lg:text-3xl font-serif font-bold text-mayden-dark text-center mb-8">
@@ -184,10 +172,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {}
       <footer className="bg-gray-50 border-t border-gray-200 px-4 pt-12 pb-8 mt-0">
         <div className="max-w-4xl mx-auto">
-          {}
           <div className="text-center mb-10">
             <p className="text-sm font-semibold text-mayden-dark mb-3">{LANDING.footer.newsletter.headline}</p>
             <form className="flex max-w-md mx-auto gap-2" onSubmit={(e) => e.preventDefault()}>
@@ -203,10 +189,8 @@ export default function Landing() {
             </form>
           </div>
 
-          {}
           <p className="text-xs text-gray-400 text-center mb-8">{LANDING.footer.delivery}</p>
 
-          {}
           <div className="flex flex-wrap justify-center gap-8 mb-8">
             {LANDING.footer.links.map((link) => (
               <a
@@ -224,7 +208,6 @@ export default function Landing() {
         </div>
       </footer>
 
-      {}
       <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden bg-white border-t border-gray-200 px-4 py-3 safe-area-bottom">
         <button
           onClick={handleSubscribe}
