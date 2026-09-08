@@ -1,13 +1,7 @@
-
-
-
-
 import { prisma } from "../config/prisma.js";
 import logger from "../utils/logger.js";
 
-
 const CHECK_INTERVAL_MS = 15 * 60 * 1000;
-
 
 function dateKey(d = new Date()) {
   const y = d.getFullYear();
@@ -16,26 +10,21 @@ function dateKey(d = new Date()) {
   return `${y}-${m}-${day}`;
 }
 
-
 export async function sendDailyReminder() {
   const now = new Date();
 
-  
   const releaseSetting = await prisma.setting.findUnique({ where: { key: "episodeReleaseTime" } });
   const releaseTime = releaseSetting?.value || "06:00";
   const [hours, minutes] = releaseTime.split(":").map(Number);
 
-  
   const todayCutoff = new Date(now);
   todayCutoff.setHours(hours, minutes, 0, 0);
   if (now < todayCutoff) return;
 
-  
   const today = dateKey(now);
   const marker = await prisma.setting.findUnique({ where: { key: "lastDailyReminderDate" } });
   if (marker?.value === today) return;
 
-  
   const dayStart = new Date(now);
   dayStart.setHours(0, 0, 0, 0);
   const dayEnd = new Date(dayStart);
@@ -69,14 +58,13 @@ export async function sendDailyReminder() {
 
 let reminderTimer = null;
 
-
 export function startDailyReminderProcessor() {
   if (reminderTimer) return;
   reminderTimer = setInterval(() => {
     sendDailyReminder().catch((err) => logger.error("[daily-reminder] run failed:", err.message));
   }, CHECK_INTERVAL_MS);
   reminderTimer.unref();
-  
+
   if (process.env.NODE_ENV !== "test") {
     sendDailyReminder().catch((err) => logger.error("[daily-reminder] initial run failed:", err.message));
   }
