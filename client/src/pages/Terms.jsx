@@ -1,4 +1,4 @@
-// Terms & Conditions placeholder page
+
 import { Link } from "react-router-dom";
 
 export default function Terms() {
