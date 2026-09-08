@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Mail, RefreshCw, Loader2, CheckCircle, Clock } from "lucide-react";
@@ -21,7 +21,6 @@ export default function VerifyEmailSent() {
   const [cooldownStart, setCooldownStart] = useState(null);
   const [countdown, setCountdown] = useState(0);
   const [verified, setVerified] = useState(false);
-  const sentRef = useRef(false);
 
   useEffect(() => {
     if (cooldownStart === null) return;
@@ -38,24 +37,6 @@ export default function VerifyEmailSent() {
     const id = setTimeout(() => navigate("/dashboard", { replace: true }), 1500);
     return () => clearTimeout(id);
   }, [verified, navigate]);
-
-  useEffect(() => {
-    if (!email || sentRef.current) return;
-    sentRef.current = true;
-
-    const send = async () => {
-      setStatus("sending");
-      try {
-        await resendVerification(email);
-        setStatus("sent");
-        setCountdown(RESEND_COOLDOWN);
-        setCooldownStart(Date.now());
-      } catch {
-        setStatus("error");
-      }
-    };
-    send();
-  }, [email, resendVerification]);
 
   const handleResend = async () => {
     if (!email || status === "sending" || countdown > 0 || verified) return;
