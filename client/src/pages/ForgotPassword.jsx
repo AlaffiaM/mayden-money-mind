@@ -22,10 +22,14 @@ export default function ForgotPassword() {
     }
     setLoading(true);
     try {
-      await api.post("/auth/forgot-password", { email: email.trim().toLowerCase() });
+      await api.post("/auth/forgot-password", {
+        email: email.trim().toLowerCase(),
+      });
       setSent(true);
     } catch (err) {
-      setError(err.response?.data?.error || "Something went wrong. Please try again.");
+      setError(
+        err.response?.data?.error || "Something went wrong. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -40,7 +44,9 @@ export default function ForgotPassword() {
             alt="Money & Mind"
             className="w-16 h-16 object-contain mx-auto mb-4"
           />
-          <h1 className="font-serif text-2xl font-bold text-mayden-dark">Forgot your password?</h1>
+          <h1 className="font-serif text-2xl font-bold text-mayden-dark">
+            Forgot your password?
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
             {sent
               ? "Check your inbox for the reset link"
@@ -50,7 +56,8 @@ export default function ForgotPassword() {
 
         {sent ? (
           <div className="p-4 rounded-lg bg-green-50 border border-green-100 text-sm text-green-700 text-center">
-            If an account exists for <span className="font-semibold">{email.trim().toLowerCase()}</span>,
+            If an account exists for{" "}
+            <span className="font-semibold">{email.trim().toLowerCase()}</span>,
             a password reset link is on its way. The link expires in 30 minutes.
             <div className="mt-4">
               <Link
@@ -70,11 +77,17 @@ export default function ForgotPassword() {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-1.5"
+              >
                 Email
               </label>
               <div className="relative">
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Mail
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
                 <input
                   id="email"
                   type="email"
@@ -99,12 +112,6 @@ export default function ForgotPassword() {
             </button>
           </form>
         )}
-
-        <p className="text-sm text-gray-500 text-center mt-6">
-          <Link to="/login" className="inline-flex items-center gap-1 text-mayden-magenta font-semibold hover:underline">
-            <ArrowLeft size={14} /> Back to sign in
-          </Link>
-        </p>
       </div>
     </div>
   );
