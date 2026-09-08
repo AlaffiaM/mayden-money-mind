@@ -1,4 +1,3 @@
-
 import { Router } from "express";
 import { authenticate } from "../middleware/auth.js";
 import { initialize, verify, callback, webhook } from "../controllers/paymentController.js";
