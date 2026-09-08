@@ -12,10 +12,11 @@ const PUBLIC_FILES = ["/audio/Maiden Microfinance Bank MONDAY.mp3.mpeg"];
 
 const DEFAULT_TTL_SECONDS = 60;
 
-function sign(filePath, expires) {
+function sign(filePath, expires, userId) {
+  const msg = userId ? `${filePath}|${expires}|${userId}` : `${filePath}|${expires}`;
   return crypto
     .createHmac("sha256", process.env.JWT_SECRET)
-    .update(`${filePath}|${expires}`)
+    .update(msg)
     .digest("hex");
 }
 
@@ -26,22 +27,36 @@ function safeEqual(a, b) {
   return crypto.timingSafeEqual(aBuf, bBuf);
 }
 
-export function signAudioUrl(filePath, ttlSeconds = DEFAULT_TTL_SECONDS) {
+export function signAudioUrl(filePath, optionsOrTtl = {}) {
+  let ttlSeconds = DEFAULT_TTL_SECONDS;
+  let userId = null;
+
+  if (typeof optionsOrTtl === "number") {
+    ttlSeconds = optionsOrTtl;
+  } else {
+    ttlSeconds = optionsOrTtl.ttl ?? DEFAULT_TTL_SECONDS;
+    userId = optionsOrTtl.userId ?? null;
+  }
+
   const expires = Date.now() + ttlSeconds * 1000;
-  const sig = sign(filePath, expires);
-  return `/api/audio?file=${encodeURIComponent(filePath)}&exp=${expires}&sig=${sig}`;
+  const sig = sign(filePath, expires, userId);
+  const u = userId ? `&u=${userId}` : "";
+  return `/api/audio?file=${encodeURIComponent(filePath)}&exp=${expires}${u}&sig=${sig}`;
 }
 
 export function verifyAudioToken(query) {
   const filePath = query?.file;
   if (!filePath || typeof filePath !== "string") return null;
-  if (isPublicFile(filePath)) return filePath;
+  if (isPublicFile(filePath)) return { filePath, userId: null };
 
   const expires = parseInt(query?.exp, 10);
   const sig = query?.sig;
+  const uRaw = query?.u;
+  const userId = uRaw ? parseInt(uRaw, 10) : null;
+  if (uRaw && !Number.isInteger(userId)) return null;
   if (!expires || !sig || expires < Date.now()) return null;
-  if (!safeEqual(sign(filePath, expires), sig)) return null;
-  return filePath;
+  if (!safeEqual(sign(filePath, expires, userId), sig)) return null;
+  return { filePath, userId };
 }
 
 function isPublicFile(filePath) {
