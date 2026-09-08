@@ -1,6 +1,3 @@
-
-
-
 const STORAGE_KEY = "utmParams";
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"];
 
@@ -16,7 +13,7 @@ export function captureUtm() {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(captured));
     }
   } catch {
-    
+
   }
 }
 
