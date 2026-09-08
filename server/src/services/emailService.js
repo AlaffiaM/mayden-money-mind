@@ -154,6 +154,22 @@ ${codeBox(code)}
   });
 }
 
+// Email a one-time nudge to users whose subscription has lapsed
+export async function sendSubscriptionReminderEmail({ to, fullName }) {
+  const bodyHtml = `
+<p>Hi ${escapeHtml(fullName)},</p>
+<p>Your <strong>Money &amp; Mind</strong> subscription has ended — but your library is still here.</p>
+<p>Every episode you've listened to is waiting for you. Renew to pick up right where you left off and keep your morning moment of calm.</p>
+<p style="text-align:center;">${ctaButton(`${FRONTEND_URL}/subscription`, "Restore Access")}</p>
+<p>Warmly,<br/>The Money &amp; Mind team</p>`;
+
+  return sendEmail({
+    to,
+    subject: "Your Money & Mind subscription has ended",
+    htmlContent: emailTemplate({ title: "Your subscription has ended", bodyHtml }),
+  });
+}
+
 // Email the 30-minute password reset code
 export async function sendPasswordResetEmail({ to, fullName, code }) {
   const bodyHtml = `
