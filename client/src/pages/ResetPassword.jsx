@@ -1,5 +1,5 @@
-// Reset password page — reached from the emailed reset link (?token=...).
-// Sets a new password, then sends the user to the sign-in page.
+
+
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import api from "../services/api";
