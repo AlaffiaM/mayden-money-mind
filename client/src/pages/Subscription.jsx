@@ -4,7 +4,7 @@ import { useSubscription } from "../hooks/useSubscription";
 import { usePricing } from "../hooks/usePricing";
 import Button from "../components/ui/Button";
 import api from "../services/api";
-import { CheckCircle, XCircle, AlertTriangle, Clock } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Clock, Calendar, CreditCard, RotateCcw } from "lucide-react";
 import SubscriberLayout from "../components/layout/SubscriberLayout";
 
 export default function Subscription() {
@@ -80,7 +80,6 @@ export default function Subscription() {
       const now = new Date();
       const nextRenewal = new Date(subscription.nextRenewal);
       if (nextRenewal < now) {
-
         refetch().catch(() => {});
       }
     };
@@ -101,7 +100,6 @@ export default function Subscription() {
       if (data.redirectUrl) {
         window.location.href = data.redirectUrl;
       } else {
-
         await api.post("/payments/verify", { reference: data.payment.reference });
         navigate("/dashboard", { replace: true });
       }
@@ -126,7 +124,6 @@ export default function Subscription() {
       if (subscription.autoRenew) {
         await setAutoRenew(subscription.id, false);
       } else {
-
         await setAutoRenew(subscription.id, true);
         const { data } = await api.post("/payments/initialize", {
           subscriptionId: subscription.id,
@@ -160,8 +157,8 @@ export default function Subscription() {
   const statusBanner = (() => {
     if (polling) {
       return (
-        <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-200 flex items-center gap-3">
-          <Clock size={20} className="text-blue-600 flex-shrink-0 animate-pulse" />
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <Clock size={20} className="flex-shrink-0 animate-pulse text-blue-600" />
           <div>
             <p className="text-sm font-semibold text-blue-800">Confirming payment...</p>
             <p className="text-xs text-blue-600">Checking with Paystack, please wait.</p>
@@ -172,8 +169,8 @@ export default function Subscription() {
 
     if (urlStatus === "success" && !polling) {
       return (
-        <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-3">
-          <CheckCircle size={20} className="text-emerald-600 flex-shrink-0" />
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+          <CheckCircle size={20} className="flex-shrink-0 text-emerald-600" />
           <div>
             <p className="text-sm font-semibold text-emerald-800">Payment confirmed!</p>
             <p className="text-xs text-emerald-600">Redirecting you now...</p>
@@ -184,21 +181,21 @@ export default function Subscription() {
 
     if (urlStatus === "failed") {
       return (
-        <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 flex items-center gap-3">
-          <XCircle size={20} className="text-red-600 flex-shrink-0" />
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+          <XCircle size={20} className="flex-shrink-0 text-red-600" />
           <div className="flex-1">
             <p className="text-sm font-semibold text-red-800">Payment was not completed</p>
             <p className="text-xs text-red-600">No worries — you can try again whenever you're ready.</p>
           </div>
-          <button onClick={() => setSearchParams({})} className="text-xs font-medium text-red-600 hover:text-red-800 underline">Dismiss</button>
+          <button onClick={() => setSearchParams({})} className="text-xs font-medium text-red-600 underline hover:text-red-800">Dismiss</button>
         </div>
       );
     }
 
     if (subscription?.status === "cancelled") {
       return (
-        <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-3">
-          <AlertTriangle size={20} className="text-amber-600 flex-shrink-0" />
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <AlertTriangle size={20} className="flex-shrink-0 text-amber-600" />
           <div>
             <p className="text-sm font-semibold text-amber-800">Subscription cancelled</p>
             <p className="text-xs text-amber-600">Pick a new plan below to get back on track.</p>
@@ -209,8 +206,8 @@ export default function Subscription() {
 
     if (subscription?.status === "expired") {
       return (
-        <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 flex items-center gap-3">
-          <AlertTriangle size={20} className="text-red-600 flex-shrink-0" />
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+          <AlertTriangle size={20} className="flex-shrink-0 text-red-600" />
           <div>
             <p className="text-sm font-semibold text-red-800">Payment expired</p>
             <p className="text-xs text-red-600">Your recurring payment failed. Choose a plan below to resubscribe.</p>
@@ -221,8 +218,8 @@ export default function Subscription() {
 
     if (subscription?.status === "pending") {
       return (
-        <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-3">
-          <Clock size={20} className="text-amber-600 flex-shrink-0" />
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <Clock size={20} className="flex-shrink-0 text-amber-600" />
           <div>
             <p className="text-sm font-semibold text-amber-800">Payment pending</p>
             <p className="text-xs text-amber-600">Complete your payment or choose a new plan below.</p>
@@ -236,28 +233,44 @@ export default function Subscription() {
 
   return (
     <SubscriberLayout>
-      <div className="max-w-lg mx-auto">
+      <div className="mx-auto max-w-lg">
         {statusBanner}
 
-        <h1 className="text-2xl font-serif font-bold text-mayden-dark mb-6">My Subscription</h1>
+        <h1 className="mb-6 text-2xl font-serif font-bold text-mayden-dark">My Subscription</h1>
 
-        {(subscription?.status === "active") && !polling ? (
-          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700`}>
-                Active
-              </span>
-              <span className="text-sm text-gray-500">
-                {subscription.plan === "weekly" ? `₦${pricing.weeklyPrice} / Week` : `₦${pricing.monthlyPrice} / Month`}
-              </span>
+        {subscription?.status === "active" && !polling ? (
+          <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+            <div className="bg-gradient-to-br from-mayden-pink-tint/80 to-white p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                  Active
+                </span>
+                <span className="text-sm font-medium text-mayden-dark">
+                  {subscription.plan === "weekly" ? `₦${pricing.weeklyPrice} / Week` : `₦${pricing.monthlyPrice} / Month`}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2.5">
+                  <Calendar size={14} className="flex-shrink-0 text-gray-400" />
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-gray-400">Started</p>
+                    <p className="text-gray-600">{new Date(subscription.startDate).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2.5">
+                  <RotateCcw size={14} className="flex-shrink-0 text-gray-400" />
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-gray-400">Next renewal</p>
+                    <p className="text-gray-600">{new Date(subscription.nextRenewal).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="text-sm text-gray-500 space-y-2 mb-6">
-              <p>Started: {new Date(subscription.startDate).toLocaleDateString()}</p>
-              <p>Next renewal: {new Date(subscription.nextRenewal).toLocaleDateString()}</p>
-            </div>
-            {subscription.autoRenew ? (
-              <>
-                <div className="flex items-center justify-between py-3 border-t border-gray-100 mb-6">
+
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-between border-t border-gray-100 pt-4">
+                <div className="flex items-center gap-2">
+                  <CreditCard size={16} className="text-gray-400" />
                   <div>
                     <p className="text-sm font-medium text-mayden-dark">Auto-renew</p>
                     <p className="text-xs text-gray-500">
@@ -266,56 +279,64 @@ export default function Subscription() {
                         : "Off — your access ends when the current period expires"}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleAutoRenewToggle}
-                    aria-pressed={subscription.autoRenew}
-                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${subscription.autoRenew ? "bg-emerald-500" : "bg-gray-300"}`}
-                  >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${subscription.autoRenew ? "translate-x-6" : "translate-x-1"}`} />
-                  </button>
                 </div>
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    className="flex-1 text-sm !border-red-200 !text-red-500 hover:!bg-red-50"
-                    onClick={handleCancel}
-                  >
-                    Cancel Subscription
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <div className="text-sm text-gray-500">
-                One-time payment — access ends {new Date(subscription.nextRenewal).toLocaleDateString()}. Resubscribe anytime to continue.
+                <button
+                  type="button"
+                  onClick={handleAutoRenewToggle}
+                  aria-pressed={subscription.autoRenew}
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${subscription.autoRenew ? "bg-emerald-500" : "bg-gray-300"}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${subscription.autoRenew ? "translate-x-6" : "translate-x-1"}`} />
+                </button>
               </div>
-            )}
+
+              {subscription.autoRenew && (
+                <Button
+                  variant="outline"
+                  className="w-full text-sm !border-red-200 !text-red-500 hover:!bg-red-50"
+                  onClick={handleCancel}
+                >
+                  Cancel Subscription
+                </Button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
             {!polling && (
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  onClick={() => handleSubscribe("weekly")}
-                  className="rounded-xl border-2 border-gray-200 p-6 text-center hover:border-mayden-magenta transition-colors"
-                >
-                  <p className="text-2xl font-bold text-mayden-dark">₦{pricing.weeklyPrice}</p>
-                  <p className="text-sm text-gray-500">Weekly</p>
-                </button>
-                <button
-                  onClick={() => handleSubscribe("monthly")}
-                  className="rounded-xl border-2 border-mayden-magenta p-6 text-center bg-mayden-magenta/5"
-                >
-                  <p className="text-2xl font-bold text-mayden-dark">₦{pricing.monthlyPrice}</p>
-                  <p className="text-sm text-gray-500">Monthly</p>
-                </button>
-              </div>
-            )}
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => handleSubscribe("weekly")}
+                    className="group rounded-2xl border-2 border-gray-200 bg-white p-6 text-center transition-all hover:-translate-y-0.5 hover:border-mayden-magenta hover:shadow-md"
+                  >
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Weekly</p>
+                    <p className="mt-1 text-3xl font-bold text-mayden-dark">₦{pricing.weeklyPrice}</p>
+                    <p className="text-xs text-gray-500">per week</p>
+                    <span className="mt-3 inline-block rounded-full bg-mayden-magenta/10 px-3 py-1 text-[10px] font-semibold text-mayden-magenta opacity-0 transition-opacity group-hover:opacity-100">
+                      Choose this plan
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handleSubscribe("monthly")}
+                    className="group relative rounded-2xl border-[3px] border-mayden-magenta bg-mayden-pink-tint/40 p-6 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-mayden-magenta px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                      Most Popular
+                    </span>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-mayden-magenta">Monthly</p>
+                    <p className="mt-1 text-3xl font-bold text-mayden-dark">₦{pricing.monthlyPrice}</p>
+                    <p className="text-xs text-gray-500">per month</p>
+                    <p className="mt-2 text-[11px] font-semibold text-mayden-magenta">
+                      Save ₦{parseInt(pricing.weeklyPrice) * 4 - parseInt(pricing.monthlyPrice)} vs. weekly
+                    </p>
+                  </button>
+                </div>
 
-            {!polling && (
-              <p className="text-xs text-center text-gray-400 mt-2">
-                Pay with card, bank transfer, USSD or bank. Only card payments auto-renew each period.
-              </p>
+                <p className="mt-2 text-center text-xs text-gray-400">
+                  Pay with card, bank transfer, USSD or bank. Only card payments auto-renew each period.
+                </p>
+              </>
             )}
           </div>
         )}
