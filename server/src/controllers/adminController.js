@@ -1,5 +1,5 @@
-// Admin handlers — dashboard stats, settings CRUD, users, episodes, subscriptions, notifications
-// All routes using these handlers are protected by authenticate + requireAdmin middleware.
+
+
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -9,11 +9,11 @@ import { signAudioUrl } from "../utils/audioAccessControl.js";
 import { businessDateStr, businessDayOfWeek, businessToday } from "../utils/businessTime.js";
 import logger from "../utils/logger.js";
 
-// Admin-facing preview URLs use a longer TTL so the admin list/modal previews
-// stay playable while working in the dashboard (subscriber playback stays at 60s).
+
+
 const ADMIN_PREVIEW_TTL_SECONDS = 60 * 60;
 
-// Default settings values used as fallback if DB has no value set
+
 const DEFAULT_SETTINGS = {
   weeklyPrice: "100",
   monthlyPrice: "350",
@@ -29,7 +29,7 @@ const DEFAULT_SETTINGS = {
   }),
 };
 
-// Whitelist of settings keys that can be updated via the PUT endpoint
+
 const SETTINGS_KEYS = [
   "weeklyPrice", "monthlyPrice", "currency",
   "gracePeriodHours", "episodeReleaseTime",
@@ -37,9 +37,9 @@ const SETTINGS_KEYS = [
   "notificationTime", "enableInApp", "enableWhatsApp", "enableEmail",
 ];
 
-// Sensitive settings must never be exposed to the client. Matches a key if it
-// hints at a secret (token, key, password, credential, etc.) so a stray
-// sensitive Setting row can never leak through the settings endpoints.
+
+
+
 const SENSITIVE_SETTING_RE =
   /(secret|password|passwd|token|api[_-]?key|private[_-]?key|credential|webhook|signature|hash)$/i;
 
@@ -47,7 +47,7 @@ function isSensitiveSettingKey(key) {
   return SENSITIVE_SETTING_RE.test(key);
 }
 
-// Returns the settings map with any sensitive keys stripped out.
+
 async function getSafeSettings() {
   const settings = await prisma.setting.findMany();
   const map = {};
@@ -71,7 +71,7 @@ const DAY_KEYWORDS = {
 
 const AUDIO_EXT_RE = /\.(mp3|mpeg|wav|m4a|ogg|aac)$/i;
 
-// GET /api/admin/settings
+
 export async function getSettings(req, res, next) {
   try {
     res.json(await getSafeSettings());
@@ -80,7 +80,7 @@ export async function getSettings(req, res, next) {
   }
 }
 
-// PUT /api/admin/settings
+
 export async function updateSettings(req, res, next) {
   try {
     const updates = req.body;
@@ -88,7 +88,7 @@ export async function updateSettings(req, res, next) {
 
     for (const key of SETTINGS_KEYS) {
       if (updates[key] !== undefined) {
-        // Validate specific keys
+        
         let value = updates[key];
         if (key === 'weeklyPrice' || key === 'gracePeriodHours') {
           const num = Number(value);
@@ -132,7 +132,7 @@ export async function updateSettings(req, res, next) {
   }
 }
 
-// GET /api/admin/stats
+
 export async function getStats(req, res, next) {
   try {
     const now = new Date();
@@ -243,7 +243,7 @@ export async function getStats(req, res, next) {
   }
 }
 
-// GET /api/admin/users
+
 export async function listUsers(req, res, next) {
   try {
     const { search, status } = req.query;
@@ -294,7 +294,7 @@ export async function listUsers(req, res, next) {
   }
 }
 
-// GET /api/admin/users/:id
+
 export async function getUser(req, res, next) {
   try {
     const user = await prisma.user.findUnique({
@@ -317,7 +317,7 @@ export async function getUser(req, res, next) {
   }
 }
 
-// DELETE /api/admin/users/:id
+
 export async function deleteUser(req, res, next) {
   try {
     const userId = parseInt(req.params.id);
@@ -339,7 +339,7 @@ export async function deleteUser(req, res, next) {
   }
 }
 
-// POST /api/admin/users/:id/override
+
 export async function overrideUser(req, res, next) {
   try {
     const { action, reason } = req.body;
@@ -385,17 +385,17 @@ export async function overrideUser(req, res, next) {
   }
 }
 
-// Day types represent the five weekdays (Mon-Fri) that make up the weekly
-// calendar. Each maps to the JS getDay() value (1=Monday .. 5=Friday).
+
+
 const WEEKDAY_KEYS = ["monday", "tuesday", "wednesday", "thursday", "friday"];
 const WEEKDAY_TO_DAYNUM = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5 };
 
-// Compute the next available Lagos-calendar date for a weekday (Mon-Fri),
-// starting today and skipping any date that already has an episode at
-// (dayType, publishDate). Used as a server-side fallback/validation so the
-// backend is the source of truth for scheduling even when a client omits or
-// miscomputes publishDate. All date math uses the shared business timezone so
-// it never drifts with the server/browser local timezone.
+
+
+
+
+
+
 export async function computeNextAvailableWeekDate(dayType, excludeDate) {
   const dayNum = WEEKDAY_TO_DAYNUM[dayType];
   if (!dayNum) {
@@ -409,7 +409,7 @@ export async function computeNextAvailableWeekDate(dayType, excludeDate) {
   const taken = new Set(existing.map((e) => businessDateStr(new Date(e.publishDate))));
   if (excludeDate) taken.add(businessDateStr(new Date(excludeDate)));
 
-  const start = businessToday(); // Lagos midnight of today
+  const start = businessToday(); 
   const todayDow = businessDayOfWeek(start);
   let diff = dayNum - todayDow;
   if (diff < 0) diff += 7;
@@ -421,7 +421,7 @@ export async function computeNextAvailableWeekDate(dayType, excludeDate) {
   return candidate;
 }
 
-// POST /api/admin/episodes
+
 export async function createEpisode(req, res, next) {
   try {
     const { title, dayType, runTimeSeconds, showNotes, publishDate, status } = req.body;
@@ -431,9 +431,9 @@ export async function createEpisode(req, res, next) {
       return res.status(400).json({ error: `dayType must be one of: ${WEEKDAY_KEYS.join(", ")}` });
     }
 
-    // Resolve the publish date: honor a supplied valid date, otherwise compute
-    // the next available weekday date server-side. Rejects any date whose weekday
-    // doesn't match dayType or that isn't a real calendar date.
+    
+    
+    
     let publish = new Date(publishDate);
     const publishInvalid = Number.isNaN(publish.getTime());
     if (publishInvalid) {
@@ -448,10 +448,10 @@ export async function createEpisode(req, res, next) {
       }
     }
 
-    // Idempotency guard: refuse to create a second episode for the same weekday.
-    // The batch scheduler can be (and historically was) double-submitted, which
-    // silently created full duplicate weeks. The DB unique index on
-    // (dayType, publishDate) is the hard backstop; this gives a clean 409 here first.
+    
+    
+    
+    
     const existing = await prisma.episode.findFirst({
       where: { dayType, publishDate: publish },
       select: { id: true },
@@ -477,7 +477,7 @@ export async function createEpisode(req, res, next) {
   }
 }
 
-// PUT /api/admin/episodes/:id
+
 export async function updateEpisode(req, res, next) {
   try {
     const { title, dayType, runTimeSeconds, showNotes, publishDate, status } = req.body;
@@ -490,11 +490,11 @@ export async function updateEpisode(req, res, next) {
 
     const current = await prisma.episode.findUnique({ where: { id: req.params.id } });
 
-    // Resolve publish date for the (possibly new) dayType:
-    //  - an explicit valid publishDate is honored,
-    //  - else if dayType changed (or a new dayType implies a new date), compute
-    //    the next available weekday date for that dayType,
-    //  - else keep the existing date (no change).
+    
+    
+    
+    
+    
     let publish = null;
     if (publishDate !== undefined) {
       publish = new Date(publishDate);
@@ -526,7 +526,7 @@ export async function updateEpisode(req, res, next) {
   }
 }
 
-// POST /api/admin/episodes/:id/publish
+
 export async function publishEpisode(req, res, next) {
   try {
     const episode = await prisma.episode.update({
@@ -540,7 +540,7 @@ export async function publishEpisode(req, res, next) {
   }
 }
 
-// DELETE /api/admin/episodes/:id
+
 export async function deleteEpisode(req, res, next) {
   try {
     await prisma.listenLog.deleteMany({ where: { episodeId: req.params.id } });
@@ -551,8 +551,8 @@ export async function deleteEpisode(req, res, next) {
   }
 }
 
-// POST /api/admin/episodes/:id/stream — mint a fresh signed URL for admin preview
-// (listings expire after an hour; this guarantees the play button always works)
+
+
 export async function streamEpisode(req, res, next) {
   try {
     const episode = await prisma.episode.findUnique({ where: { id: req.params.id } });
@@ -564,7 +564,7 @@ export async function streamEpisode(req, res, next) {
   }
 }
 
-// GET /api/admin/episodes
+
 export async function listEpisodes(req, res, next) {
   try {
     const episodes = await prisma.episode.findMany({
@@ -583,7 +583,7 @@ export async function listEpisodes(req, res, next) {
   }
 }
 
-// GET /api/admin/subscriptions
+
 export async function listSubscriptions(req, res, next) {
   try {
     const { status } = req.query;
@@ -618,7 +618,7 @@ export async function listSubscriptions(req, res, next) {
   }
 }
 
-// GET /api/admin/subscriptions/revenue
+
 export async function getRevenue(req, res, next) {
   try {
     const payments = await prisma.payment.findMany({
@@ -635,7 +635,7 @@ export async function getRevenue(req, res, next) {
   }
 }
 
-// GET /api/admin/reports/utm — conversion funnel grouped by UTM source
+
 export async function getUtmReport(req, res, next) {
   try {
     const users = await prisma.user.findMany({
@@ -673,7 +673,7 @@ export async function getUtmReport(req, res, next) {
   }
 }
 
-// GET /api/admin/payments/export?days=1 (or ?from=ISO&to=ISO) — CSV of successful payments
+
 export async function exportPayments(req, res, next) {
   try {
     const { days, from, to } = req.query;
