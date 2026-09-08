@@ -1,5 +1,3 @@
-
-
 import { useAuth } from "../../context/AuthContext";
 import { LayoutDashboard, FileText, Users, CreditCard, Bell, Settings, LogOut } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
@@ -8,7 +6,6 @@ import LogoutButton from "../ui/LogoutButton";
 export default function AdminLayout({ children }) {
   const { user } = useAuth();
 
-  
   const nav = [
     { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
     { to: "/admin/episodes", label: "Episodes", icon: FileText },
@@ -22,9 +19,7 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {}
       <aside className="w-64 bg-mayden-dark text-white flex flex-col">
-        {}
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center gap-2">
             <img src="/assets/logo.jpg" alt="M&m" className="w-8 h-8 object-contain rounded-full" />
@@ -33,7 +28,6 @@ export default function AdminLayout({ children }) {
           <p className="text-xs text-gray-400 mt-1">Admin Panel</p>
         </div>
 
-        {}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {nav.map((item) => {
             const active = item.exact ? location.pathname === item.to : location.pathname.startsWith(item.to);
@@ -52,7 +46,6 @@ export default function AdminLayout({ children }) {
           })}
         </nav>
 
-        {}
         <div className="p-4 border-t border-white/10">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 rounded-full bg-mayden-magenta flex items-center justify-center text-xs font-bold">
@@ -71,7 +64,6 @@ export default function AdminLayout({ children }) {
         </div>
       </aside>
 
-      {}
       <main className="flex-1 overflow-auto">
         <div className="max-w-6xl mx-auto px-6 py-8">{children}</div>
       </main>
