@@ -1,10 +1,7 @@
-
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { ArrowLeft, Mail, Phone, CreditCard, Shield, AlertTriangle, Headphones, Trash2 } from "lucide-react";
-
 
 const STATUS_BADGE = {
   active: "bg-emerald-100 text-emerald-700",
@@ -57,7 +54,7 @@ export default function UserDetail() {
       setOverrideModal(null);
       setReason("");
     } catch {
-      
+
     } finally {
       setOverriding(false);
     }
@@ -84,7 +81,6 @@ export default function UserDetail() {
         <ArrowLeft size={16} /> Back to Users
       </button>
 
-      {}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
@@ -120,7 +116,6 @@ export default function UserDetail() {
         </div>
       </div>
 
-      {}
       <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
         {["overview", "subscriptions", "payments", "activity"].map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors capitalize ${activeTab === tab ? "bg-white text-mayden-dark shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
@@ -129,7 +124,6 @@ export default function UserDetail() {
         ))}
       </div>
 
-      {}
       {activeTab === "overview" && sub && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <h2 className="text-lg font-bold text-mayden-dark mb-4">Current Subscription</h2>
@@ -228,7 +222,6 @@ export default function UserDetail() {
         </div>
       )}
 
-      {}
       {overrideModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
