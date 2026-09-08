@@ -48,6 +48,7 @@ function emailTemplate({ title, bodyHtml, footerText = "Money & Mind by Mayden M
 </html>`;
 }
 
+// Send a formatted Brevo email
 export async function sendUserEmail({ to, subject, title, body }) {
   return sendEmail({
     to,
@@ -56,6 +57,7 @@ export async function sendUserEmail({ to, subject, title, body }) {
   });
 }
 
+// Welcome email with plan details
 export async function sendWelcomeEmail({ to, fullName, plan, nextRenewal }) {
   const planLabel = plan === "weekly" ? "Weekly — ₦100 / week" : "Monthly — ₦350 / month";
   const renewalDate = new Date(nextRenewal).toLocaleDateString("en-GB", {
@@ -81,6 +83,7 @@ export async function sendWelcomeEmail({ to, fullName, plan, nextRenewal }) {
   });
 }
 
+// Email the 24-hour verification link
 export async function sendVerificationEmail({ to, fullName, token }) {
   const verifyUrl = `${FRONTEND_URL}/verify-email?token=${encodeURIComponent(token)}`;
   const bodyHtml = `
