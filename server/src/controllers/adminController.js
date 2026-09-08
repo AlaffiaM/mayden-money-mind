@@ -1,5 +1,3 @@
-
-
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -9,10 +7,7 @@ import { signAudioUrl } from "../utils/audioAccessControl.js";
 import { businessDateStr, businessDayOfWeek, businessToday } from "../utils/businessTime.js";
 import logger from "../utils/logger.js";
 
-
-
 const ADMIN_PREVIEW_TTL_SECONDS = 60 * 60;
-
 
 const DEFAULT_SETTINGS = {
   weeklyPrice: "100",
@@ -29,7 +24,6 @@ const DEFAULT_SETTINGS = {
   }),
 };
 
-
 const SETTINGS_KEYS = [
   "weeklyPrice", "monthlyPrice", "currency",
   "gracePeriodHours", "episodeReleaseTime",
@@ -37,16 +31,12 @@ const SETTINGS_KEYS = [
   "notificationTime", "enableInApp", "enableWhatsApp", "enableEmail",
 ];
 
-
-
-
 const SENSITIVE_SETTING_RE =
   /(secret|password|passwd|token|api[_-]?key|private[_-]?key|credential|webhook|signature|hash)$/i;
 
 function isSensitiveSettingKey(key) {
   return SENSITIVE_SETTING_RE.test(key);
 }
-
 
 async function getSafeSettings() {
   const settings = await prisma.setting.findMany();
@@ -71,7 +61,6 @@ const DAY_KEYWORDS = {
 
 const AUDIO_EXT_RE = /\.(mp3|mpeg|wav|m4a|ogg|aac)$/i;
 
-
 export async function getSettings(req, res, next) {
   try {
     res.json(await getSafeSettings());
@@ -80,7 +69,6 @@ export async function getSettings(req, res, next) {
   }
 }
 
-
 export async function updateSettings(req, res, next) {
   try {
     const updates = req.body;
@@ -88,7 +76,7 @@ export async function updateSettings(req, res, next) {
 
     for (const key of SETTINGS_KEYS) {
       if (updates[key] !== undefined) {
-        
+
         let value = updates[key];
         if (key === 'weeklyPrice' || key === 'gracePeriodHours') {
           const num = Number(value);
@@ -131,7 +119,6 @@ export async function updateSettings(req, res, next) {
     next(err);
   }
 }
-
 
 export async function getStats(req, res, next) {
   try {
@@ -243,7 +230,6 @@ export async function getStats(req, res, next) {
   }
 }
 
-
 export async function listUsers(req, res, next) {
   try {
     const { search, status } = req.query;
@@ -294,7 +280,6 @@ export async function listUsers(req, res, next) {
   }
 }
 
-
 export async function getUser(req, res, next) {
   try {
     const user = await prisma.user.findUnique({
@@ -317,7 +302,6 @@ export async function getUser(req, res, next) {
   }
 }
 
-
 export async function deleteUser(req, res, next) {
   try {
     const userId = parseInt(req.params.id);
@@ -338,7 +322,6 @@ export async function deleteUser(req, res, next) {
     next(err);
   }
 }
-
 
 export async function overrideUser(req, res, next) {
   try {
@@ -385,16 +368,8 @@ export async function overrideUser(req, res, next) {
   }
 }
 
-
-
 const WEEKDAY_KEYS = ["monday", "tuesday", "wednesday", "thursday", "friday"];
 const WEEKDAY_TO_DAYNUM = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5 };
-
-
-
-
-
-
 
 export async function computeNextAvailableWeekDate(dayType, excludeDate) {
   const dayNum = WEEKDAY_TO_DAYNUM[dayType];
@@ -409,7 +384,7 @@ export async function computeNextAvailableWeekDate(dayType, excludeDate) {
   const taken = new Set(existing.map((e) => businessDateStr(new Date(e.publishDate))));
   if (excludeDate) taken.add(businessDateStr(new Date(excludeDate)));
 
-  const start = businessToday(); 
+  const start = businessToday();
   const todayDow = businessDayOfWeek(start);
   let diff = dayNum - todayDow;
   if (diff < 0) diff += 7;
@@ -421,7 +396,6 @@ export async function computeNextAvailableWeekDate(dayType, excludeDate) {
   return candidate;
 }
 
-
 export async function createEpisode(req, res, next) {
   try {
     const { title, dayType, runTimeSeconds, showNotes, publishDate, status } = req.body;
@@ -431,9 +405,6 @@ export async function createEpisode(req, res, next) {
       return res.status(400).json({ error: `dayType must be one of: ${WEEKDAY_KEYS.join(", ")}` });
     }
 
-    
-    
-    
     let publish = new Date(publishDate);
     const publishInvalid = Number.isNaN(publish.getTime());
     if (publishInvalid) {
@@ -448,10 +419,6 @@ export async function createEpisode(req, res, next) {
       }
     }
 
-    
-    
-    
-    
     const existing = await prisma.episode.findFirst({
       where: { dayType, publishDate: publish },
       select: { id: true },
@@ -477,7 +444,6 @@ export async function createEpisode(req, res, next) {
   }
 }
 
-
 export async function updateEpisode(req, res, next) {
   try {
     const { title, dayType, runTimeSeconds, showNotes, publishDate, status } = req.body;
@@ -490,11 +456,6 @@ export async function updateEpisode(req, res, next) {
 
     const current = await prisma.episode.findUnique({ where: { id: req.params.id } });
 
-    
-    
-    
-    
-    
     let publish = null;
     if (publishDate !== undefined) {
       publish = new Date(publishDate);
@@ -526,7 +487,6 @@ export async function updateEpisode(req, res, next) {
   }
 }
 
-
 export async function publishEpisode(req, res, next) {
   try {
     const episode = await prisma.episode.update({
@@ -540,7 +500,6 @@ export async function publishEpisode(req, res, next) {
   }
 }
 
-
 export async function deleteEpisode(req, res, next) {
   try {
     await prisma.listenLog.deleteMany({ where: { episodeId: req.params.id } });
@@ -550,8 +509,6 @@ export async function deleteEpisode(req, res, next) {
     next(err);
   }
 }
-
-
 
 export async function streamEpisode(req, res, next) {
   try {
@@ -563,7 +520,6 @@ export async function streamEpisode(req, res, next) {
     next(err);
   }
 }
-
 
 export async function listEpisodes(req, res, next) {
   try {
@@ -582,7 +538,6 @@ export async function listEpisodes(req, res, next) {
     next(err);
   }
 }
-
 
 export async function listSubscriptions(req, res, next) {
   try {
@@ -618,7 +573,6 @@ export async function listSubscriptions(req, res, next) {
   }
 }
 
-
 export async function getRevenue(req, res, next) {
   try {
     const payments = await prisma.payment.findMany({
@@ -634,7 +588,6 @@ export async function getRevenue(req, res, next) {
     next(err);
   }
 }
-
 
 export async function getUtmReport(req, res, next) {
   try {
@@ -672,7 +625,6 @@ export async function getUtmReport(req, res, next) {
     next(err);
   }
 }
-
 
 export async function exportPayments(req, res, next) {
   try {
@@ -722,7 +674,6 @@ export async function exportPayments(req, res, next) {
   }
 }
 
-// POST /api/admin/subscriptions/send-reminder
 export async function sendReminder(req, res, next) {
   try {
     const { paymentIds } = req.body;
@@ -750,7 +701,6 @@ export async function sendReminder(req, res, next) {
   }
 }
 
-// GET /api/admin/notifications
 export async function listNotifications(req, res, next) {
   try {
     const notifications = await prisma.notification.findMany({
@@ -763,7 +713,6 @@ export async function listNotifications(req, res, next) {
   }
 }
 
-// POST /api/admin/notifications
 export async function createNotification(req, res, next) {
   try {
     const { title, body: notifBody, channels } = req.body;
@@ -785,7 +734,6 @@ export async function createNotification(req, res, next) {
   }
 }
 
-// POST /api/admin/notifications/test
 export async function testNotification(req, res, next) {
   try {
     const { title, body: notifBody, channels } = req.body;
@@ -795,12 +743,10 @@ export async function testNotification(req, res, next) {
   }
 }
 
-// DELETE /api/admin/notifications/:id
 export async function deleteNotification(req, res, next) {
   try {
     const id = parseInt(req.params.id);
-    // NotificationRead has ON DELETE RESTRICT — clear reads before the row,
-    // atomically so a partial delete can't happen.
+
     await prisma.$transaction([
       prisma.notificationRead.deleteMany({ where: { notificationId: id } }),
       prisma.notification.delete({ where: { id } }),
@@ -811,7 +757,6 @@ export async function deleteNotification(req, res, next) {
   }
 }
 
-// DELETE /api/admin/notifications
 export async function clearNotifications(req, res, next) {
   try {
     await prisma.$transaction([
@@ -824,7 +769,6 @@ export async function clearNotifications(req, res, next) {
   }
 }
 
-// GET /api/admin/audio-files — list available audio files grouped by day type
 export async function listAudioFiles(req, res, next) {
   try {
     const grouped = { monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], unassigned: [] };
