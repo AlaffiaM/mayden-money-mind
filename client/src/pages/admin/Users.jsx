@@ -1,11 +1,11 @@
-// Admin users page — searchable + filterable user table
-// Clicking "View" navigates to the full user detail page with tabs
+
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { Search, Filter, Eye, Trash2, Headphones } from "lucide-react";
 
-// Subscription status filter options for the dropdown
+
 const STATUS_FILTERS = [
   { value: "", label: "All Users" },
   { value: "active", label: "Active" },
@@ -55,7 +55,7 @@ export default function Users() {
       setUsers((prev) => prev.filter((u) => u.id !== deleteTarget.id));
       setDeleteTarget(null);
     } catch {
-      // keep current state
+      
     }
   };
 
@@ -157,7 +157,7 @@ export default function Users() {
         </table>
       </div>
 
-      {/* Delete confirmation modal */}
+      {}
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
