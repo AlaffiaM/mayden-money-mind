@@ -1,5 +1,5 @@
-// Registration page — creates new user account, redirects to /subscription after success
-// Client-side validation mirrors the server rules (name ≥2, email format, password ≥8)
+
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
