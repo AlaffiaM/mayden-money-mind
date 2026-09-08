@@ -1,12 +1,12 @@
-// Episode handlers — public listing, today's episode, and listen logging
-// Episode metadata is public, but the audio content is protected: listings never
-// contain a signed URL. Active subscribers mint a short-lived signed URL per
-// play via POST /api/episodes/:id/stream, so copied links expire within seconds.
+
+
+
+
 import { prisma } from "../config/prisma.js";
 import { signAudioUrl } from "../utils/audioAccessControl.js";
 import { businessDateStr, businessDayOfWeek, businessToday } from "../utils/businessTime.js";
 
-// Returns true if the given user has an active subscription
+
 async function isSubscriber(userId) {
   if (!userId) return false;
   const sub = await prisma.subscription.findFirst({
@@ -16,8 +16,8 @@ async function isSubscriber(userId) {
   return !!sub;
 }
 
-// Flattens episodes for listings. audioUrl is always null here — audio is only
-// handed out per-play through the /stream endpoint to active subscribers.
+
+
 function serialize(episodes) {
   return episodes.map((e) => ({
     ...e,
@@ -27,7 +27,7 @@ function serialize(episodes) {
   }));
 }
 
-// GET /api/episodes
+
 export async function list(req, res, next) {
   try {
     const episodes = await prisma.episode.findMany({
@@ -36,23 +36,23 @@ export async function list(req, res, next) {
       include: { _count: { select: { listenLogs: true } } },
     });
 
-    // Deduplicate episodes by title and publishDate (keeping the most recently created version)
-    // This prevents showing multiple versions of the same episode in the full list
+    
+    
     const episodeMap = new Map();
     for (const episode of episodes) {
-      // Create a key based on title and publish date (normalized to date only)
-      // Handle null/undefined titles safely
+      
+      
       const safeTitle = (episode.title || '').trim();
       const key = `${safeTitle}-${businessDateStr(new Date(episode.publishDate))}`;
 
-      // If we haven't seen this episode title/date combination, or if this one is newer
+      
       if (!episodeMap.has(key) ||
           (episodeMap.get(key).createdAt < episode.createdAt)) {
         episodeMap.set(key, episode);
       }
     }
 
-    // Convert map back to array, sorted by publishDate (descending to match original order)
+    
     const uniqueEpisodes = Array.from(episodeMap.values()).sort((a, b) =>
       new Date(b.publishDate) - new Date(a.publishDate)
     );
@@ -63,21 +63,21 @@ export async function list(req, res, next) {
   }
 }
 
-// GET /api/episodes/library
+
 export async function library(req, res, next) {
   try {
     const userId = req.user.id;
 
-    // Get all published episodes from the current business week (Monday-Friday,
-    // Africa/Lagos). weekStart = Lagos Monday midnight, weekEndExclusive =
-    // Lagos Saturday midnight, so in the half-open range [weekStart,
-    // weekEndExclusive) the stored UTC-midnight publishDates for Mon-Fri land
-    // exactly on their Lagos calendar day.
-    const weekStart = new Date(businessToday()); // Lagos midnight of today
+    
+    
+    
+    
+    
+    const weekStart = new Date(businessToday()); 
     const todayDow = businessDayOfWeek(weekStart);
-    weekStart.setUTCDate(weekStart.getUTCDate() + (todayDow === 0 ? -6 : 1 - todayDow)); // Lagos Monday midnight
+    weekStart.setUTCDate(weekStart.getUTCDate() + (todayDow === 0 ? -6 : 1 - todayDow)); 
     const weekEndExclusive = new Date(weekStart);
-    weekEndExclusive.setUTCDate(weekEndExclusive.getUTCDate() + 5); // Lagos Saturday midnight
+    weekEndExclusive.setUTCDate(weekEndExclusive.getUTCDate() + 5); 
 
     const episodes = await prisma.episode.findMany({
       where: {
@@ -87,31 +87,31 @@ export async function library(req, res, next) {
           lt: weekEndExclusive,
         },
       },
-      orderBy: { publishDate: "asc" }, // Order by day of week (Mon, Tue, Wed, Thu, Fri)
+      orderBy: { publishDate: "asc" }, 
       include: { _count: { select: { listenLogs: true } } },
     });
 
-    // Deduplicate episodes by title and publishDate (keeping the most recently created version)
+    
     const episodeMap = new Map();
     for (const episode of episodes) {
-      // Create a key based on title and publish date (normalized to date only)
-      // Handle null/undefined titles safely
+      
+      
       const safeTitle = (episode.title || '').trim();
       const key = `${safeTitle}-${businessDateStr(new Date(episode.publishDate))}`;
 
-      // If we haven't seen this episode title/date combination, or if this one is newer
+      
       if (!episodeMap.has(key) ||
           (episodeMap.get(key).createdAt < episode.createdAt)) {
         episodeMap.set(key, episode);
       }
     }
 
-    // Convert map back to array, sorted by publishDate
+    
     const uniqueEpisodes = Array.from(episodeMap.values()).sort((a, b) =>
       new Date(a.publishDate) - new Date(b.publishDate)
     );
 
-    // Get user's listen logs for these episodes to compute lastListened
+    
     const episodeIds = uniqueEpisodes.map((e) => e.id);
     const logs = await prisma.listenLog.findMany({
       where: { userId, episodeId: { in: episodeIds } },
@@ -126,9 +126,9 @@ export async function library(req, res, next) {
     }
 
     const mapped = serialize(uniqueEpisodes).map((e) => {
-      // Determine if episode is locked (its Lagos publish date is in the future).
-      // Uses the shared business calendar so an episode is unlocked from Lagos
-      // midnight on its publish date, regardless of the server host timezone.
+      
+      
+      
       const locked = businessDateStr(new Date(e.publishDate)) > businessDateStr(new Date());
 
       return {
@@ -144,14 +144,14 @@ export async function library(req, res, next) {
   }
 }
 
-// GET /api/episodes/today
+
 export async function today(req, res, next) {
   try {
-    // Business "today" = Lagos midnight of the current Lagos date, so the
-    // business date rolls over at Lagos 00:00 (UTC 23:00 the previous day).
-    const todayStart = businessToday(); // Lagos midnight today
+    
+    
+    const todayStart = businessToday(); 
     const tomorrow = new Date(todayStart);
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1); // Lagos midnight tomorrow
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1); 
 
     const episode = await prisma.episode.findFirst({
       where: {
@@ -171,14 +171,14 @@ export async function today(req, res, next) {
   }
 }
 
-// GET /api/episodes/my-library
-// Returns the current user's PERSONAL listening library: the distinct episodes
-// they have listened to, each with its lastListenedAt. This is private to the
-// requesting user (filtered strictly by req.user.id). audioUrl is always null —
-// playback is still gated through the /stream endpoint (active subscription).
-// Saved items are returned even if the episode was later unpublished or the
-// user's subscription has lapsed — they can view their history, but playback
-// remains controlled by /stream.
+
+
+
+
+
+
+
+
 export async function myLibrary(req, res, next) {
   try {
     const logs = await prisma.listenLog.findMany({
@@ -200,10 +200,10 @@ export async function myLibrary(req, res, next) {
   }
 }
 
-// POST /api/episodes/:id/stream — mints a fresh short-lived signed audio URL,
-// but only for users with an active subscription AND for episodes that have
-// been unlocked (publish date has passed). This is the single entry
-// point for protected playback, so no reusable URL ever ships in listings.
+
+
+
+
 export async function stream(req, res, next) {
   try {
     const episodeId = req.params.id;
@@ -213,15 +213,15 @@ export async function stream(req, res, next) {
     if (!episode) return res.status(404).json({ error: "Episode not found" });
     if (!episode.audioUrl) return res.status(404).json({ error: "No audio assigned to this episode" });
 
-    // Check if user has active subscription
+    
     if (!(await isSubscriber(req.user?.id))) {
       return res.status(403).json({ error: "Active subscription required" });
     }
 
-    // Check if episode is unlocked (its Lagos publish date has passed). Uses the
-    // shared business calendar so playback unlocks at Lagos midnight on the
-    // publish date (e.g. a Tue Sep 1 episode is playable from Lagos 00:00 on
-    // Sep 1, which is still UTC Aug 31 23:00).
+    
+    
+    
+    
     const unlocked = businessDateStr(new Date(episode.publishDate)) <= businessDateStr(new Date());
 
     if (!unlocked) {
@@ -234,7 +234,7 @@ export async function stream(req, res, next) {
   }
 }
 
-// GET /api/episodes/:id
+
 export async function getById(req, res, next) {
   try {
     const episode = await prisma.episode.findFirst({
@@ -247,11 +247,11 @@ export async function getById(req, res, next) {
   }
 }
 
-// POST /api/episodes/:id/listen
-// Records that the user listened to this episode. Because ListenLog has a unique
-// constraint on (userId, episodeId), repeated listens upsert the same row instead
-// of creating duplicates — the row is the user's Library item (createdAt = first
-// listened, lastListenedAt = most recent).
+
+
+
+
+
 export async function listen(req, res, next) {
   try {
     const episodeId = req.params.id;
