@@ -1,11 +1,11 @@
-// Admin dashboard — stats cards (revenue, subscribers, churn, today's episode)
-// Includes a 30-day subscriber growth SVG line chart and clickable stat cards
+
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { Users, CreditCard, FileText, TrendingUp, TrendingDown, Activity, AlertCircle, Download, BarChart3 } from "lucide-react";
 
-// SVG mini line chart — renders a filled area chart from { date, count } data points
+
 function MiniLineChart({ data, color = "#EC268F", height = 60 }) {
   if (!data || data.length === 0) return null;
   const max = Math.max(...data.map((d) => d.count), 1);
@@ -14,14 +14,14 @@ function MiniLineChart({ data, color = "#EC268F", height = 60 }) {
   const chartW = width - padding * 2;
   const chartH = height - padding * 2;
 
-  // Convert data points to SVG coordinate pairs
+  
   const points = data.map((d, i) => {
     const x = padding + (i / (data.length - 1 || 1)) * chartW;
     const y = padding + chartH - (d.count / max) * chartH;
     return `${x},${y}`;
   });
 
-  // Polygon points for the filled area under the line
+  
   const areaPoints = [
     `${padding},${padding + chartH}`,
     ...points,
@@ -42,7 +42,7 @@ function MiniLineChart({ data, color = "#EC268F", height = 60 }) {
   );
 }
 
-// Green/red trend badge showing percentage change (e.g. +12% or -5%)
+
 function TrendBadge({ value, suffix = "%" }) {
   if (value === 0 || value === undefined || value === null) return <span className="text-xs text-gray-400">—</span>;
   const positive = value > 0;
@@ -61,7 +61,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Fetch dashboard stats on mount
+  
   useEffect(() => {
     Promise.all([
       api.get("/admin/stats"),
@@ -75,7 +75,7 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Download last-24h successful payments as CSV
+  
   const downloadCsv = async () => {
     setDownloading(true);
     try {
