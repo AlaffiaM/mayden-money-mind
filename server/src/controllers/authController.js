@@ -3,18 +3,19 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
 import { prisma } from "../config/prisma.js";
-import { JWT_SECRET, FRONTEND_URL } from "../config/env.js";
-import { sendUserEmail, sendVerificationEmail } from "../services/emailService.js";
+import { JWT_SECRET } from "../config/env.js";
+import { sendPasswordResetEmail, sendVerificationEmail } from "../services/emailService.js";
 import { createVerificationToken } from "../services/verificationService.js";
 import logger from "../utils/logger.js";
 
 const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
+const MAX_RESET_ATTEMPTS = 5;
 
-function issueToken(user) {
+export function issueToken(user) {
   return jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
 }
 
-function serializeUser(user) {
+export function serializeUser(user) {
   return {
     id: user.id,
     fullName: user.fullName,
@@ -62,9 +63,9 @@ export async function register(req, res) {
     });
 
     if (user.role !== "admin") {
-      const token = await createVerificationToken(user.id);
+      const code = await createVerificationToken(user.id);
       try {
-        await sendVerificationEmail({ to: user.email, fullName: user.fullName, token });
+        await sendVerificationEmail({ to: user.email, fullName: user.fullName, code });
       } catch (err) {
 
         logger.error("[verify] welcome verification email failed:", err.message);
@@ -94,9 +95,9 @@ export async function login(req, res) {
     }
 
     if (user.role !== "admin" && !user.emailVerified) {
-      const token = await createVerificationToken(user.id);
+      const code = await createVerificationToken(user.id);
       try {
-        await sendVerificationEmail({ to: user.email, fullName: user.fullName, token });
+        await sendVerificationEmail({ to: user.email, fullName: user.fullName, code });
       } catch (err) {
         logger.error("[verify] login verification email failed:", err.message);
       }
@@ -120,25 +121,20 @@ export async function forgotPassword(req, res) {
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (user) {
-      const token = crypto.randomBytes(32).toString("hex");
+      const code = crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
       await prisma.user.update({
         where: { id: user.id },
         data: {
-          resetPasswordToken: hashResetToken(token),
+          resetPasswordToken: hashResetToken(code),
           resetPasswordExpires: new Date(Date.now() + RESET_TOKEN_TTL_MS),
+          resetPasswordAttempts: 0,
         },
       });
 
-      const resetUrl = `${FRONTEND_URL}/reset-password?token=${token}`;
-      const result = await sendUserEmail({
+      const result = await sendPasswordResetEmail({
         to: user.email,
-        subject: "Reset your Money & Mind password",
-        title: "Reset your password",
-        body:
-          `Hi ${user.fullName},\n\n` +
-          `You asked to reset your Money & Mind password. Click the link below to choose a new one (valid for 30 minutes):\n\n` +
-          `${resetUrl}\n\n` +
-          `If you didn't request this, you can safely ignore this email.`,
+        fullName: user.fullName,
+        code,
       });
 
       if (!result.sent) {
@@ -160,19 +156,37 @@ export async function resetPassword(req, res) {
   }
 
   try {
-    const { token, password } = req.body;
+    const email = (req.body.email || "").toString().trim().toLowerCase();
+    const code = (req.body.code || "").toString().trim();
+    const { password } = req.body;
 
-    const user = await prisma.user.findUnique({
-      where: { resetPasswordToken: hashResetToken(token) },
-    });
-    if (!user || !user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
-      return res.status(400).json({ error: "This reset link is invalid or has expired" });
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !user.resetPasswordToken) {
+      return res.status(400).json({ error: "That reset code is invalid. Please request a new one." });
+    }
+    if (!user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
+      return res.status(400).json({ error: "This reset code has expired. Please request a new one." });
+    }
+    if (hashResetToken(code) !== user.resetPasswordToken) {
+      const attempts = user.resetPasswordAttempts + 1;
+      if (attempts >= MAX_RESET_ATTEMPTS) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { resetPasswordToken: null, resetPasswordExpires: null },
+        });
+        return res.status(400).json({ error: "Too many wrong attempts. Please request a new code." });
+      }
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { resetPasswordAttempts: attempts },
+      });
+      return res.status(400).json({ error: "That reset code is incorrect. Please check it and try again." });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
     await prisma.user.update({
       where: { id: user.id },
-      data: { passwordHash, resetPasswordToken: null, resetPasswordExpires: null },
+      data: { passwordHash, resetPasswordToken: null, resetPasswordExpires: null, resetPasswordAttempts: 0 },
     });
 
     res.json({ success: true });
