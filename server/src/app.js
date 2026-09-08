@@ -196,9 +196,9 @@ app.use("/api", (req, res) => {
 app.use((err, req, res, next) => {
   logger.error("Unhandled error:", err.stack || err);
   if (res.headersSent) return next(err);
-  const status = err.status || err.statusCode || 500;
+  const status = err.code === "P2025" ? 404 : err.status || err.statusCode || 500;
   res.status(status).json({
-    error: status >= 500 ? "Internal server error" : "Bad request",
+    error: status >= 500 ? "Internal server error" : err.message || "Bad request",
   });
 });
 
