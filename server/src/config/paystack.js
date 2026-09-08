@@ -1,6 +1,3 @@
-
-
-
 export const PAYSTACK_API = "https://api.paystack.co";
 
 export function getPaystackKey() {
