@@ -1,6 +1,6 @@
-// Axios API client — base instance pointing at /api with an auth interceptor.
-// Automatically attaches the JWT token to every request and surfaces API
-// errors to the UI banner (no redirect).
+
+
+
 import axios from "axios";
 
 const api = axios.create({
@@ -23,7 +23,7 @@ api.interceptors.response.use(
     const method = (err.config?.method || "?").toUpperCase();
     const status = err.response?.status;
 
-    // Surface the error in the UI banner — NO redirect, session stays intact.
+    
     window.dispatchEvent(
       new CustomEvent("api:error", {
         detail: {
