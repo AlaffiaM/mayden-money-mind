@@ -1,9 +1,5 @@
-
-
-
 import multer from "multer";
 import path from "path";
-
 
 const storage = multer.diskStorage({
   destination: "uploads/",
@@ -13,23 +9,16 @@ const storage = multer.diskStorage({
   },
 });
 
-
 const allowedExtensions = [".mp3", ".mpeg", ".wav", ".m4a", ".ogg", ".aac"];
-
-
-
-
-
-
 
 function hasAudioMagic(buf) {
   if (buf.length < 4) return false;
-  if (buf.subarray(0, 3).equals(Buffer.from("ID3"))) return true; 
-  if (buf[0] === 0xff && (buf[1] & 0xe0) === 0xe0) return true;   
-  if (buf.subarray(0, 4).equals(Buffer.from("RIFF"))) return true; 
-  if (buf.subarray(0, 4).equals(Buffer.from("OggS"))) return true; 
-  if (buf.length >= 8 && buf.subarray(4, 8).equals(Buffer.from("ftyp"))) return true; 
-  if (buf[0] === 0xff && (buf[1] & 0xf0) === 0xf0) return true;    
+  if (buf.subarray(0, 3).equals(Buffer.from("ID3"))) return true;
+  if (buf[0] === 0xff && (buf[1] & 0xe0) === 0xe0) return true;
+  if (buf.subarray(0, 4).equals(Buffer.from("RIFF"))) return true;
+  if (buf.subarray(0, 4).equals(Buffer.from("OggS"))) return true;
+  if (buf.length >= 8 && buf.subarray(4, 8).equals(Buffer.from("ftyp"))) return true;
+  if (buf[0] === 0xff && (buf[1] & 0xf0) === 0xf0) return true;
   return false;
 }
 
@@ -39,7 +28,6 @@ const fileFilter = (req, file, cb) => {
     return cb(new Error("Unsupported file type"));
   }
 
-  
   const chunks = [];
   file.stream.on("data", (c) => chunks.push(c));
   file.stream.on("end", () => {
@@ -52,9 +40,7 @@ const fileFilter = (req, file, cb) => {
   file.stream.on("error", (err) => cb(err));
 };
 
-
 export const upload = multer({ storage, fileFilter, limits: { fileSize: 50 * 1024 * 1024 } });
-
 
 export function getUploadUrl(filename) {
   return `/uploads/${filename}`;
