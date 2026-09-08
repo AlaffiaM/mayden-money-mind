@@ -1,10 +1,10 @@
-// Admin settings page — pricing, episode config, day labels, grace period
-// All settings saved via PUT /api/admin/settings (upserts to Setting table)
+
+
 import { useEffect, useState } from "react";
 import api from "../../services/api";
 import { Save, CreditCard, Clock, Tag } from "lucide-react";
 
-// Default day-type display names (shown if no custom labels are set)
+
 const DEFAULT_DAY_LABELS = {
   monday: "Motivation Mondays",
   tuesday: "Tactical Tuesdays",
@@ -87,7 +87,7 @@ export default function Settings() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-mayden-dark">Settings</h1>
 
-      {/* Pricing */}
+      {}
       <Section icon={CreditCard} title="Pricing">
         <div className="grid grid-cols-2 gap-4">
           <Field label="Weekly Price (₦)">
@@ -108,7 +108,7 @@ export default function Settings() {
         </Field>
       </Section>
 
-      {/* Episode & Renewal */}
+      {}
       <Section icon={Clock} title="Episode & Renewal">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Episode Release Time" hint="Time of day episodes are published (24h format)">
@@ -126,7 +126,7 @@ export default function Settings() {
         </div>
       </Section>
 
-      {/* Day Type Labels */}
+      {}
       <Section icon={Tag} title="Day-Type Labels">
         <p className="text-sm text-gray-500 mb-4">Customize the display names for each day's episode theme.</p>
         <div className="space-y-3">
