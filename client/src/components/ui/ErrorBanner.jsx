@@ -1,5 +1,5 @@
-// Global error banner — shows the most recent API error on the page
-// without any redirect or page refresh. Dismissible.
+
+
 import { useEffect, useState } from "react";
 
 export default function ErrorBanner() {
