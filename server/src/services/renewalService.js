@@ -23,6 +23,7 @@ async function sendRenewalReminder(sub, { title, body, subject }) {
   }
 }
 
+// Expire overdue subscriptions and send renewal reminders
 export async function processExpiredSubscriptions() {
   const now = new Date();
 
@@ -89,6 +90,7 @@ export async function processExpiredSubscriptions() {
 
 let renewalTimer = null;
 
+// Run renewal sweep every 12 hours
 export function startRenewalProcessor() {
   if (renewalTimer) return;
   renewalTimer = setInterval(() => {
