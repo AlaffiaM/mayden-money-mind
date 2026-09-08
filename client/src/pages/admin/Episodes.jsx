@@ -181,11 +181,14 @@ export default function Episodes() {
 
   useEffect(() => { fetchEpisodes(); fetchAudioFiles(); }, []);
 
-  const getNextAvailableDate = (dayTypeKey, excludeDate) => {
+  const getNextAvailableDate = (dayTypeKey, excludeDates) => {
     const idx = DAY_TYPES.findIndex((d) => d.key === dayTypeKey);
     if (idx === -1) return toLocalDateStr(new Date());
     const taken = new Set(episodes.map((e) => toLocalDateStr(new Date(e.publishDate))));
-    if (excludeDate) taken.add(excludeDate);
+    const excludes = excludeDates
+      ? (Array.isArray(excludeDates) ? excludeDates : [excludeDates]).map((d) => toLocalDateStr(new Date(d)))
+      : [];
+    for (const d of excludes) taken.add(d);
     const start = businessToday();
     const dayOfWeek = businessDayOfWeek(start);
     const targetDay = idx + 1;
@@ -201,11 +204,8 @@ export default function Episodes() {
 
   const getWeeklyDatesForDayType = (dayTypeKey, count) => {
     const dates = [];
-    let cursor = null;
     for (let i = 0; i < count; i++) {
-      const next = getNextAvailableDate(dayTypeKey, cursor);
-      dates.push(next);
-      cursor = next;
+      dates.push(getNextAvailableDate(dayTypeKey, dates.slice()));
     }
     return dates;
   };
@@ -277,23 +277,23 @@ export default function Episodes() {
           return;
         }
         const dates = getWeeklyDatesForDayType(form.dayType, currentDayFiles.length);
-        let created = 0;
-        for (let i = 0; i < dates.length; i++) {
+        const episodes = [];
+        for (let i = 0; i < currentDayFiles.length; i++) {
           const file = currentDayFiles[i];
           const duration = await detectAudioDuration(file.url);
-          const fd = new FormData();
-          fd.append("title", form.title);
-          fd.append("dayType", form.dayType);
-          fd.append("runTimeSeconds", duration > 0 ? String(duration) : "0");
-          fd.append("showNotes", form.showNotes);
-          fd.append("publishDate", dates[i]);
-          fd.append("audioUrl", file.path);
-          await api.post("/admin/episodes", fd, { headers: { "Content-Type": "multipart/form-data" } });
-          created++;
+          episodes.push({
+            title: form.title,
+            dayType: form.dayType,
+            runTimeSeconds: duration > 0 ? String(duration) : "0",
+            showNotes: form.showNotes,
+            publishDate: dates[i],
+            audioUrl: file.path,
+          });
         }
+        const { data } = await api.post("/admin/episodes/batch", { episodes });
         setShowModal(false);
         fetchEpisodes();
-        showToast(`${created} ${form.dayType} episodes scheduled`);
+        showToast(`${data.length} ${form.dayType} episodes scheduled`);
       }
     } catch (err) {
       showToast(err.response?.data?.error || "Failed to save episode", "error");
