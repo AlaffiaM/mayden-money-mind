@@ -1,5 +1,5 @@
-// Hook: fetches public pricing from /api/settings/pricing
-// Returns weekly and monthly prices with defaults (100 NGN / 350 NGN)
+
+
 import { useEffect, useState } from "react";
 import api from "../services/api";
 
