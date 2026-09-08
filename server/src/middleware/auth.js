@@ -1,4 +1,3 @@
-
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config/env.js";
 import { prisma } from "../config/prisma.js";
@@ -13,15 +12,12 @@ export function authenticate(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded; 
+    req.user = decoded;
     next();
   } catch {
     return res.status(401).json({ error: "Invalid token" });
   }
 }
-
-
-
 
 export function optionalAuth(req, res, next) {
   const header = req.headers.authorization;
@@ -29,13 +25,11 @@ export function optionalAuth(req, res, next) {
     try {
       req.user = jwt.verify(header.split(" ")[1], JWT_SECRET);
     } catch {
-      
+
     }
   }
   next();
 }
-
-
 
 export async function requireVerified(req, res, next) {
   try {
@@ -46,7 +40,7 @@ export async function requireVerified(req, res, next) {
       where: { id: req.user.id },
       select: { emailVerified: true, role: true },
     });
-    
+
     if (!dbUser || dbUser.role !== "admin" && !dbUser.emailVerified) {
       return res.status(403).json({ error: "Please verify your email to continue." });
     }
