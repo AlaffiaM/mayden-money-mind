@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { PlayerProvider } from "./context/PlayerContext";
 import { captureUtm } from "./utils/utm";
 import api from "./services/api";
 import Landing from "./pages/Landing";
@@ -131,8 +132,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ErrorBanner />
-        <NormalizedRoutes />
+        <PlayerProvider>
+          <ErrorBanner />
+          <NormalizedRoutes />
+        </PlayerProvider>
       </AuthProvider>
     </BrowserRouter>
   );
