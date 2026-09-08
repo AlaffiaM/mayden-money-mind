@@ -1,14 +1,11 @@
-
-
-
 import { prisma } from "../config/prisma.js";
 import { brevoConfigured, sendEmail } from "./emailService.js";
 import logger from "../utils/logger.js";
 
 const RECONCILIATION_EMAIL = process.env.RECONCILIATION_EMAIL || "";
-const RECONCILIATION_HOUR = parseInt(process.env.RECONCILIATION_HOUR || "23", 10); 
-const MONTHLY_REPORT_HOUR = parseInt(process.env.MONTHLY_REPORT_HOUR || "23", 10); 
-const MONTHLY_REPORT_DAY = parseInt(process.env.MONTHLY_REPORT_DAY || "1", 10); 
+const RECONCILIATION_HOUR = parseInt(process.env.RECONCILIATION_HOUR || "23", 10);
+const MONTHLY_REPORT_HOUR = parseInt(process.env.MONTHLY_REPORT_HOUR || "23", 10);
+const MONTHLY_REPORT_DAY = parseInt(process.env.MONTHLY_REPORT_DAY || "1", 10);
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -16,14 +13,11 @@ function esc(value) {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-// Emails the CSV to the finance team via Brevo — no-op when not configured.
-// `kind` is "Daily" | "Monthly"; `label` keys the subject/filename (e.g. "2026-08-05" or "2026-07").
 async function sendReconciliationEmail({ csv, from, kind = "Daily", label }) {
   const labelValue = label || from.toISOString().slice(0, 10);
   const subject = `${kind} Payment Reconciliation — ${labelValue}`;
   const text = `${kind} payment reconciliation report for ${labelValue} attached.`;
 
-  // Brevo must be configured AND the finance recipient set
   if (brevoConfigured() && RECONCILIATION_EMAIL) {
     await sendEmail({
       to: RECONCILIATION_EMAIL,
@@ -41,7 +35,6 @@ async function sendReconciliationEmail({ csv, from, kind = "Daily", label }) {
   return { sent: false, reason: "brevo not configured" };
 }
 
-// Builds the reconciliation CSV for payments paid between `from` (inclusive) and `to` (exclusive)
 async function buildPaymentsCsv({ from, to }) {
   const payments = await prisma.payment.findMany({
     where: { status: "success", paidAt: { gte: from, lt: to } },
@@ -67,7 +60,6 @@ async function buildPaymentsCsv({ from, to }) {
   return { csv, count: payments.length };
 }
 
-// Builds + sends the report for an explicit window [from, to). Returns the summary.
 async function runReconciliationForWindow({ from, to, kind = "Daily", label }) {
   const { csv, count } = await buildPaymentsCsv({ from, to });
   const result = await sendReconciliationEmail({ csv, from, kind, label });
@@ -76,7 +68,6 @@ async function runReconciliationForWindow({ from, to, kind = "Daily", label }) {
   return { date: labelValue, kind, count, ...result };
 }
 
-// Builds + sends the report for a given day (UTC). Returns the summary.
 async function runDailyReconciliation(day = new Date()) {
   const start = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate()));
   const end = new Date(start);
@@ -84,22 +75,17 @@ async function runDailyReconciliation(day = new Date()) {
   return runReconciliationForWindow({ from: start, to: end, kind: "Daily" });
 }
 
-// Previous calendar month window + label for a given instant (UTC).
 function previousMonthWindow(now = new Date()) {
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
   const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   return { from: start, to: end, label: start.toISOString().slice(0, 7) };
 }
 
-// Builds + sends the report for the previous calendar month. Returns the summary.
 async function runMonthlyReconciliation(now = new Date()) {
   const { from, to, label } = previousMonthWindow(now);
   return runReconciliationForWindow({ from, to, kind: "Monthly", label });
 }
 
-// Interval job — checks hourly and fires the daily report at RECONCILIATION_HOUR UTC
-// and the monthly report at MONTHLY_REPORT_HOUR UTC on MONTHLY_REPORT_DAY.
-// Both are deduped via Settings so restarts can't double-send.
 export function startReconciliationProcessor() {
   const tick = async () => {
     const now = new Date();
