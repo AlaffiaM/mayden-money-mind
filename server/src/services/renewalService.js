@@ -1,25 +1,25 @@
-// Renewal processor — handles grace period logic for failed subscription renewals
-// Runs every 12 hours on server start to process past_due subscriptions
-//
-// Business rules:
-//   1. Failed payment → subscription status becomes "past_due"
-//   2. During grace period (default 48h, configurable in Settings):
-//      - Reminder 1 sent after 12h
-//      - Reminder 2 sent after 24h
-//   3. After grace period expires → subscription is auto-cancelled
-//
+
+
+
+
+
+
+
+
+
+
 import { prisma } from "../config/prisma.js";
 import { FRONTEND_URL } from "../config/env.js";
 import { sendUserEmail } from "./emailService.js";
 import logger from "../utils/logger.js";
 
-// How often to check for expired subscriptions (12 hours)
+
 const REMINDER_INTERVAL_MS = 12 * 60 * 60 * 1000;
 
-// Creates an in-app notification AND emails the user the same renewal reminder.
-// Emails only when the user has an address (and Brevo is configured — sendUserEmail
-// no-ops otherwise). Email failures are logged, never thrown, so one broken send
-// can't abort processing of the remaining subscriptions or duplicate the next run.
+
+
+
+
 async function sendRenewalReminder(sub, { title, body, subject }) {
   await prisma.notification.create({
     data: { title, body, channels: "inapp,email", sentBy: "system" },
@@ -38,12 +38,12 @@ async function sendRenewalReminder(sub, { title, body, subject }) {
   }
 }
 
-// Main processor — finds all past_due subscriptions and applies grace period rules
+
 export async function processExpiredSubscriptions() {
   const now = new Date();
 
-  // Subscriptions that reached their renewal date with auto-renew turned off
-  // expire cleanly — no charge was attempted, so there's no grace period.
+  
+  
   await prisma.subscription.updateMany({
     where: { status: "active", autoRenew: false, nextRenewal: { lte: now } },
     data: { status: "expired" },
@@ -61,7 +61,7 @@ export async function processExpiredSubscriptions() {
     const graceEnd = new Date(sub.nextRenewal);
     graceEnd.setHours(graceEnd.getHours() - graceHours);
 
-    // Grace period fully expired — cancel the subscription
+    
     if (now > sub.nextRenewal) {
       await prisma.subscription.update({
         where: { id: sub.id },
@@ -79,7 +79,7 @@ export async function processExpiredSubscriptions() {
       continue;
     }
 
-    // Check how many failed payment attempts exist for this subscription
+    
     const failedPayments = await prisma.payment.count({
       where: { subscriptionId: sub.id, status: "failed" },
     });
@@ -88,7 +88,7 @@ export async function processExpiredSubscriptions() {
       const timeSinceGrace = now.getTime() - graceEnd.getTime();
       const hoursSinceGrace = timeSinceGrace / (1000 * 60 * 60);
 
-      // First reminder at 12h past grace start
+      
       if (hoursSinceGrace >= 12 && failedPayments < 1) {
         await sendRenewalReminder(sub, {
           title: "Payment Reminder",
@@ -97,7 +97,7 @@ export async function processExpiredSubscriptions() {
         });
       }
 
-      // Final reminder at 24h past grace start
+      
       if (hoursSinceGrace >= 24 && failedPayments < 2) {
         await sendRenewalReminder(sub, {
           title: "Final Payment Reminder",
@@ -111,7 +111,7 @@ export async function processExpiredSubscriptions() {
 
 let renewalTimer = null;
 
-// Starts the processor — runs immediately on first call, then every 12h
+
 export function startRenewalProcessor() {
   if (renewalTimer) return;
   renewalTimer = setInterval(() => {
