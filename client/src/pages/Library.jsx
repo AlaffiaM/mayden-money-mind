@@ -1,11 +1,8 @@
-
-
 import { useState, useEffect } from "react";
 import api from "../services/api";
 import AudioPlayer from "../components/ui/AudioPlayer";
 import { Search } from "lucide-react";
 import SubscriberLayout from "../components/layout/SubscriberLayout";
-
 
 const moodTags = [
   { label: "I want focus", query: "monday" },
