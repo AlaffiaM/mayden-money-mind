@@ -40,6 +40,7 @@ const fileFilter = (req, file, cb) => {
   file.stream.on("error", (err) => cb(err));
 };
 
+// Multer upload: 50MB max, audio content only
 export const upload = multer({ storage, fileFilter, limits: { fileSize: 50 * 1024 * 1024 } });
 
 export function getUploadUrl(filename) {
