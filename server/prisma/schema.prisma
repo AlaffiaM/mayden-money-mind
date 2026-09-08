@@ -1,5 +1,5 @@
-// Prisma schema for Money & Mind — PostgreSQL database (Supabase)
-// Models: User, Subscription, Payment, Setting, Episode, ListenLog, Notification, NotificationRead
+
+
 
 generator client {
   provider = "prisma-client-js"
@@ -10,22 +10,22 @@ datasource db {
 }
 
 
-// Registered users — both subscribers and admins
+
 model User {
   id              Int              @id @default(autoincrement())
   fullName        String
   email           String?          @unique
   phone           String?          @unique
   passwordHash    String
-  role            String           @default("user") // user | admin
+  role            String           @default("user")
   utmSource       String?
   utmMedium       String?
   utmCampaign     String?
   utmTerm         String?
   utmContent      String?
-  resetPasswordToken    String?  @unique // sha256 hash of a one-time password reset token
-  resetPasswordExpires  DateTime? // expiry for the reset token (1 hour)
-  emailVerified   DateTime? // set to the verification time once the email is confirmed (null = unverified)
+  resetPasswordToken    String?  @unique
+  resetPasswordExpires  DateTime?
+  emailVerified   DateTime?
   createdAt       DateTime         @default(now())
   subscriptions   Subscription[]
   payments        Payment[]
@@ -34,14 +34,14 @@ model User {
   verificationTokens VerificationToken[]
 }
 
-// One-time email verification tokens — only the sha256 hash is stored. Single-use
-// via usedAt, expiry via expiresAt. type currently "email" (reserved for future use).
+
+
 model VerificationToken {
   id        Int      @id @default(autoincrement())
   userId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String   @default("email") // email
-  tokenHash String   @unique // sha256 hash of the raw token — raw token is never stored
+  type      String   @default("email")
+  tokenHash String   @unique
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime @default(now())
@@ -49,23 +49,23 @@ model VerificationToken {
   @@index([userId, type])
 }
 
-// Subscription lifecycle: pending → active → past_due → cancelled/expired
+
 model Subscription {
   id        Int       @id @default(autoincrement())
   userId    Int
   user      User      @relation(fields: [userId], references: [id])
-  plan      String    // weekly | monthly
-  status      String    @default("pending") // pending | active | past_due | paused | cancelled | expired
+  plan      String
+  status      String    @default("pending")
   startDate   DateTime  @default(now())
   nextRenewal DateTime
-  pausedAt    DateTime?  // set when paused to freeze the renewal timer
+  pausedAt    DateTime?
   autoRenew   Boolean   @default(true)
-  paystackSubscriptionCode String? // Paystack subscription code for recurring card billing
-  paystackPlanCode         String? // Paystack plan code (weekly or monthly) this sub belongs to
+  paystackSubscriptionCode String?
+  paystackPlanCode         String?
   payments    Payment[]
 }
 
-// Payment records — linked to subscriptions, tracks Paystack transactions
+
 model Payment {
   id             Int           @id @default(autoincrement())
   userId         Int
@@ -74,46 +74,46 @@ model Payment {
   subscription   Subscription  @relation(fields: [subscriptionId], references: [id])
   amount         Float
   currency       String        @default("NGN")
-  status         String        // pending | success | failed
+  status         String
   reference      String        @unique
-  last4          String?       // last 4 digits of the card charged (auto-renewal display)
-  usesCard       Boolean       @default(true) // true = card (recurring), false = bank transfer/USSD/QR (one-time)
+  last4          String?
+  usesCard       Boolean       @default(true)
   paidAt         DateTime?
   createdAt      DateTime      @default(now())
 }
 
-// Key-value settings store — prices, grace period, notification config, day labels
+
 model Setting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
 }
 
-// Daily audio episodes — published on a weekly schedule by day type
+
 model Episode {
   id             String      @id @default(uuid())
   title          String
-  dayType        String      // monday | tuesday | wednesday | thursday | friday
+  dayType        String
   audioUrl       String?
-  runTimeSeconds Int         // seconds
-  showNotes      String      // rich text HTML
+  runTimeSeconds Int
+  showNotes      String
   publishDate    DateTime
-  status         String      @default("draft") // draft | scheduled | published
+  status         String      @default("draft")
   listenCount    Int         @default(0)
   createdAt      DateTime    @default(now())
   listenLogs     ListenLog[]
 
-  // One episode per day per week. This makes a duplicate insert fail loudly
-  // (instead of silently creating a second row for the same weekday) and is the
-  // root-cause guard against the duplicate episodes that came from double-running
-  // the admin batch scheduler.
+
+
+
+
   @@unique([dayType, publishDate])
 }
 
-// Tracks a user's personal listening history. Doubles as the user's Library:
-// one row per (user, episode) — the first time they listend (createdAt) and the
-// most recent time (lastListenedAt). A unique constraint prevents duplicates
-// when the same user listens to the same episode repeatedly.
+
+
+
+
 model ListenLog {
   id             Int      @id @default(autoincrement())
   userId         Int
@@ -126,19 +126,19 @@ model ListenLog {
   @@unique([userId, episodeId])
 }
 
-// In-app notifications — sent by admin or system events
+
 model Notification {
   id              Int                @id @default(autoincrement())
   title           String
   body            String
-  channels        String             // comma-separated: inapp,email
+  channels        String
   sentBy          String             @default("admin")
-  subscribersOnly Boolean            @default(false) // only visible to users with an active subscription
+  subscribersOnly Boolean            @default(false)
   sentAt          DateTime           @default(now())
   reads           NotificationRead[]
 }
 
-// Tracks which notifications each user has read — for unread badge count
+
 model NotificationRead {
   id             Int          @id @default(autoincrement())
   userId         Int
