@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useSubscription } from "../hooks/useSubscription";
@@ -12,7 +10,6 @@ import SubscriberLayout from "../components/layout/SubscriberLayout";
 import { ChevronDown, ChevronUp, CreditCard, Calendar } from "lucide-react";
 import { businessDayOfWeek } from "../utils/businessTime.js";
 
-
 const moodTags = [
   { label: "I want focus", query: "monday" },
   { label: "I want save", query: "tuesday" },
@@ -20,7 +17,6 @@ const moodTags = [
   { label: "I want inspiration", query: "thursday" },
   { label: "I want to celebrate", query: "friday" },
 ];
-
 
 const dayCategories = {
   monday: "Motivation & Vision",
@@ -30,7 +26,6 @@ const dayCategories = {
   friday: "Financial Wins",
 };
 
-
 const dayNames = {
   monday: "Monday",
   tuesday: "Tuesday",
@@ -38,9 +33,6 @@ const dayNames = {
   thursday: "Thursday",
   friday: "Friday",
 };
-
-
-
 
 const businessWeekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -59,7 +51,6 @@ export default function Dashboard() {
     api.get("/episodes/library").then(({ data }) => setEpisodes(data)).catch(() => {});
   }, []);
 
-  
   const filteredEpisodes = vaultSearch
     ? episodes.filter(
         (ep) =>
@@ -67,7 +58,6 @@ export default function Dashboard() {
       )
     : episodes;
 
-  
   const todayDayName = dayNames[todayEpisode?.dayType] || businessWeekdayNames[businessDayOfWeek(new Date())];
   const heroTitle = todayEpisode
     ? `Today: ${todayDayName} – ${todayEpisode.title}`
@@ -75,14 +65,12 @@ export default function Dashboard() {
 
   return (
     <SubscriberLayout>
-      {}
       <div className={`mb-8 transition-all duration-500 ${playing ? "bg-gradient-to-b from-mayden-magenta/5 to-transparent rounded-2xl p-4 -mx-4" : ""}`}>
         <h1 className="text-2xl lg:text-3xl font-serif font-bold text-mayden-dark mb-2">
           Good morning, {user?.fullName?.split(" ")[0]}. Take a breath. Your day starts here.
         </h1>
       </div>
 
-      {}
       {todayEpisode ? (
         <div id="hero-player" className="bg-white rounded-2xl p-6 lg:p-8 shadow-sm border border-gray-100 mb-8">
           <p className="text-sm text-mayden-magenta font-semibold mb-2">
@@ -101,7 +89,6 @@ export default function Dashboard() {
             }}
           />
 
-          {}
           {todayEpisode.showNotes && (
             <div className="mt-6 rounded-xl bg-gray-50 text-sm text-gray-600 leading-relaxed overflow-hidden transition-all duration-300">
               <div className={`${notesExpanded ? "" : "max-h-24"} relative`}>
@@ -131,13 +118,11 @@ export default function Dashboard() {
         </div>
       )}
 
-      {}
       <div className="bg-white rounded-2xl p-6 lg:p-8 shadow-sm border border-gray-100 mb-8">
         <h2 className="text-xl lg:text-2xl font-serif font-bold text-mayden-dark mb-4">
           The Vault
         </h2>
 
-        {}
         <div className="flex flex-wrap gap-2 mb-4">
           {moodTags.map((tag) => (
             <button
@@ -162,8 +147,6 @@ export default function Dashboard() {
           )}
         </div>
 
-
-        {}
         {vaultSearch ? (
           <div className="space-y-3">
             {filteredEpisodes.map((ep) => (
@@ -209,7 +192,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {}
       {subscription && subscription.status === "active" && (
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
