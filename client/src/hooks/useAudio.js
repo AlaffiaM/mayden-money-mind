@@ -1,5 +1,3 @@
-
-
 import { useState, useRef, useCallback } from "react";
 
 const FALLBACK_DURATION = 60;
@@ -11,7 +9,6 @@ export function useAudio() {
   const [error, setError] = useState(null);
   const audioRef = useRef(null);
 
-  
   const toggle = () => {
     if (!audioRef.current) return;
     if (playing) {
@@ -32,7 +29,6 @@ export function useAudio() {
     }
   };
 
-  
   const handleTimeUpdate = () => {
     if (audioRef.current) {
       const t = audioRef.current.currentTime;
@@ -40,7 +36,6 @@ export function useAudio() {
     }
   };
 
-  
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
       const d = audioRef.current.duration;
@@ -49,13 +44,11 @@ export function useAudio() {
     }
   };
 
-  
   const handleError = () => {
     setDuration(FALLBACK_DURATION);
     setError("Could not load audio. Please check the episode has audio assigned.");
   };
 
-  
   const seek = (time) => {
     if (audioRef.current) {
       const t = Math.min(Math.max(time, 0), duration);
@@ -64,7 +57,6 @@ export function useAudio() {
     }
   };
 
-  
   const skip = useCallback((seconds) => {
     if (audioRef.current) {
       const newTime = Math.min(Math.max(audioRef.current.currentTime + seconds, 0), duration);
