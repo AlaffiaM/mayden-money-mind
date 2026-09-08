@@ -1,4 +1,4 @@
-// Privacy Policy placeholder page (NDPA compliant)
+
 import { Link } from "react-router-dom";
 
 export default function Privacy() {
