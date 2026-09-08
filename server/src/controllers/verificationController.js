@@ -1,12 +1,7 @@
-
 import { prisma } from "../config/prisma.js";
 import logger from "../utils/logger.js";
 import { consumeVerificationToken, createVerificationToken } from "../services/verificationService.js";
 import { sendVerificationEmail } from "../services/emailService.js";
-
-
-
-
 
 export async function verifyEmail(req, res) {
   const { token } = req.body || {};
@@ -24,10 +19,6 @@ export async function verifyEmail(req, res) {
   }
 }
 
-
-
-
-
 export async function resendVerification(req, res) {
   const email = (req.body?.email || "").toString().trim().toLowerCase();
 
@@ -41,6 +32,5 @@ export async function resendVerification(req, res) {
     }
   }
 
-  
   res.json({ success: true });
 }
