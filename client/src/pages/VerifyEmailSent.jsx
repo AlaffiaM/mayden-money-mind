@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Mail, RefreshCw, Loader2, CheckCircle, Clock } from "lucide-react";
 import VerifyCodeForm from "../components/ui/VerifyCodeForm";
+import AuthLayout from "../components/ui/AuthLayout";
 
 const RESEND_COOLDOWN = 60;
 
@@ -63,53 +64,58 @@ export default function VerifyEmailSent() {
         : "Resend verification email";
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm flex flex-col items-center text-center">
-        <img
-          src="/assets/logo.jpg"
-          alt="Money & Mind"
-          className="w-16 h-16 object-contain mx-auto mb-6"
-        />
-        <div className="w-14 h-14 rounded-full bg-mayden-magenta/10 flex items-center justify-center">
-          <Mail size={28} className="text-mayden-magenta" />
-        </div>
-        <h1 className="font-serif text-2xl font-bold text-mayden-dark mt-4">
-          Verify your email
-        </h1>
-        <p className="text-sm text-gray-500 mt-2">
+    <AuthLayout
+      title="Verify your email"
+      subtitle={
+        <>
           We've sent a 6-digit verification code to{" "}
           <span className="font-semibold text-mayden-dark">{email || "your email"}</span>.
+        </>
+      }
+      footer={
+        <p>
+          Already verified?{" "}
+          <Link to="/login" className="text-mayden-magenta font-semibold hover:underline">
+            Sign in
+          </Link>
         </p>
-        <p className="text-xs text-gray-400 mt-2 max-w-xs">
-          Once you confirm your email you'll be able to access your subscription and
-          daily audio. The code expires in 30 minutes.
+      }
+    >
+      <div className="flex flex-col items-center text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-mayden-magenta/10">
+          <Mail size={26} className="text-mayden-magenta" />
+        </div>
+
+        <p className="mt-4 text-xs text-gray-400">
+          Once you confirm your email you'll be able to access your subscription and daily audio.
+          The code expires in 30 minutes.
         </p>
 
         {status === "sending" && (
-          <div className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-mayden-magenta/5 text-mayden-magenta text-sm font-medium">
+          <div className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-mayden-magenta/5 py-3 text-sm font-medium text-mayden-magenta">
             <Loader2 size={16} className="animate-spin" />
             Sending verification email…
           </div>
         )}
         {status === "sent" && (
-          <div className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-green-50 text-green-700 text-sm font-medium">
+          <div className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-green-50 py-3 text-sm font-medium text-green-700">
             <CheckCircle size={16} />
             {msg || "Verification email sent — check your inbox."}
           </div>
         )}
         {status === "error" && (
-          <div className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium">
+          <div className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-red-50 py-3 text-sm font-medium text-red-600">
             {msg}
           </div>
         )}
 
         {!verified && (
-          <div className="mt-2 w-full">
+          <div className="mt-4 w-full">
             <VerifyCodeForm email={email} onSuccess={() => setVerified(true)} />
           </div>
         )}
         {verified && (
-          <div className="mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-green-50 text-green-700 text-sm font-medium">
+          <div className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-green-50 py-3 text-sm font-medium text-green-700">
             <CheckCircle size={16} />
             Email verified! Taking you to your dashboard…
           </div>
@@ -119,7 +125,7 @@ export default function VerifyEmailSent() {
           type="button"
           onClick={handleResend}
           disabled={buttonDisabled}
-          className="mt-4 w-full py-3 rounded-lg border border-gray-200 text-gray-600 font-semibold text-sm hover:border-mayden-magenta hover:text-mayden-magenta transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 py-3 text-sm font-semibold text-gray-600 transition-colors hover:border-mayden-magenta hover:text-mayden-magenta disabled:cursor-not-allowed disabled:opacity-50"
         >
           {status === "sending" ? (
             <Loader2 size={16} className="animate-spin" />
@@ -130,14 +136,7 @@ export default function VerifyEmailSent() {
           )}
           {buttonLabel}
         </button>
-
-        <p className="text-sm text-gray-500 mt-6">
-          Already verified?{" "}
-          <Link to="/login" className="text-mayden-magenta font-semibold hover:underline">
-            Sign in
-          </Link>
-        </p>
       </div>
-    </div>
+    </AuthLayout>
   );
 }
