@@ -1,4 +1,3 @@
-
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -9,7 +8,7 @@ import { sendUserEmail, sendVerificationEmail } from "../services/emailService.j
 import { createVerificationToken } from "../services/verificationService.js";
 import logger from "../utils/logger.js";
 
-const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; 
+const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
 
 function issueToken(user) {
   return jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
@@ -26,11 +25,9 @@ function serializeUser(user) {
   };
 }
 
-
 function hashResetToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
-
 
 export async function register(req, res) {
   const errors = validationResult(req);
@@ -55,8 +52,7 @@ export async function register(req, res) {
         email,
         phone,
         passwordHash,
-        
-        
+
         utmSource: req.body.utmSource || null,
         utmMedium: req.body.utmMedium || null,
         utmCampaign: req.body.utmCampaign || null,
@@ -65,13 +61,12 @@ export async function register(req, res) {
       },
     });
 
-    
     if (user.role !== "admin") {
       const token = await createVerificationToken(user.id);
       try {
         await sendVerificationEmail({ to: user.email, fullName: user.fullName, token });
       } catch (err) {
-        
+
         logger.error("[verify] welcome verification email failed:", err.message);
       }
     }
@@ -82,7 +77,6 @@ export async function register(req, res) {
     res.status(500).json({ error: "Internal server error" });
   }
 }
-
 
 export async function login(req, res) {
   try {
@@ -99,8 +93,6 @@ export async function login(req, res) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    
-    
     if (user.role !== "admin" && !user.emailVerified) {
       const token = await createVerificationToken(user.id);
       try {
@@ -117,7 +109,6 @@ export async function login(req, res) {
   }
 }
 
-
 export async function forgotPassword(req, res) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -128,7 +119,6 @@ export async function forgotPassword(req, res) {
     const email = (req.body.email || "").toString().trim().toLowerCase();
     const user = await prisma.user.findUnique({ where: { email } });
 
-    
     if (user) {
       const token = crypto.randomBytes(32).toString("hex");
       await prisma.user.update({
@@ -151,7 +141,6 @@ export async function forgotPassword(req, res) {
           `If you didn't request this, you can safely ignore this email.`,
       });
 
-      
       if (!result.sent) {
         logger.info(`[password-reset] email sending attempted, sent=${result.sent}`);
       }
@@ -163,7 +152,6 @@ export async function forgotPassword(req, res) {
     res.status(500).json({ error: "Internal server error" });
   }
 }
-
 
 export async function resetPassword(req, res) {
   const errors = validationResult(req);
