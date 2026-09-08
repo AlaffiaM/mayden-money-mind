@@ -1,6 +1,3 @@
-
-
-
 import crypto from "crypto";
 import { prisma } from "../config/prisma.js";
 import {
@@ -16,18 +13,12 @@ import PrismaClient from '@prisma/client';
 const { PrismaClientKnownRequestError } = PrismaClient;
 import logger from "../utils/logger.js";
 
-
-
-
-
-
-
 async function welcomeNewSubscriber(subscriptionId) {
   const marker = `welcome-${subscriptionId}`;
   try {
     await prisma.setting.create({ data: { key: marker, value: "sent" } });
   } catch (err) {
-    if (err.code === "P2002") return; 
+    if (err.code === "P2002") return;
     throw err;
   }
 
@@ -48,10 +39,6 @@ async function welcomeNewSubscriber(subscriptionId) {
     await prisma.setting.delete({ where: { key: marker } }).catch(() => {});
   }
 }
-
-
-
-
 
 async function activateSubscription(subscriptionId, extras = {}) {
   const sub = await prisma.subscription.findUnique({
@@ -76,10 +63,6 @@ async function activateSubscription(subscriptionId, extras = {}) {
     data,
   });
 }
-
-
-
-
 
 async function linkCardSubscription(subscriptionId, data) {
   const auth = data?.authorization;
@@ -114,7 +97,6 @@ async function linkCardSubscription(subscriptionId, data) {
   }
 }
 
-
 async function markPastDue(subscriptionId) {
   const graceSettings = await prisma.setting.findUnique({ where: { key: "gracePeriodHours" } });
   const graceHours = parseInt(graceSettings?.value || "48");
@@ -126,7 +108,6 @@ async function markPastDue(subscriptionId) {
     data: { status: "past_due", nextRenewal: pastDueDate },
   });
 }
-
 
 export async function initialize(req, res) {
   try {
@@ -172,7 +153,6 @@ export async function initialize(req, res) {
   }
 }
 
-
 export async function verify(req, res) {
   try {
     const { reference } = req.body;
@@ -208,7 +188,6 @@ export async function verify(req, res) {
     res.status(500).json({ error: "Internal server error" });
   }
 }
-
 
 export async function callback(req, res) {
   const { reference } = req.query;
@@ -254,7 +233,6 @@ export async function callback(req, res) {
   }
 }
 
-
 export async function webhook(req, res) {
   try {
     const secret = await getPaystackKey();
@@ -278,13 +256,10 @@ export async function webhook(req, res) {
     const event = req.body;
     const reference = event.data?.reference;
 
-    
     if (event.event === "charge.success") {
       let payment = reference ? await prisma.payment.findUnique({ where: { reference } }) : null;
       let createdRenewalPayment = false;
 
-      
-      
       if (!payment && event.data?.subscription_code) {
         const sub = await prisma.subscription.findFirst({
           where: { paystackSubscriptionCode: event.data.subscription_code },
@@ -305,9 +280,9 @@ export async function webhook(req, res) {
             createdRenewalPayment = true;
           } catch (err) {
             if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
-              
+
               payment = await prisma.payment.findUnique({ where: { reference: ref } });
-              
+
               if (payment && payment.status !== "success") {
                 await prisma.payment.update({
                   where: { reference: ref },
@@ -341,8 +316,6 @@ export async function webhook(req, res) {
             },
           });
 
-          
-          
           await welcomeNewSubscriber(payment.subscriptionId);
         }
 
@@ -356,7 +329,6 @@ export async function webhook(req, res) {
       return res.sendStatus(200);
     }
 
-    
     if (event.event === "charge.failed") {
       if (reference) {
         const payment = await prisma.payment.findUnique({ where: { reference } });
@@ -378,7 +350,6 @@ export async function webhook(req, res) {
       return res.sendStatus(200);
     }
 
-    
     if (event.event === "invoice.update") {
       const invoice = event.data;
       const subscriptionCode = invoice.subscription?.subscription_code;
@@ -431,8 +402,6 @@ export async function webhook(req, res) {
       return res.sendStatus(200);
     }
 
-    
-    
     if (event.event === "subscription.create") {
       const subscriptionCode = event.data?.subscription_code;
       const planCode = event.data?.plan?.plan_code;
@@ -454,8 +423,6 @@ export async function webhook(req, res) {
       return res.sendStatus(200);
     }
 
-    
-    
     if (event.event === "subscription.disable") {
       const { subscription_code: subscriptionCode } = event.data || {};
       if (subscriptionCode) {
@@ -467,7 +434,6 @@ export async function webhook(req, res) {
       return res.sendStatus(200);
     }
 
-    
     if (event.event === "subscription.not_renew") {
       const { subscription_code: subscriptionCode } = event.data || {};
       if (subscriptionCode) {
