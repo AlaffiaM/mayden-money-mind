@@ -105,6 +105,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/audio", audioLimiter, audioRoutes);
 app.use("/api/admin", adminLimiter, adminRoutes);
 
+// Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
@@ -125,6 +126,7 @@ app.get("/api/debug/emailVerified", async (req, res) => {
 const DEFAULT_PRICING = { weeklyPrice: "100", monthlyPrice: "350", currency: "NGN" };
 const PRICING_KEYS = ["weeklyPrice", "monthlyPrice", "currency"];
 
+// Public pricing settings
 app.get("/api/settings/pricing", async (req, res, next) => {
   try {
     const settings = await prisma.setting.findMany({ where: { key: { in: PRICING_KEYS } } });
@@ -136,6 +138,7 @@ app.get("/api/settings/pricing", async (req, res, next) => {
   }
 });
 
+// Latest notifications for the user
 app.get("/api/notifications/latest", authenticate, async (req, res, next) => {
   try {
     const hasActiveSub = await prisma.subscription.findFirst({
@@ -164,6 +167,7 @@ app.get("/api/notifications/latest", authenticate, async (req, res, next) => {
   }
 });
 
+// Mark notification as read
 app.post("/api/notifications/:id/read", authenticate, async (req, res, next) => {
   try {
     const notificationId = parseInt(req.params.id);
@@ -182,10 +186,12 @@ app.post("/api/notifications/:id/read", authenticate, async (req, res, next) => 
   }
 });
 
+// Catch-all 404 for unknown API routes
 app.use("/api", (req, res) => {
   res.status(404).json({ error: "Not found" });
 });
 
+// Global error handler
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   logger.error("Unhandled error:", err.stack || err);
