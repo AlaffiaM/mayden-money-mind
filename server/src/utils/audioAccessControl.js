@@ -1,14 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
 import crypto from "crypto";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -19,10 +8,7 @@ const UPLOADS_DIR = path.join(__dirname, "../../uploads");
 const STORAGE_AUDIO_DIR = path.join(__dirname, "../../storage/audio");
 const PUBLIC_AUDIO_DIR = path.join(__dirname, "../../../client/public/audio");
 
-
 const PUBLIC_FILES = ["/audio/Maiden Microfinance Bank MONDAY.mp3.mpeg"];
-
-
 
 const DEFAULT_TTL_SECONDS = 60;
 
@@ -40,13 +26,11 @@ function safeEqual(a, b) {
   return crypto.timingSafeEqual(aBuf, bBuf);
 }
 
-
 export function signAudioUrl(filePath, ttlSeconds = DEFAULT_TTL_SECONDS) {
   const expires = Date.now() + ttlSeconds * 1000;
   const sig = sign(filePath, expires);
   return `/api/audio?file=${encodeURIComponent(filePath)}&exp=${expires}&sig=${sig}`;
 }
-
 
 export function verifyAudioToken(query) {
   const filePath = query?.file;
@@ -64,13 +48,9 @@ function isPublicFile(filePath) {
   return PUBLIC_FILES.includes(filePath);
 }
 
-
-
 export function resolveAudioFile(filePath) {
   if (!filePath || typeof filePath !== "string") return null;
 
-  
-  
   let normalized;
   try {
     normalized = decodeURIComponent(filePath);
@@ -99,7 +79,7 @@ export function resolveAudioFile(filePath) {
   }
 
   const absolute = path.resolve(root, rel);
-  
+
   if (!absolute.startsWith(path.resolve(root) + path.sep)) return null;
   return absolute;
 }
