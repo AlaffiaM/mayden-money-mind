@@ -13,6 +13,7 @@ function esc(value) {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
+// Email a CSV of payments for the window
 async function sendReconciliationEmail({ csv, from, kind = "Daily", label }) {
   const labelValue = label || from.toISOString().slice(0, 10);
   const subject = `${kind} Payment Reconciliation — ${labelValue}`;
@@ -86,6 +87,7 @@ async function runMonthlyReconciliation(now = new Date()) {
   return runReconciliationForWindow({ from, to, kind: "Monthly", label });
 }
 
+// Run daily + monthly reconciliation reports
 export function startReconciliationProcessor() {
   const tick = async () => {
     const now = new Date();
