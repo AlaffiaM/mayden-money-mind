@@ -1,9 +1,9 @@
-// Admin subscriptions page — list of subscribers with CSV export
+
 import { useState, useEffect, useMemo } from "react";
 import api from "../../services/api";
 import { Download, AlertTriangle, CreditCard, CheckCircle } from "lucide-react";
 
-// Status badge color map
+
 const STATUS_BADGE = {
   active: "bg-emerald-100 text-emerald-700",
   pending: "bg-amber-100 text-amber-700",
@@ -83,7 +83,7 @@ export default function Subscriptions() {
         </button>
       </div>
 
-      {/* Summary Cards */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
           <div className="flex items-center gap-3 mb-2">
@@ -108,7 +108,7 @@ export default function Subscriptions() {
         </div>
       </div>
 
-      {/* Filters */}
+      {}
       <div className="flex items-center gap-2 mb-4">
         <span className="text-sm font-medium text-gray-500">Filter by status:</span>
         <select
@@ -122,7 +122,7 @@ export default function Subscriptions() {
         </select>
       </div>
 
-      {/* Subscriptions Table */}
+      {}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="font-semibold text-mayden-dark">Subscriptions List</h2>
