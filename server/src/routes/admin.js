@@ -1,5 +1,3 @@
-
-
 import { Router } from "express";
 import { authenticate } from "../middleware/auth.js";
 import { requireAdmin } from "../middleware/admin.js";
@@ -32,7 +30,6 @@ import {
 } from "../controllers/adminController.js";
 
 const router = Router();
-
 
 router.use(authenticate, requireAdmin);
 
