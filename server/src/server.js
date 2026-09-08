@@ -59,6 +59,7 @@ async function main() {
 
     logger.info("🔄 Running database migrations...");
     try {
+      // Apply pending migrations before serving traffic
       execSync("npx prisma migrate deploy", { stdio: 'inherit' });
       logger.info("✅ Migrations completed successfully");
     } catch (migrateErr) {
@@ -72,6 +73,7 @@ async function main() {
     process.exit(1);
   }
 
+  // Load Express app (starts background processors)
   const { default: app } = await import("./app.js");
 
   logger.info("✅ Background jobs started");
@@ -87,6 +89,7 @@ async function main() {
     logger.warn("⚠️  Paystack: no key — dev-mode bypass active (payments auto-succeed). Disabled in production.");
   }
 
+  // Start HTTP server
   app.listen(PORT, () => {
     logger.info(`🚀 Server running on http://localhost:${PORT}`);
   });
