@@ -1,4 +1,3 @@
-
 import { Router } from "express";
 import { authenticate, optionalAuth, requireVerified } from "../middleware/auth.js";
 import {
@@ -15,8 +14,6 @@ const router = Router();
 
 router.get("/", optionalAuth, list);
 router.get("/library", authenticate, library);
-
-
 
 router.get("/my-library", authenticate, requireVerified, myLibrary);
 router.get("/today", optionalAuth, today);
