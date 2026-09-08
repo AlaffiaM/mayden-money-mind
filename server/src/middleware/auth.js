@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config/env.js";
 import { prisma } from "../config/prisma.js";
 
+// Authenticate a request via JWT
 export function authenticate(req, res, next) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith("Bearer ")) {
@@ -19,6 +20,7 @@ export function authenticate(req, res, next) {
   }
 }
 
+// Allow anonymous access but attach user if token is valid
 export function optionalAuth(req, res, next) {
   const header = req.headers.authorization;
   if (header && header.startsWith("Bearer ")) {
@@ -31,6 +33,7 @@ export function optionalAuth(req, res, next) {
   next();
 }
 
+// Require a verified email (admins bypass)
 export async function requireVerified(req, res, next) {
   try {
     if (req.user?.role === "admin") return next();
