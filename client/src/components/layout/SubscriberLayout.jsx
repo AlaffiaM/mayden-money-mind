@@ -5,6 +5,7 @@ import { LogOut, Library, Home, CreditCard, Bell, X } from "lucide-react";
 import LogoutButton from "../ui/LogoutButton";
 import { Link, useLocation } from "react-router-dom";
 import LogoLockup from "../ui/LogoLockup";
+import NowPlayingBar from "../ui/NowPlayingBar";
 
 function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
@@ -123,7 +124,7 @@ export default function SubscriberLayout({ children }) {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-5xl mx-auto px-4 py-6 pb-28">
         <nav className="flex gap-1 mb-6 bg-white rounded-xl p-1 shadow-sm border border-gray-100">
           {nav.map((item) => {
             const active = location.pathname === item.to;
@@ -143,6 +144,8 @@ export default function SubscriberLayout({ children }) {
         </nav>
         {children}
       </div>
+
+      <NowPlayingBar />
     </div>
   );
 }
