@@ -1,7 +1,7 @@
-// Shared transactional email service — the single Brevo path for the app.
-// Used by password-reset emails, welcome emails, renewal reminders and payment
-// reconciliation. No-op (with a log) when Brevo isn't configured so local dev
-// works without keys.
+
+
+
+
 import { FRONTEND_URL } from "../config/env.js";
 import logger from "../utils/logger.js";
 
@@ -22,8 +22,8 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-// Branded HTML shell — logo + title + body + footer. `bodyHtml` is inserted as-is,
-// so callers must escape dynamic text themselves (or use sendUserEmail).
+
+
 function emailTemplate({ title, bodyHtml, footerText = "Money & Mind by Mayden Microfinance Bank" }) {
   return `<!doctype html>
 <html lang="en">
@@ -54,7 +54,7 @@ function emailTemplate({ title, bodyHtml, footerText = "Money & Mind by Mayden M
 </html>`;
 }
 
-// Sends a branded email whose body is a single plain-text block (auto-escaped).
+
 export async function sendUserEmail({ to, subject, title, body }) {
   return sendEmail({
     to,
@@ -63,7 +63,7 @@ export async function sendUserEmail({ to, subject, title, body }) {
   });
 }
 
-// Thank-you email sent once, on the first successful subscription.
+
 export async function sendWelcomeEmail({ to, fullName, plan, nextRenewal }) {
   const planLabel = plan === "weekly" ? "Weekly — ₦100 / week" : "Monthly — ₦350 / month";
   const renewalDate = new Date(nextRenewal).toLocaleDateString("en-GB", {
@@ -89,8 +89,8 @@ export async function sendWelcomeEmail({ to, fullName, plan, nextRenewal }) {
   });
 }
 
-// Verification email sent immediately after registration. The link points at the
-// frontend /verify-email route, which verifies and then resends-expires.
+
+
 export async function sendVerificationEmail({ to, fullName, token }) {
   const verifyUrl = `${FRONTEND_URL}/verify-email?token=${encodeURIComponent(token)}`;
   const bodyHtml = `
@@ -108,9 +108,9 @@ export async function sendVerificationEmail({ to, fullName, token }) {
   });
 }
 
-// Sends a transactional email via the Brevo SMTP API.
-// `to` is a single email address (string). Optional `attachment`:
-// { name, content } where content is base64. Resolves with { sent, via, reason }.
+
+
+
 export async function sendEmail({ to, subject, textContent, htmlContent, attachment }) {
   if (!brevoConfigured()) {
     console.log("[email] skipped — set BREVO_API_KEY and BREVO_FROM_EMAIL");
