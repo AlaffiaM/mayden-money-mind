@@ -1,11 +1,6 @@
-
-
-
 import { prisma } from "../config/prisma.js";
 import { PAYSTACK_API, getPaystackKey } from "../config/paystack.js";
 import { generateReference } from "../utils/helpers.js";
-
-
 
 function assertPaystackConfigured() {
   if (process.env.NODE_ENV === "production") {
@@ -26,14 +21,10 @@ async function setSetting(key, value) {
   });
 }
 
-
 const PLAN_SETTING_BY_PLAN = {
   weekly: "paystackPlanWeekly",
   monthly: "paystackPlanMonthly",
 };
-
-
-
 
 export async function ensurePlans() {
   const secret = await getPaystackKey();
@@ -86,21 +77,13 @@ export async function ensurePlans() {
   return codes;
 }
 
-
-
-
 const ALL_CHANNELS = ["card", "bank", "bank_transfer", "ussd", "qr", "mobile_money", "eft"];
-
-
-
-
 
 export async function initializePayment(user, subscriptionId, amount, subPlan, { forceCard = false } = {}) {
   const reference = generateReference();
   const amountInKobo = amount * 100;
   const secret = await getPaystackKey();
 
-  
   if (!secret) {
     assertPaystackConfigured();
     return { reference, redirectUrl: null };
@@ -132,13 +115,9 @@ export async function initializePayment(user, subscriptionId, amount, subPlan, {
   return { reference, redirectUrl: data.data.authorization_url };
 }
 
-
-
-
 export async function verifyPayment(reference) {
   const secret = await getPaystackKey();
 
-  
   if (!secret) {
     assertPaystackConfigured();
     return true;
@@ -152,9 +131,6 @@ export async function verifyPayment(reference) {
   if (data.status && data.data.status === "success") return data.data;
   return null;
 }
-
-
-
 
 export async function createPaystackSubscription({ customer, plan, authorization, invoiceLimit = 0 }) {
   const secret = await getPaystackKey();
@@ -175,8 +151,6 @@ export async function createPaystackSubscription({ customer, plan, authorization
   }
   return data.data;
 }
-
-
 
 export async function disablePaystackSubscription(subscriptionCode) {
   const secret = await getPaystackKey();
