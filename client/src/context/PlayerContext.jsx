@@ -1,17 +1,9 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { useAuth } from "./AuthContext";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useAuth } from "./useAuth";
 import api from "../services/api";
 import { useAudio } from "../hooks/useAudio";
-import { useToast } from "../components/admin/useToast";
-
-const PlayerContext = createContext(null);
+import { useToast } from "../components/admin/useToast.js";
+import { PlayerContext } from "./playerContext";
 
 export function PlayerProvider({ children }) {
   const { user } = useAuth();
@@ -51,7 +43,10 @@ export function PlayerProvider({ children }) {
   }, [audioRef, pause]);
 
   useEffect(() => {
-    if (!user) stopAndClear();
+    if (!user) {
+      const cleanupTimer = setTimeout(stopAndClear, 0);
+      return () => clearTimeout(cleanupTimer);
+    }
   }, [user, stopAndClear]);
 
   const playEpisode = useCallback(
@@ -147,8 +142,3 @@ export function PlayerProvider({ children }) {
   );
 }
 
-export function usePlayer() {
-  const ctx = useContext(PlayerContext);
-  if (!ctx) throw new Error("usePlayer must be used within a PlayerProvider");
-  return ctx;
-}
