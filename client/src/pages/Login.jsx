@@ -28,7 +28,10 @@ export default function Login() {
         <>
           <p>
             Don't have an account?{" "}
-            <Link to="/register" className="text-mayden-magenta font-semibold hover:underline">
+            <Link
+              to="/register"
+              className="text-mayden-magenta font-semibold hover:underline"
+            >
               Create one
             </Link>
           </p>
@@ -45,7 +48,7 @@ export default function Login() {
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-center text-sm text-red-600">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-center text-sm text-amber-700">
             {error}
           </div>
         )}
