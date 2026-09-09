@@ -242,7 +242,7 @@ function WeekCalendar({ episodes, weekOffset, onPublish }) {
               )}
             </div>
           ) : (
-            <p className="text-xs text-gray-300 text-center mt-6">No episode</p>
+            <p className="mt-6 text-center text-xs text-gray-400">No episode scheduled</p>
           )}
         </div>
       ))}
@@ -766,9 +766,10 @@ export default function Episodes() {
 
           if (weeks.length === 0) {
             return (
-              <p className="rounded-2xl border border-gray-100 bg-white py-12 text-center text-gray-400">
-                No episodes yet. Click "New Episode" to get started.
-              </p>
+              <div className="rounded-2xl border border-dashed border-gray-200 bg-white py-12 text-center">
+                <p className="text-lg font-medium text-mayden-dark">No episodes scheduled yet</p>
+                <p className="mt-2 text-sm text-gray-500">Create your first release to start building the week.</p>
+              </div>
             );
           }
 
@@ -923,8 +924,8 @@ export default function Episodes() {
                           </div>
                         </>
                       ) : (
-                        <span className="text-[10px] text-gray-300 flex-1 text-center">
-                          No episode
+                        <span className="text-[10px] text-gray-400 flex-1 text-center">
+                          No episode scheduled
                         </span>
                       )}
                     </div>
@@ -1029,10 +1030,12 @@ export default function Episodes() {
               )}
 
               {!editingEp && batchCount === 0 && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-                  <p className="text-sm text-gray-500">
-                    No audio files available for this day. Add files to
-                    server/storage/audio/Maiden/
+                <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                  <p className="text-sm font-medium text-amber-800">
+                    No audio is ready for this day yet
+                  </p>
+                  <p className="text-xs text-amber-700 mt-1">
+                    Upload a file for this pillar to start scheduling episodes.
                   </p>
                 </div>
               )}
@@ -1042,9 +1045,8 @@ export default function Episodes() {
                   Audio — {currentDayPillar} ({form.dayType})
                 </label>
                 {currentDayFiles.length === 0 ? (
-                  <p className="text-xs text-gray-400 py-3">
-                    No audio files available for this day. Add files to
-                    server/storage/audio/Maiden/
+                  <p className="text-xs text-gray-500 py-3">
+                    No audio files are available for this day yet. Upload a file to begin.
                   </p>
                 ) : (
                   <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-48 overflow-y-auto">
