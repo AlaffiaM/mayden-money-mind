@@ -136,7 +136,7 @@ export default function SubscriberLayout({ children }) {
           </Link>
           <div className="flex items-center gap-4">
             <NotificationBell />
-            <span className="text-sm text-gray-500">
+            <span className="hidden text-sm text-gray-500 sm:inline">
               Hi, {user?.fullName?.split(" ")[0]}
             </span>
             <LogoutButton
@@ -150,14 +150,14 @@ export default function SubscriberLayout({ children }) {
       </header>
 
       <div className="max-w-5xl mx-auto px-4 py-6 pb-28">
-        <nav className="flex gap-1 mb-6 bg-white rounded-xl p-1 shadow-sm border border-gray-100">
+        <nav className="mb-6 grid grid-cols-3 gap-1 rounded-xl border border-gray-100 bg-white p-1 shadow-sm">
           {nav.map((item) => {
             const active = location.pathname === item.to;
             return (
               <Link
                 key={item.to}
                 to={item.to}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-colors sm:gap-2 sm:px-4 sm:text-sm ${
                   active
                     ? "bg-mayden-magenta text-white"
                     : "text-gray-500 hover:text-mayden-magenta"
