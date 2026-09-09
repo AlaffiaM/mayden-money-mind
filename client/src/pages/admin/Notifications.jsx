@@ -5,7 +5,7 @@ import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import AdminCard from "../../components/admin/AdminCard";
 import ConfirmModal from "../../components/admin/ConfirmModal";
 import Loader from "../../components/admin/Loader";
-import { useToast } from "../../components/admin/useToast";
+import { useToast } from "../../components/admin/useToast.js";
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
