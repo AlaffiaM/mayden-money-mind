@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { startTransition, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { Search, Filter, Eye, Trash2, Headphones } from "lucide-react";
@@ -7,7 +7,7 @@ import AdminTable from "../../components/admin/AdminTable";
 import ConfirmModal from "../../components/admin/ConfirmModal";
 import StatusBadge from "../../components/admin/StatusBadge";
 import { InlineLoader } from "../../components/admin/Loader";
-import { useToast } from "../../components/admin/useToast";
+import { useToast } from "../../components/admin/useToast.js";
 
 const STATUS_FILTERS = [
   { value: "", label: "All Users" },
@@ -33,7 +33,7 @@ export default function Users() {
   }, [search]);
 
   useEffect(() => {
-    setLoading(true);
+    startTransition(() => setLoading(true));
     const params = {};
     if (debouncedSearch) params.search = debouncedSearch;
     if (statusFilter) params.status = statusFilter;
