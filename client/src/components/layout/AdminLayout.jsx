@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import {
   LayoutDashboard,
   FileText,
@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import LogoutButton from "../ui/LogoutButton";
-import { ToastProvider } from "../admin/useToast";
+import { ToastProvider } from "../admin/ToastProvider";
 
 const nav = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
