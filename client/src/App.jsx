@@ -6,9 +6,9 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthContext.jsx";
 import { useAuth } from "./context/useAuth";
-import { PlayerProvider } from "./context/PlayerContext";
+import { PlayerProvider } from "./context/PlayerContext.jsx";
 import { captureUtm } from "./utils/utm";
 import api from "./services/api";
 const Landing = lazy(() => import("./pages/Landing"));
