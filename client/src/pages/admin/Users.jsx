@@ -2,6 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { Search, Filter, Eye, Trash2, Headphones } from "lucide-react";
+import AdminPageHeading from "../../components/admin/AdminPageHeading";
+import AdminTable from "../../components/admin/AdminTable";
+import ConfirmModal from "../../components/admin/ConfirmModal";
+import StatusBadge from "../../components/admin/StatusBadge";
+import { InlineLoader } from "../../components/admin/Loader";
+import { useToast } from "../../components/admin/useToast";
 
 const STATUS_FILTERS = [
   { value: "", label: "All Users" },
@@ -11,15 +17,6 @@ const STATUS_FILTERS = [
   { value: "never_subscribed", label: "Never Subscribed" },
 ];
 
-const STATUS_BADGE = {
-  active: "bg-emerald-100 text-emerald-700",
-  pending: "bg-amber-100 text-amber-700",
-  past_due: "bg-orange-100 text-orange-700",
-  paused: "bg-blue-100 text-blue-700",
-  cancelled: "bg-gray-100 text-gray-600",
-  expired: "bg-red-100 text-red-600",
-};
-
 export default function Users() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,6 +25,7 @@ export default function Users() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
@@ -51,23 +49,24 @@ export default function Users() {
       await api.delete(`/admin/users/${deleteTarget.id}`);
       setUsers((prev) => prev.filter((u) => u.id !== deleteTarget.id));
       setDeleteTarget(null);
-    } catch {
-
+      toast("User deleted.");
+    } catch (err) {
+      toast(err.response?.data?.error || "Failed to delete user.", "error");
     }
   };
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-mayden-dark">Users</h1>
+      <AdminPageHeading title="Users" subtitle="Every account, their subscription state and activity." />
 
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, email, or phone..."
-            className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20 focus:border-mayden-magenta"
+            className="w-full rounded-xl border border-gray-200 py-2 pl-9 pr-3 text-sm focus:border-mayden-magenta focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -75,7 +74,7 @@ export default function Users() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20"
+            className="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-mayden-magenta focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20"
           >
             {STATUS_FILTERS.map((f) => (
               <option key={f.value} value={f.value}>{f.label}</option>
@@ -84,98 +83,77 @@ export default function Users() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-100">
-            <tr>
-              <th className="text-left p-4 font-medium text-gray-500">User</th>
-              <th className="text-left p-4 font-medium text-gray-500">Status</th>
-              <th className="text-left p-4 font-medium text-gray-500">Plan</th>
-              <th className="text-left p-4 font-medium text-gray-500">Next Billing</th>
-              <th className="text-left p-4 font-medium text-gray-500">Last Active</th>
-              <th className="text-left p-4 font-medium text-gray-500">Listens</th>
-              <th className="text-right p-4 font-medium text-gray-500">Action</th>
+      <AdminTable
+        columns={[
+          { label: "User" },
+          { label: "Status" },
+          { label: "Plan" },
+          { label: "Next Billing" },
+          { label: "Last Active" },
+          { label: "Listens" },
+          { label: "Action", className: "text-right" },
+        ]}
+        empty="No users found"
+      >
+        {loading ? (
+          <tr>
+            <td colSpan={7} className="py-12 text-center"><InlineLoader /></td>
+          </tr>
+        ) : (
+          users.map((u) => (
+            <tr key={u.id} className="hover:bg-mayden-gray/40">
+              <td className="px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mayden-magenta/10 text-xs font-bold text-mayden-magenta">
+                    {u.fullName?.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-medium text-mayden-dark">{u.fullName}</p>
+                    <p className="text-xs text-gray-400">{u.email || u.phone}</p>
+                  </div>
+                </div>
+              </td>
+              <td className="px-4 py-3"><StatusBadge status={u.subscription?.status || "none"} /></td>
+              <td className="px-4 py-3 text-gray-500 capitalize">{u.subscription?.plan || "—"}</td>
+              <td className="px-4 py-3 text-xs text-gray-500">
+                {u.subscription?.nextRenewal ? new Date(u.subscription.nextRenewal).toLocaleDateString() : "—"}
+              </td>
+              <td className="px-4 py-3 text-xs text-gray-500">
+                {u.lastActive ? new Date(u.lastActive).toLocaleDateString() : "—"}
+              </td>
+              <td className="px-4 py-3 text-gray-500">
+                <span className="inline-flex items-center gap-1"><Headphones size={12} /> {u.episodesListened || 0}</span>
+              </td>
+              <td className="px-4 py-3 text-right">
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => navigate(`/admin/users/${u.id}`)}
+                    className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1.5 text-xs text-gray-600 transition-colors hover:bg-gray-200"
+                  >
+                    <Eye size={12} /> View
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget(u)}
+                    aria-label="Delete user"
+                    className="rounded-full p-1.5 text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </td>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {loading ? (
-              <tr><td colSpan={7} className="text-center py-12"><div className="w-6 h-6 border-2 border-mayden-magenta border-t-transparent rounded-full animate-spin mx-auto" /></td></tr>
-            ) : users.length === 0 ? (
-              <tr><td colSpan={7} className="text-center text-gray-400 py-12">No users found</td></tr>
-            ) : (
-              users.map((u) => (
-                <tr key={u.id} className="hover:bg-gray-50/50">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-mayden-magenta/10 flex items-center justify-center text-xs font-bold text-mayden-magenta">
-                        {u.fullName?.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="font-medium text-mayden-dark">{u.fullName}</p>
-                        <p className="text-xs text-gray-400">{u.email || u.phone}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${STATUS_BADGE[u.subscription?.status] || "bg-gray-100 text-gray-500"}`}>
-                      {u.subscription?.status || "none"}
-                    </span>
-                  </td>
-                  <td className="p-4 text-gray-500 capitalize">{u.subscription?.plan || "—"}</td>
-                  <td className="p-4 text-gray-500 text-xs">
-                    {u.subscription?.nextRenewal ? new Date(u.subscription.nextRenewal).toLocaleDateString() : "—"}
-                  </td>
-                  <td className="p-4 text-gray-500 text-xs">
-                    {u.lastActive ? new Date(u.lastActive).toLocaleDateString() : "—"}
-                  </td>
-                  <td className="p-4 text-gray-500 flex items-center gap-1">
-                    <Headphones size={12} /> {u.episodesListened || 0}
-                  </td>
-                  <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => navigate(`/admin/users/${u.id}`)}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg hover:bg-gray-200"
-                      >
-                        <Eye size={12} /> View
-                      </button>
-                      <button
-                        onClick={() => setDeleteTarget(u)}
-                        className="flex items-center gap-1 px-3 py-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 text-xs rounded-lg transition-colors"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+          ))
+        )}
+      </AdminTable>
 
-      {deleteTarget && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
-                <Trash2 size={20} className="text-red-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-mayden-dark">Delete User</h3>
-                <p className="text-xs text-gray-500">This action cannot be undone</p>
-              </div>
-            </div>
-            <p className="text-sm text-gray-600 mb-4">
-              Permanently delete <strong>{deleteTarget.fullName}</strong> and all their data (subscriptions, payments, listen history)?
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100">Cancel</button>
-              <button onClick={handleDelete} className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-red-500 hover:bg-red-600">Delete User</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Delete User"
+        message={deleteTarget ? `Permanently delete ${deleteTarget.fullName} and all their data (subscriptions, payments, listen history)?` : ""}
+        confirmLabel="Delete User"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
