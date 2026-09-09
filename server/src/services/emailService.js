@@ -185,7 +185,7 @@ ${codeBox(code)}
   });
 }
 
-export async function sendEmail({ to, subject, textContent, htmlContent, attachment }) {
+export async function sendEmail({ to, subject, textContent, htmlContent, attachment, attachments }) {
   if (!brevoConfigured()) {
     console.log("[email] skipped — set BREVO_API_KEY and BREVO_FROM_EMAIL");
     return { sent: false, reason: "brevo not configured" };
@@ -199,6 +199,7 @@ export async function sendEmail({ to, subject, textContent, htmlContent, attachm
   };
   if (htmlContent) body.htmlContent = htmlContent;
   if (attachment) body.attachment = [attachment];
+  else if (attachments && attachments.length) body.attachment = attachments;
 
   const response = await fetch(BREVO_URL, {
     method: "POST",
