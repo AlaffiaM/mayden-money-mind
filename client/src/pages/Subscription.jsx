@@ -118,7 +118,10 @@ export default function Subscription() {
         navigate("/dashboard", { replace: true });
       }
     } catch {
-      toast("We couldn't complete your subscription. Please try again.", "error");
+      toast(
+        "We couldn't complete your subscription. Please try again.",
+        "error",
+      );
     }
   };
 
