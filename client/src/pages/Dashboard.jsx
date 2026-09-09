@@ -13,7 +13,7 @@ import { businessDayOfWeek } from "../utils/businessTime.js";
 
 const moodTags = [
   { label: "I want focus", query: "monday" },
-  { label: "I want save", query: "tuesday" },
+  { label: "I want to save", query: "tuesday" },
   { label: "I want peace", query: "wednesday" },
   { label: "I want inspiration", query: "thursday" },
   { label: "I want to celebrate", query: "friday" },
@@ -35,7 +35,15 @@ const dayNames = {
   friday: "Friday",
 };
 
-const businessWeekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const businessWeekdayNames = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
 
 const dayTints = {
   monday: "from-blue-50",
@@ -62,19 +70,35 @@ export default function Dashboard() {
   const [notesExpanded, setNotesExpanded] = useState(false);
 
   useEffect(() => {
-    api.get("/episodes/today").then(({ data }) => setTodayEpisode(data)).catch(() => {});
-    api.get("/episodes/library").then(({ data }) => setEpisodes(data)).catch(() => {});
+    api
+      .get("/episodes/today")
+      .then(({ data }) => setTodayEpisode(data))
+      .catch(() => {});
+    api
+      .get("/episodes/library")
+      .then(({ data }) => setEpisodes(data))
+      .catch(() => {});
   }, []);
 
   const filteredEpisodes = vaultSearch
-    ? episodes.filter((ep) => ep.dayType?.toLowerCase() === vaultSearch.toLowerCase())
+    ? episodes.filter(
+        (ep) => ep.dayType?.toLowerCase() === vaultSearch.toLowerCase(),
+      )
     : episodes;
 
-  const todayDayName = dayNames[todayEpisode?.dayType] || businessWeekdayNames[businessDayOfWeek(new Date())];
-  const heroTitle = todayEpisode ? `Today: ${todayDayName} – ${todayEpisode.title}` : "";
-  const isTodayPlaying = todayEpisode && activeEp?.id === todayEpisode.id && anyPlaying;
+  const todayDayName =
+    dayNames[todayEpisode?.dayType] ||
+    businessWeekdayNames[businessDayOfWeek(new Date())];
+  const heroTitle = todayEpisode
+    ? `Today: ${todayDayName} – ${todayEpisode.title}`
+    : "";
+  const isTodayPlaying =
+    todayEpisode && activeEp?.id === todayEpisode.id && anyPlaying;
 
-  const scrollToHero = () => document.getElementById("hero-player")?.scrollIntoView({ behavior: "smooth" });
+  const scrollToHero = () =>
+    document
+      .getElementById("hero-player")
+      ?.scrollIntoView({ behavior: "smooth" });
 
   return (
     <SubscriberLayout>
@@ -86,7 +110,9 @@ export default function Dashboard() {
         <h1 className="text-2xl lg:text-3xl font-serif font-bold text-mayden-dark mb-1 leading-tight">
           {greeting()}, {user?.fullName?.split(" ")[0]}. Welcome in.
         </h1>
-        <p className="text-sm text-gray-500">Your gentle reset starts here — one thoughtful minute at a time.</p>
+        <p className="text-sm text-gray-500">
+          Your gentle reset starts here — two thoughtful minutes at a time.
+        </p>
       </div>
 
       {todayEpisode ? (
@@ -100,14 +126,19 @@ export default function Dashboard() {
             </span>
             <span className="text-xs text-gray-400">Today’s focus</span>
           </div>
-          <h2 className="mb-6 text-xl font-serif font-bold text-mayden-dark lg:text-2xl">{heroTitle}</h2>
+          <h2 className="mb-6 text-xl font-serif font-bold text-mayden-dark lg:text-2xl">
+            {heroTitle}
+          </h2>
 
           <AudioPlayer episode={todayEpisode} large />
 
           {todayEpisode.showNotes && (
             <div className="mt-6 rounded-xl bg-white/60 text-sm text-gray-600 leading-relaxed overflow-hidden transition-all duration-300">
               <div className={`${notesExpanded ? "" : "max-h-24"} relative`}>
-                <div className="p-5" dangerouslySetInnerHTML={{ __html: todayEpisode.showNotes }} />
+                <div
+                  className="p-5"
+                  dangerouslySetInnerHTML={{ __html: todayEpisode.showNotes }}
+                />
                 {!notesExpanded && todayEpisode.showNotes.length > 200 && (
                   <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent" />
                 )}
@@ -118,9 +149,13 @@ export default function Dashboard() {
                   className="flex items-center gap-1 px-5 pb-4 text-xs font-medium text-mayden-magenta hover:underline"
                 >
                   {notesExpanded ? (
-                    <>Show less <ChevronUp size={14} /></>
+                    <>
+                      Show less <ChevronUp size={14} />
+                    </>
                   ) : (
-                    <>Read more <ChevronDown size={14} /></>
+                    <>
+                      Read more <ChevronDown size={14} />
+                    </>
                   )}
                 </button>
               )}
@@ -129,19 +164,27 @@ export default function Dashboard() {
         </div>
       ) : (
         <div className="mb-8 rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-lg font-medium text-mayden-dark">Your next gentle reset is on the way.</p>
-          <p className="mt-2 text-sm text-gray-500">A fresh episode will appear here soon.</p>
+          <p className="text-lg font-medium text-mayden-dark">
+            Your next gentle reset is on the way.
+          </p>
+          <p className="mt-2 text-sm text-gray-500">
+            A fresh episode will appear here soon.
+          </p>
         </div>
       )}
 
       <div className="mb-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:p-8">
-        <h2 className="mb-4 text-xl font-serif font-bold text-mayden-dark lg:text-2xl">The Vault</h2>
+        <h2 className="mb-4 text-xl font-serif font-bold text-mayden-dark lg:text-2xl">
+          The Vault
+        </h2>
 
         <div className="mb-4 flex flex-wrap gap-2">
           {moodTags.map((tag) => (
             <button
               key={tag.label}
-              onClick={() => setVaultSearch(vaultSearch === tag.query ? "" : tag.query)}
+              onClick={() =>
+                setVaultSearch(vaultSearch === tag.query ? "" : tag.query)
+              }
               className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
                 vaultSearch === tag.query
                   ? "bg-mayden-magenta text-white border-mayden-magenta"
@@ -167,7 +210,9 @@ export default function Dashboard() {
               <EpisodeCard key={ep.id} episode={ep} onPlay={scrollToHero} />
             ))}
             {filteredEpisodes.length === 0 && (
-              <p className="text-center text-sm text-gray-500 py-8">No episodes match that mood right now. Try another theme.</p>
+              <p className="text-center text-sm text-gray-500 py-8">
+                No episodes match that mood right now. Try another theme.
+              </p>
             )}
           </div>
         ) : (
@@ -178,13 +223,20 @@ export default function Dashboard() {
               return (
                 <Carousel key={day} title={label}>
                   {filtered.map((ep) => (
-                    <EpisodeCard key={ep.id} episode={ep} onPlay={scrollToHero} />
+                    <EpisodeCard
+                      key={ep.id}
+                      episode={ep}
+                      onPlay={scrollToHero}
+                    />
                   ))}
                 </Carousel>
               );
             })}
             {episodes.length === 0 && (
-              <p className="text-center text-sm text-gray-500 py-8">Your vault is empty right now. New recordings will appear here soon.</p>
+              <p className="text-center text-sm text-gray-500 py-8">
+                Your vault is empty right now. New recordings will appear here
+                soon.
+              </p>
             )}
           </>
         )}
@@ -198,15 +250,22 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-sm font-medium text-mayden-dark">
-                Active – {subscription.plan === "weekly" ? "₦100/Weekly" : "₦350/Monthly"}
+                Active –{" "}
+                {subscription.plan === "weekly"
+                  ? "₦100/Weekly"
+                  : "₦350/Monthly"}
               </p>
               <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
                 <Calendar size={11} />
-                Next renewal: {new Date(subscription.nextRenewal).toLocaleDateString()}
+                Next renewal:{" "}
+                {new Date(subscription.nextRenewal).toLocaleDateString()}
               </div>
             </div>
           </div>
-          <a href="/subscription" className="text-xs font-medium text-mayden-magenta transition-colors hover:text-mayden-magenta/80">
+          <a
+            href="/subscription"
+            className="text-xs font-medium text-mayden-magenta transition-colors hover:text-mayden-magenta/80"
+          >
             Manage
           </a>
         </div>
