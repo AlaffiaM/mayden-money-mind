@@ -41,9 +41,15 @@ export function ToastProvider({ children }) {
             }`}
           >
             {type === "success" ? (
-              <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-600" />
+              <CheckCircle2
+                size={18}
+                className="mt-0.5 flex-shrink-0 text-emerald-600"
+              />
             ) : type === "error" ? (
-              <XCircle size={18} className="mt-0.5 flex-shrink-0 text-amber-600" />
+              <XCircle
+                size={18}
+                className="mt-0.5 flex-shrink-0 text-amber-600"
+              />
             ) : (
               <Info size={18} className="mt-0.5 flex-shrink-0 text-gray-400" />
             )}
