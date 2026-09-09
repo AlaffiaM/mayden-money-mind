@@ -26,7 +26,10 @@ export default function VerifyEmailSent() {
   useEffect(() => {
     if (cooldownStart === null) return;
     const id = setInterval(() => {
-      const remaining = Math.max(0, RESEND_COOLDOWN - Math.floor((Date.now() - cooldownStart) / 1000));
+      const remaining = Math.max(
+        0,
+        RESEND_COOLDOWN - Math.floor((Date.now() - cooldownStart) / 1000),
+      );
       setCountdown(remaining);
       if (remaining <= 0) clearInterval(id);
     }, 1000);
@@ -35,7 +38,10 @@ export default function VerifyEmailSent() {
 
   useEffect(() => {
     if (!verified) return;
-    const id = setTimeout(() => navigate("/dashboard", { replace: true }), 1500);
+    const id = setTimeout(
+      () => navigate("/dashboard", { replace: true }),
+      1500,
+    );
     return () => clearTimeout(id);
   }, [verified, navigate]);
 
@@ -51,7 +57,10 @@ export default function VerifyEmailSent() {
       setCooldownStart(Date.now());
     } catch (err) {
       setStatus("error");
-      setMsg(err.response?.data?.error || "Couldn't send a new code. Please try again shortly.");
+      setMsg(
+        err.response?.data?.error ||
+          "Couldn't send a new code. Please try again shortly.",
+      );
     }
   };
 
@@ -69,13 +78,19 @@ export default function VerifyEmailSent() {
       subtitle={
         <>
           We've sent a 6-digit verification code to{" "}
-          <span className="font-semibold text-mayden-dark">{email || "your email"}</span>.
+          <span className="font-semibold text-mayden-dark">
+            {email || "your email"}
+          </span>
+          .
         </>
       }
       footer={
         <p>
           Already verified?{" "}
-          <Link to="/login" className="text-mayden-magenta font-semibold hover:underline">
+          <Link
+            to="/login"
+            className="text-mayden-magenta font-semibold hover:underline"
+          >
             Sign in
           </Link>
         </p>
@@ -87,8 +102,8 @@ export default function VerifyEmailSent() {
         </div>
 
         <p className="mt-4 text-xs text-gray-400">
-          Once you confirm your email you'll be able to access your subscription and daily audio.
-          The code expires in 30 minutes.
+          Once you confirm your email, you'll be able to access your
+          subscription and daily audio. The code expires in 30 minutes.
         </p>
 
         {status === "sending" && (
