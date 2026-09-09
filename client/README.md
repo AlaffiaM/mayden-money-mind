@@ -4,16 +4,16 @@ A subscription-based daily audio motivation platform for women, built as a Progr
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | React 19 |
-| Build Tool | Vite 8 |
-| Styling | Tailwind CSS v4 |
-| Routing | React Router DOM 7 |
-| HTTP Client | Axios |
-| Icons | Lucide React |
-| Rich Text Editor | TipTap |
-| PWA | vite-plugin-pwa + Workbox |
+| Layer            | Technology                |
+| ---------------- | ------------------------- |
+| Framework        | React 19                  |
+| Build Tool       | Vite 8                    |
+| Styling          | Tailwind CSS v4           |
+| Routing          | React Router DOM 7        |
+| HTTP Client      | Axios                     |
+| Icons            | Lucide React              |
+| Rich Text Editor | TipTap                    |
+| PWA              | vite-plugin-pwa + Workbox |
 
 ## Getting Started
 
@@ -26,12 +26,12 @@ The dev server runs on `http://localhost:5173` and proxies `/api` requests to `h
 
 ## Scripts
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start development server |
-| `npm run build` | Production build to `dist/` |
-| `npm run preview` | Preview production build |
-| `npm run lint` | Run ESLint |
+| Command           | Description                 |
+| ----------------- | --------------------------- |
+| `npm run dev`     | Start development server    |
+| `npm run build`   | Production build to `dist/` |
+| `npm run preview` | Preview production build    |
+| `npm run lint`    | Run ESLint                  |
 
 ## Project Structure
 
@@ -69,6 +69,10 @@ src/
     ├── Landing.jsx           # Marketing landing page
     ├── Login.jsx             # User login
     ├── Register.jsx          # User registration
+    ├── ForgotPassword.jsx    # Password reset request
+    ├── ResetPassword.jsx     # Set a new password
+    ├── VerifyEmail.jsx       # Confirm email with a verification code
+    ├── VerifyEmailSent.jsx   # Verification-code instructions
     ├── Dashboard.jsx         # Subscriber dashboard + today's episode
     ├── Library.jsx           # Searchable episode library
     ├── Subscription.jsx      # Plan selection + Paystack payment
@@ -89,11 +93,14 @@ src/
 ## Features
 
 ### Public
+
 - Marketing landing page with hero, how-it-works, pricing, FAQ
 - Free audio sample player
 - User registration and login
+- Email verification with resend flow
 
 ### Subscriber
+
 - Daily 2-minute audio episodes themed by weekday:
   - **Motivation Monday** — Vision-setting and discipline
   - **Tactical Tuesday** — Money habits and micro-saving
@@ -104,6 +111,7 @@ src/
 - Subscription management with Paystack integration
 
 ### Admin
+
 - Dashboard with revenue, subscriber metrics, and growth chart
 - Episode management with weekly calendar, rich text editor, bulk actions
 - User management with search, filters, and detailed profiles
@@ -112,6 +120,7 @@ src/
 - Settings for pricing, scheduling, and day labels
 
 ### PWA
+
 - Service worker with auto-update (Workbox)
 - Install banner prompt
 - Standalone display mode
@@ -119,9 +128,9 @@ src/
 
 ## API
 
-The frontend communicates with a REST API at `/api/*` (proxied to `localhost:5000` in development). Authentication uses JWT tokens stored in localStorage.
+The frontend communicates with a REST API at `/api/*` (proxied to `localhost:5000` in development). Authentication uses JWT tokens stored in localStorage. Subscriber routes require an active subscription, and non-admin users must verify their email before accessing subscriber content.
 
-Key API domains: `/auth`, `/episodes`, `/subscriptions`, `/payments`, `/notifications`, `/admin/*`, `/settings`.
+Key API domains: `/auth`, `/episodes`, `/subscriptions`, `/payments`, `/notifications`, `/admin/*`, and `/settings/pricing`.
 
 ## Brand
 
