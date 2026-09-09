@@ -88,13 +88,13 @@ export default function UserDetail() {
           <div className="flex items-center gap-2 text-sm text-gray-600"><Mail size={14} className="text-gray-400" /> {user.email || "No email"}</div>
           <div className="flex items-center gap-2 text-sm text-gray-600"><Phone size={14} className="text-gray-400" /> {user.phone || "No phone"}</div>
           <div className="flex items-center gap-2 text-sm text-gray-600"><Shield size={14} className="text-gray-400" /> {user.role}</div>
-          <div className="flex items-center gap-2 text-sm text-gray-600"><Headphones size={14} className="text-gray-400" /> {listenLogs.length} episodes listened</div>
+          <div className="flex items-center gap-2 text-sm text-gray-600"><Headphones size={14} className="text-gray-400" /> {listenLogs.length} episodes listened to</div>
         </div>
 
         <div className="mt-6 flex gap-3 border-t border-gray-100 pt-4">
           {sub && sub.status !== "cancelled" && (
             <button onClick={() => setOverrideModal("cancel")} className="rounded-full bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600">
-              Force Cancel
+              Cancel subscription now
             </button>
           )}
           <button onClick={() => setOverrideModal("delete")} className="inline-flex items-center gap-1.5 rounded-full border border-red-200 px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-50">
@@ -200,7 +200,7 @@ export default function UserDetail() {
                 <AlertTriangle size={20} className="text-red-600" />
               </div>
               <div>
-                <h3 className="font-bold text-mayden-dark">{overrideModal === "delete" ? "Delete User" : "Force Cancel"}</h3>
+                <h3 className="font-bold text-mayden-dark">{overrideModal === "delete" ? "Delete User" : "Cancel Subscription"}</h3>
                 <p className="text-xs text-gray-500">This action cannot be undone</p>
               </div>
             </div>
