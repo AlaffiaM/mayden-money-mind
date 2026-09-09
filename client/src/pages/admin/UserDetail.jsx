@@ -13,7 +13,7 @@ import {
 import StatusBadge from "../../components/admin/StatusBadge";
 import AdminTable from "../../components/admin/AdminTable";
 import Loader from "../../components/admin/Loader";
-import { useToast } from "../../components/admin/useToast";
+import { useToast } from "../../components/admin/useToast.js";
 
 const DAY_LABELS = {
   monday: "Motivation",
