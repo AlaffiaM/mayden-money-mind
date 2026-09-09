@@ -18,7 +18,10 @@ async function sendRenewalReminder(sub, { title, body, subject }) {
         body: `${body}\n\nUpdate your payment details anytime in your account: ${FRONTEND_URL}/subscription`,
       });
     } catch (err) {
-      logger.error(`[renewal] reminder email to ${sub.user.email} failed:`, err.message);
+      logger.error(
+        `[renewal] reminder email to ${sub.user.email} failed:`,
+        err.message,
+      );
     }
   }
 }
@@ -37,7 +40,9 @@ export async function processExpiredSubscriptions() {
     include: { user: { select: { id: true, fullName: true, email: true } } },
   });
 
-  const graceSettings = await prisma.setting.findUnique({ where: { key: "gracePeriodHours" } });
+  const graceSettings = await prisma.setting.findUnique({
+    where: { key: "gracePeriodHours" },
+  });
   const graceHours = parseInt(graceSettings?.value || "48");
 
   for (const sub of pastDueSubs) {
@@ -94,8 +99,12 @@ let renewalTimer = null;
 export function startRenewalProcessor() {
   if (renewalTimer) return;
   renewalTimer = setInterval(() => {
-    processExpiredSubscriptions().catch((err) => logger.error("[renewal] run failed:", err.message));
+    processExpiredSubscriptions().catch((err) =>
+      logger.error("[renewal] run failed:", err.message),
+    );
   }, REMINDER_INTERVAL_MS);
   renewalTimer.unref();
-  processExpiredSubscriptions().catch((err) => logger.error("[renewal] initial run failed:", err.message));
+  processExpiredSubscriptions().catch((err) =>
+    logger.error("[renewal] initial run failed:", err.message),
+  );
 }
