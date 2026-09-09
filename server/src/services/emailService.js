@@ -18,7 +18,7 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-function emailTemplate({ title, bodyHtml, footerText = "Money & Mind by Mayden Microfinance Bank" }) {
+export function emailTemplate({ title, bodyHtml, footerText = "Money & Mind by Mayden Microfinance Bank" }) {
   const year = new Date().getFullYear();
   return `<!doctype html>
 <html lang="en">
