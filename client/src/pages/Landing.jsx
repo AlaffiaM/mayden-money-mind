@@ -21,7 +21,7 @@ export default function Landing() {
     <main className="min-h-screen bg-white text-gray-800 relative pb-20 sm:pb-0">
       <div className="absolute top-0 left-0 right-0 z-20 px-4 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-end gap-4">
-          <button onClick={() => navigate("/login")} className="text-sm text-gray-500 hover:text-mayden-magenta transition-colors font-medium">Sign In</button>
+          <button onClick={() => navigate("/login")} className="text-sm text-gray-500 hover:text-mayden-magenta transition-colors font-medium">Sign in</button>
           <button onClick={() => navigate("/register")} className="text-sm px-4 py-2 rounded-full bg-mayden-magenta text-white font-semibold hover:bg-mayden-magenta/90 transition-colors">Get Started</button>
         </div>
       </div>
@@ -158,7 +158,7 @@ export default function Landing() {
             <Button pill className="text-lg px-12 py-4 w-full sm:w-auto" onClick={handleSubscribe}>{LANDING.pricing.cta}</Button>
           </div>
           <button onClick={handlePlaySample} className="mt-4 text-sm text-mayden-magenta hover:underline font-medium">
-            Not sure yet? Play a free sample
+            Not sure yet? Listen to a free sample
           </button>
         </div>
       </section>
