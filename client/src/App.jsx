@@ -6,7 +6,8 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthContext";
+import { useAuth } from "./context/useAuth";
 import { PlayerProvider } from "./context/PlayerContext";
 import { captureUtm } from "./utils/utm";
 import api from "./services/api";
