@@ -32,9 +32,15 @@ function SidebarContent({ onNavigate }) {
     <>
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center gap-2">
-          <img src="/assets/logo.jpg" alt="Money & Mind" className="h-8 w-8 rounded-full object-contain" />
+          <img
+            src="/assets/logo.jpg"
+            alt="Money & Mind"
+            className="h-8 w-8 rounded-full object-contain"
+          />
           <div>
-            <h2 className="font-serif text-lg font-bold leading-tight">Money &amp; Mind</h2>
+            <h2 className="font-serif text-lg font-bold leading-tight">
+              Money &amp; Mind
+            </h2>
             <p className="text-xs text-gray-400">Admin Panel</p>
           </div>
         </div>
@@ -51,7 +57,9 @@ function SidebarContent({ onNavigate }) {
               to={item.to}
               onClick={onNavigate}
               className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
-                active ? "bg-mayden-magenta text-white shadow-lg shadow-mayden-magenta/20" : "text-gray-300 hover:bg-white/10 hover:text-white"
+                active
+                  ? "bg-mayden-magenta text-white shadow-lg shadow-mayden-magenta/20"
+                  : "text-gray-300 hover:bg-white/10 hover:text-white"
               }`}
             >
               <item.icon size={18} />
@@ -87,11 +95,21 @@ export default function AdminLayout({ children }) {
     <div className="min-h-screen bg-mayden-gray lg:flex">
       <header className="sticky top-0 z-40 flex items-center justify-between bg-mayden-dark px-4 py-3 text-white lg:hidden">
         <div className="flex items-center gap-2">
-          <img src="/assets/logo.jpg" alt="Money & Mind" className="h-7 w-7 rounded-full object-contain" />
-          <span className="font-serif text-base font-bold">Money &amp; Mind</span>
+          <img
+            src="/assets/logo.jpg"
+            alt="Money & Mind"
+            className="h-7 w-7 rounded-full object-contain"
+          />
+          <span className="font-serif text-base font-bold">
+            Money &amp; Mind
+          </span>
           <span className="text-xs text-gray-400">— Admin</span>
         </div>
-        <button onClick={() => setOpen(true)} aria-label="Open menu" className="rounded-lg p-2 text-gray-300 hover:bg-white/10">
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Open menu"
+          className="rounded-lg p-2 text-gray-300 hover:bg-white/10"
+        >
           <Menu size={20} />
         </button>
       </header>
@@ -118,7 +136,9 @@ export default function AdminLayout({ children }) {
 
       <main className="min-w-0 flex-1 overflow-auto">
         <ToastProvider>
-          <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-8">{children}</div>
+          <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
+            {children}
+          </div>
         </ToastProvider>
       </main>
     </div>
