@@ -73,7 +73,7 @@ export async function processExpiredSubscriptions() {
         await sendRenewalReminder(sub, {
           title: "Payment Reminder",
           subject: "Your Money & Mind renewal needs attention",
-          body: `Hi ${sub.user.fullName}, your subscription renewal failed. Please update your payment method.`,
+          body: `Hi ${sub.user.fullName}, your subscription renewal payment didn't go through. Please update your payment method.`,
         });
       }
 
@@ -81,7 +81,7 @@ export async function processExpiredSubscriptions() {
         await sendRenewalReminder(sub, {
           title: "Final Payment Reminder",
           subject: "Final reminder: your Money & Mind subscription",
-          body: `Hi ${sub.user.fullName}, this is your final reminder. Your subscription will be cancelled if payment is not received.`,
+          body: `Hi ${sub.user.fullName}, this is your final reminder. Your subscription will be cancelled if we don't receive payment.`,
         });
       }
     }
