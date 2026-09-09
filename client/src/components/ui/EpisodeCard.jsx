@@ -14,7 +14,11 @@ function EqBars() {
   return (
     <div className="flex h-4 items-end gap-[3px]">
       {heights.map((h, i) => (
-        <span key={i} className="eq-bar w-[3px] rounded-full bg-mayden-magenta" style={{ height: h }} />
+        <span
+          key={i}
+          className="eq-bar w-[3px] rounded-full bg-mayden-magenta"
+          style={{ height: h }}
+        />
       ))}
     </div>
   );
@@ -25,7 +29,8 @@ export default function EpisodeCard({ episode, onPlay }) {
 
   const isActive = activeEp?.id === episode.id;
   const isPlaying = isActive && playing;
-  const dayLabel = episode.dayType?.charAt(0).toUpperCase() + episode.dayType?.slice(1);
+  const dayLabel =
+    episode.dayType?.charAt(0).toUpperCase() + episode.dayType?.slice(1);
   const duration = episode.runTimeSeconds
     ? `${Math.floor(episode.runTimeSeconds / 60)}:${String(episode.runTimeSeconds % 60).padStart(2, "0")}`
     : "2:00";
@@ -58,8 +63,12 @@ export default function EpisodeCard({ episode, onPlay }) {
         <span className="text-xs text-gray-400">{duration}</span>
       </div>
 
-      <h4 className="mb-2 text-sm font-semibold text-mayden-dark line-clamp-2">{episode.title}</h4>
-      <p className="mb-4 text-xs text-gray-500 line-clamp-2">{episode.showNotes}</p>
+      <h4 className="mb-2 text-sm font-semibold text-mayden-dark line-clamp-2">
+        {episode.title}
+      </h4>
+      <p className="mb-4 text-xs text-gray-500 line-clamp-2">
+        {episode.showNotes}
+      </p>
 
       <div className="mt-auto flex items-center justify-between">
         <button
@@ -68,11 +77,17 @@ export default function EpisodeCard({ episode, onPlay }) {
           aria-label={isPlaying ? "Pause" : "Play"}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-mayden-magenta text-white shadow-md shadow-mayden-magenta/25 transition-all hover:scale-105"
         >
-          {isPlaying ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
+          {isPlaying ? (
+            <Pause size={16} />
+          ) : (
+            <Play size={16} className="ml-0.5" />
+          )}
         </button>
         <div className="flex items-center gap-2">
           {isActive && !isPlaying && (
-            <span className="text-xs font-medium text-mayden-magenta">Paused</span>
+            <span className="text-xs font-medium text-mayden-magenta">
+              Paused
+            </span>
           )}
           {isPlaying && <EqBars />}
         </div>
