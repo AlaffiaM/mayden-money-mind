@@ -38,10 +38,11 @@ export async function verifyEmail(req, res) {
         error: "That code isn't correct. Watch for the 6 digits, and note the code expires after 5 wrong attempts.",
       });
     default:
-      sendAccountWelcomeEmail({ to: user.email, fullName: user.fullName }).catch((err) =>
+      const verifiedUser = await prisma.user.findUnique({ where: { email } });
+      sendAccountWelcomeEmail({ to: verifiedUser.email, fullName: verifiedUser.fullName }).catch((err) =>
         logger.error("[verify] welcome email failed:", err.message)
       );
-      return res.json({ success: true, token: issueToken(user), user: serializeUser(user) });
+      return res.json({ success: true, token: issueToken(verifiedUser), user: serializeUser(verifiedUser) });
   }
 }
 
