@@ -8,7 +8,11 @@ export default function LogoutButton({ className, children, ariaLabel }) {
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className={className} aria-label={ariaLabel}>
+      <button
+        onClick={() => setOpen(true)}
+        className={className}
+        aria-label={ariaLabel}
+      >
         {children}
       </button>
 
@@ -19,7 +23,9 @@ export default function LogoutButton({ className, children, ariaLabel }) {
               <LogOut size={18} className="text-red-500" />
             </div>
             <h3 className="font-bold text-mayden-dark text-lg">Log out</h3>
-            <p className="text-sm text-gray-500 mt-1">Are you sure you want to log out?</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Are you sure you want to log out?
+            </p>
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setOpen(false)}
