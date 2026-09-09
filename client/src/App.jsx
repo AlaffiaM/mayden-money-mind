@@ -100,102 +100,102 @@ function AppRoutes() {
       }
     >
       <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/verify-email" element={<VerifyEmail />} />
-      <Route path="/verify-email-sent" element={<VerifyEmailSent />} />
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/verify-email-sent" element={<VerifyEmailSent />} />
 
-      <Route
-        path="/dashboard"
-        element={
-          <SubscriberRoute>
-            <Dashboard />
-          </SubscriberRoute>
-        }
-      />
-      <Route
-        path="/library"
-        element={
-          <VerifiedRoute>
-            <Library />
-          </VerifiedRoute>
-        }
-      />
-      <Route
-        path="/subscription"
-        element={
-          <ProtectedRoute>
-            <Subscription />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/dashboard"
+          element={
+            <SubscriberRoute>
+              <Dashboard />
+            </SubscriberRoute>
+          }
+        />
+        <Route
+          path="/library"
+          element={
+            <VerifiedRoute>
+              <Library />
+            </VerifiedRoute>
+          }
+        />
+        <Route
+          path="/subscription"
+          element={
+            <ProtectedRoute>
+              <Subscription />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route
-        path="/admin"
-        element={
-          <AdminRoute>
-            <AdminDashboard />
-          </AdminRoute>
-        }
-      />
-      <Route
-        path="/admin/episodes"
-        element={
-          <AdminRoute>
-            <AdminEpisodes />
-          </AdminRoute>
-        }
-      />
-      <Route
-        path="/admin/users"
-        element={
-          <AdminRoute>
-            <AdminUsers />
-          </AdminRoute>
-        }
-      />
-      <Route
-        path="/admin/users/:id"
-        element={
-          <AdminRoute>
-            <AdminUserDetail />
-          </AdminRoute>
-        }
-      />
-      <Route
-        path="/admin/subscriptions"
-        element={
-          <AdminRoute>
-            <AdminSubscriptions />
-          </AdminRoute>
-        }
-      />
-      <Route
-        path="/admin/notifications"
-        element={
-          <AdminRoute>
-            <AdminNotifications />
-          </AdminRoute>
-        }
-      />
-      <Route
-        path="/admin/settings"
-        element={
-          <AdminRoute>
-            <AdminSettings />
-          </AdminRoute>
-        }
-      />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/episodes"
+          element={
+            <AdminRoute>
+              <AdminEpisodes />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <AdminRoute>
+              <AdminUsers />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/users/:id"
+          element={
+            <AdminRoute>
+              <AdminUserDetail />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/subscriptions"
+          element={
+            <AdminRoute>
+              <AdminSubscriptions />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/notifications"
+          element={
+            <AdminRoute>
+              <AdminNotifications />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <AdminRoute>
+              <AdminSettings />
+            </AdminRoute>
+          }
+        />
 
-      <Route path="/terms" element={<Terms />} />
-      <Route path="/privacy" element={<Privacy />} />
-      <Route path="/support" element={<Support />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/support" element={<Support />} />
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
   );
