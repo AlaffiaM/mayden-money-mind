@@ -3,8 +3,14 @@ import { brevoConfigured, emailTemplate, sendEmail } from "./emailService.js";
 import logger from "../utils/logger.js";
 
 const RECONCILIATION_EMAIL = process.env.RECONCILIATION_EMAIL || "";
-const RECONCILIATION_HOUR = parseInt(process.env.RECONCILIATION_HOUR || "23", 10);
-const MONTHLY_REPORT_HOUR = parseInt(process.env.MONTHLY_REPORT_HOUR || "23", 10);
+const RECONCILIATION_HOUR = parseInt(
+  process.env.RECONCILIATION_HOUR || "23",
+  10,
+);
+const MONTHLY_REPORT_HOUR = parseInt(
+  process.env.MONTHLY_REPORT_HOUR || "23",
+  10,
+);
 const MONTHLY_REPORT_DAY = parseInt(process.env.MONTHLY_REPORT_DAY || "1", 10);
 
 function esc(value) {
@@ -41,7 +47,9 @@ async function sendReconciliationEmail({ csv, from, kind = "Daily", label }) {
     return { sent: true, via: "brevo" };
   }
 
-  console.log("[reconciliation] email skipped — set BREVO_API_KEY, BREVO_FROM_EMAIL, RECONCILIATION_EMAIL");
+  console.log(
+    "[reconciliation] email skipped — set BREVO_API_KEY, BREVO_FROM_EMAIL, RECONCILIATION_EMAIL",
+  );
   return { sent: false, reason: "brevo not configured" };
 }
 
@@ -56,7 +64,14 @@ async function buildPaymentsCsv({ from, to }) {
   });
 
   const rows = [
-    ["Transaction Date & Time", "Customer Identifier", "Subscription Tier", "Amount (NGN)", "Paystack Reference", "Payment Status"],
+    [
+      "Transaction Date & Time",
+      "Customer Identifier",
+      "Subscription Tier",
+      "Amount (NGN)",
+      "Paystack Reference",
+      "Payment Status",
+    ],
     ...payments.map((p) => [
       (p.paidAt || p.createdAt).toISOString(),
       p.user.email || p.user.phone || "",
@@ -74,19 +89,25 @@ async function runReconciliationForWindow({ from, to, kind = "Daily", label }) {
   const { csv, count } = await buildPaymentsCsv({ from, to });
   const result = await sendReconciliationEmail({ csv, from, kind, label });
   const labelValue = label || from.toISOString().slice(0, 10);
-  console.log(`[reconciliation] ${kind} ${labelValue}: ${count} payment(s), email ${result.sent ? "sent" : "skipped: " + result.reason}`);
+  console.log(
+    `[reconciliation] ${kind} ${labelValue}: ${count} payment(s), email ${result.sent ? "sent" : "skipped: " + result.reason}`,
+  );
   return { date: labelValue, kind, count, ...result };
 }
 
 async function runDailyReconciliation(day = new Date()) {
-  const start = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate()));
+  const start = new Date(
+    Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate()),
+  );
   const end = new Date(start);
   end.setUTCDate(end.getUTCDate() + 1);
   return runReconciliationForWindow({ from: start, to: end, kind: "Daily" });
 }
 
 function previousMonthWindow(now = new Date()) {
-  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  const start = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1),
+  );
   const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   return { from: start, to: end, label: start.toISOString().slice(0, 7) };
 }
@@ -99,7 +120,18 @@ async function buildSubscriptionsCsv({ from, to }) {
   });
 
   const rows = [
-    ["Subscription ID", "User ID", "Full Name", "Email", "Phone", "Plan", "Status", "Started", "Next Renewal", "Auto-Renew"],
+    [
+      "Subscription ID",
+      "User ID",
+      "Full Name",
+      "Email",
+      "Phone",
+      "Plan",
+      "Status",
+      "Started",
+      "Next Renewal",
+      "Auto-Renew",
+    ],
     ...subscriptions.map((s) => [
       s.id,
       s.userId,
@@ -137,7 +169,19 @@ async function buildUsersCsv({ from, to }) {
   });
 
   const rows = [
-    ["User ID", "Full Name", "Email", "Phone", "Role", "Email Verified", "Registered", "UTM Source", "UTM Medium", "UTM Campaign", "Episodes Listened"],
+    [
+      "User ID",
+      "Full Name",
+      "Email",
+      "Phone",
+      "Role",
+      "Email Verified",
+      "Registered",
+      "UTM Source",
+      "UTM Medium",
+      "UTM Campaign",
+      "Episodes Listened",
+    ],
     ...users.map((u) => [
       u.id,
       u.fullName,
@@ -157,24 +201,59 @@ async function buildUsersCsv({ from, to }) {
 }
 
 async function buildMonthlySummary({ from, to }) {
-  const [paymentsAgg, failedCount, subscriptions, newUsers, listens, uniqueListeners, episodes, activeAgg, statusCounts, utm] = await Promise.all([
-    prisma.payment.aggregate({ where: { status: "success", paidAt: { gte: from, lt: to } }, _sum: { amount: true }, _count: { _all: true } }),
-    prisma.payment.count({ where: { status: "failed", paidAt: { gte: from, lt: to } } }),
-    prisma.subscription.findMany({ where: { createdAt: { gte: from, lt: to } }, select: { plan: true } }),
+  const [
+    paymentsAgg,
+    failedCount,
+    subscriptions,
+    newUsers,
+    listens,
+    uniqueListeners,
+    episodes,
+    activeAgg,
+    statusCounts,
+    utm,
+  ] = await Promise.all([
+    prisma.payment.aggregate({
+      where: { status: "success", paidAt: { gte: from, lt: to } },
+      _sum: { amount: true },
+      _count: { _all: true },
+    }),
+    prisma.payment.count({
+      where: { status: "failed", paidAt: { gte: from, lt: to } },
+    }),
+    prisma.subscription.findMany({
+      where: { createdAt: { gte: from, lt: to } },
+      select: { plan: true },
+    }),
     prisma.user.count({ where: { createdAt: { gte: from, lt: to } } }),
     prisma.listenLog.count({ where: { createdAt: { gte: from, lt: to } } }),
-    prisma.listenLog.findMany({ where: { createdAt: { gte: from, lt: to } }, select: { userId: true }, distinct: ["userId"] }),
-    prisma.episode.count({ where: { status: "published", publishDate: { gte: from, lt: to } } }),
-    prisma.payment.aggregate({ where: { status: "success" }, _count: { _all: true } }),
+    prisma.listenLog.findMany({
+      where: { createdAt: { gte: from, lt: to } },
+      select: { userId: true },
+      distinct: ["userId"],
+    }),
+    prisma.episode.count({
+      where: { status: "published", publishDate: { gte: from, lt: to } },
+    }),
+    prisma.payment.aggregate({
+      where: { status: "success" },
+      _count: { _all: true },
+    }),
     prisma.subscription.groupBy({ by: ["status"], _count: { _all: true } }),
-    prisma.user.groupBy({ by: ["utmSource"], _count: { _all: true }, where: { createdAt: { gte: from, lt: to } } }),
+    prisma.user.groupBy({
+      by: ["utmSource"],
+      _count: { _all: true },
+      where: { createdAt: { gte: from, lt: to } },
+    }),
   ]);
 
   const planSplit = subscriptions.reduce((acc, s) => {
     acc[s.plan] = (acc[s.plan] || 0) + 1;
     return acc;
   }, {});
-  const statusCountsBy = Object.fromEntries(statusCounts.map((s) => [s.status, s._count._all]));
+  const statusCountsBy = Object.fromEntries(
+    statusCounts.map((s) => [s.status, s._count._all]),
+  );
 
   return {
     revenue: paymentsAgg._sum.amount || 0,
@@ -206,9 +285,15 @@ function summaryTable(title, rows) {
 }
 
 function buildMonthlyHtml(summary, label) {
-  const monthName = new Date(summary.startTime).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  const monthName = new Date(summary.startTime).toLocaleDateString("en-GB", {
+    month: "long",
+    year: "numeric",
+  });
   const statusRows = Object.entries(summary.statusCounts).length
-    ? Object.entries(summary.statusCounts).map(([status, count]) => [status, count])
+    ? Object.entries(summary.statusCounts).map(([status, count]) => [
+        status,
+        count,
+      ])
     : [["active", 0]];
   const planRows = Object.entries(summary.planSplit).length
     ? Object.entries(summary.planSplit).map(([plan, count]) => [plan, count])
@@ -248,15 +333,28 @@ async function sendMonthlyReport({ from, to, label }) {
   ]);
   summary.startTime = from.getTime();
 
-  const admins = await prisma.user.findMany({ where: { role: "admin" }, select: { email: true } });
-  const recipients = [...new Set([RECONCILIATION_EMAIL, ...admins.map((u) => (u.email || "").trim()).filter(Boolean)])];
+  const admins = await prisma.user.findMany({
+    where: { role: "admin" },
+    select: { email: true },
+  });
+  const recipients = [
+    ...new Set([
+      RECONCILIATION_EMAIL,
+      ...admins.map((u) => (u.email || "").trim()).filter(Boolean),
+    ]),
+  ];
 
   if (!brevoConfigured() || recipients.length === 0) {
-    console.log("[reconciliation] monthly email skipped — set BREVO_API_KEY, BREVO_FROM_EMAIL, RECONCILIATION_EMAIL or admin-role users");
+    console.log(
+      "[reconciliation] monthly email skipped — set BREVO_API_KEY, BREVO_FROM_EMAIL, RECONCILIATION_EMAIL or admin-role users",
+    );
     return { sent: false, reason: "no recipients or brevo not configured" };
   }
 
-  const attachment = (name, csv) => ({ name, content: Buffer.from(csv, "utf-8").toString("base64") });
+  const attachment = (name, csv) => ({
+    name,
+    content: Buffer.from(csv, "utf-8").toString("base64"),
+  });
 
   let anySent = false;
   for (const to of recipients) {
@@ -265,7 +363,10 @@ async function sendMonthlyReport({ from, to, label }) {
       await sendEmail({
         to,
         subject: `Monthly Money & Mind Report — ${label}`,
-        htmlContent: buildMonthlyHtml({ ...summary, startTime: from.getTime() }, label),
+        htmlContent: buildMonthlyHtml(
+          { ...summary, startTime: from.getTime() },
+          label,
+        ),
         attachments: [
           attachment(`payments-${label}.csv`, paymentsCsv.csv),
           attachment(`subscriptions-${label}.csv`, subscriptionsCsv.csv),
@@ -274,7 +375,10 @@ async function sendMonthlyReport({ from, to, label }) {
       });
       anySent = true;
     } catch (err) {
-      console.error(`[reconciliation] monthly email to ${to} failed:`, err.message);
+      console.error(
+        `[reconciliation] monthly email to ${to} failed:`,
+        err.message,
+      );
     }
   }
 
@@ -285,7 +389,9 @@ async function runMonthlyReconciliation(now = new Date()) {
   const { from, to, label } = previousMonthWindow(now);
   try {
     const result = await sendMonthlyReport({ from, to, label });
-    console.log(`[reconciliation] monthly ${label}: revenue + ${result.recipients ?? 0} recipient(s), email ${result.sent ? "sent" : "skipped: " + result.reason}`);
+    console.log(
+      `[reconciliation] monthly ${label}: revenue + ${result.recipients ?? 0} recipient(s), email ${result.sent ? "sent" : "skipped: " + result.reason}`,
+    );
     return { date: label, kind: "Monthly", ...result };
   } catch (err) {
     console.error("[reconciliation] monthly job failed:", err.message);
@@ -301,7 +407,9 @@ export function startReconciliationProcessor() {
 
     if (hour === RECONCILIATION_HOUR) {
       const today = now.toISOString().slice(0, 10);
-      const last = await prisma.setting.findUnique({ where: { key: "lastReconciliationDate" } });
+      const last = await prisma.setting.findUnique({
+        where: { key: "lastReconciliationDate" },
+      });
       if (last?.value !== today) {
         try {
           const day = new Date(now);
@@ -320,9 +428,14 @@ export function startReconciliationProcessor() {
       }
     }
 
-    if (hour === MONTHLY_REPORT_HOUR && now.getUTCDate() === MONTHLY_REPORT_DAY) {
+    if (
+      hour === MONTHLY_REPORT_HOUR &&
+      now.getUTCDate() === MONTHLY_REPORT_DAY
+    ) {
       const { label } = previousMonthWindow(now);
-      const last = await prisma.setting.findUnique({ where: { key: "lastMonthlyReport" } });
+      const last = await prisma.setting.findUnique({
+        where: { key: "lastMonthlyReport" },
+      });
       if (last?.value !== label) {
         try {
           const result = await runMonthlyReconciliation(now);
@@ -343,6 +456,8 @@ export function startReconciliationProcessor() {
   const timer = setInterval(tick, 60 * 60 * 1000);
   timer.unref();
   tick();
-  console.log(`   - Reconciliation reports (daily at ${RECONCILIATION_HOUR}:00 UTC, monthly on day ${MONTHLY_REPORT_DAY} at ${MONTHLY_REPORT_HOUR}:00 UTC)`);
+  console.log(
+    `   - Reconciliation reports (daily at ${RECONCILIATION_HOUR}:00 UTC, monthly on day ${MONTHLY_REPORT_DAY} at ${MONTHLY_REPORT_HOUR}:00 UTC)`,
+  );
   return timer;
 }
