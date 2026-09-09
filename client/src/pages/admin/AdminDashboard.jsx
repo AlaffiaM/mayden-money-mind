@@ -255,8 +255,8 @@ export default function AdminDashboard() {
           </AdminTable>
         ) : (
           <p className="py-6 text-center text-sm text-gray-400">
-            No campaign-attributed signups yet. Visitors coming from the Mayden site
-            will appear here.
+            No campaign-attributed signups yet. Visitors coming from the Mayden
+            site will appear here.
           </p>
         )}
       </AdminCard>
