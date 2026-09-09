@@ -31,7 +31,8 @@ function validate(form) {
     errors.confirmPassword = "Passwords do not match";
   }
   if (!form.acceptedTerms) {
-    errors.acceptedTerms = "Please accept the Terms of Service and Privacy Policy.";
+    errors.acceptedTerms =
+      "Please accept the Terms of Service and Privacy Policy.";
   }
   return errors;
 }
