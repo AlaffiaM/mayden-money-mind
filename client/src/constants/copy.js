@@ -4,7 +4,7 @@ export const LANDING = {
     headlineLight: "Protect your peace.",
     subheadline:
       "A premium, 2-minute daily audio series designed for women in the Mayden community to ease financial anxiety, build wealth-generating habits, and regulate the nervous system.",
-    ctaPlay: "▶ Play a Sample",
+    ctaPlay: "Listen to a free sample",
     trust: [
       { icon: "Lock", text: "Secured by Mayden Microfinance Bank" },
       { icon: "Shield", text: "Bank-grade encryption" },
@@ -79,7 +79,7 @@ export const LANDING = {
   },
   pricing: {
     headline: "Invest in Your Mind for Less Than the Cost of a Data Bundle.",
-    note: "Your subscription is deducted automatically from your Mayden account. Cancel anytime.",
+    note: "Secure billing through Mayden Microfinance Bank. Cancel anytime.",
     cta: "Activate My Subscription",
     trust:
       "Secure, one-click billing integrated directly with Mayden Microfinance Bank.",
@@ -117,9 +117,9 @@ export const LANDING = {
   },
   footer: {
     newsletter: {
-      headline: "Get a free motivation tip every Monday.",
+      headline: "Give yourself two thoughtful minutes today.",
       placeholder: "Your email address",
-      cta: "Subscribe Free",
+      cta: "Start listening",
     },
     delivery:
       "Delivered via in-app notification. Best experience: Add to Home Screen.",
