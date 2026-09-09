@@ -1,7 +1,15 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../services/api";
-import { ArrowLeft, Mail, Phone, CreditCard, Shield, AlertTriangle, Headphones } from "lucide-react";
+import {
+  ArrowLeft,
+  Mail,
+  Phone,
+  CreditCard,
+  Shield,
+  AlertTriangle,
+  Headphones,
+} from "lucide-react";
 import StatusBadge from "../../components/admin/StatusBadge";
 import AdminTable from "../../components/admin/AdminTable";
 import Loader from "../../components/admin/Loader";
@@ -27,7 +35,8 @@ export default function UserDetail() {
   const toast = useToast();
 
   useEffect(() => {
-    api.get(`/admin/users/${id}`)
+    api
+      .get(`/admin/users/${id}`)
       .then(({ data }) => setUser(data))
       .catch(() => navigate("/admin/users"))
       .finally(() => setLoading(false));
@@ -43,7 +52,10 @@ export default function UserDetail() {
         navigate("/admin/users", { replace: true });
         return;
       }
-      await api.post(`/admin/users/${id}/override`, { action: overrideModal, reason: reason || null });
+      await api.post(`/admin/users/${id}/override`, {
+        action: overrideModal,
+        reason: reason || null,
+      });
       const { data } = await api.get(`/admin/users/${id}`);
       setUser(data);
       setOverrideModal(null);
@@ -66,7 +78,10 @@ export default function UserDetail() {
 
   return (
     <div className="space-y-6">
-      <button onClick={() => navigate("/admin/users")} className="flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-mayden-dark">
+      <button
+        onClick={() => navigate("/admin/users")}
+        className="flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-mayden-dark"
+      >
         <ArrowLeft size={16} /> Back to Users
       </button>
 
@@ -77,27 +92,51 @@ export default function UserDetail() {
               {user.fullName?.charAt(0)?.toUpperCase()}
             </div>
             <div>
-              <h1 className="text-xl font-serif font-bold text-mayden-dark">{user.fullName}</h1>
-              <p className="text-sm text-gray-500">Registered {new Date(user.createdAt).toLocaleDateString()}</p>
+              <h1 className="text-xl font-serif font-bold text-mayden-dark">
+                {user.fullName}
+              </h1>
+              <p className="text-sm text-gray-500">
+                Registered {new Date(user.createdAt).toLocaleDateString()}
+              </p>
             </div>
           </div>
-          <StatusBadge status={sub?.status || "none"} label={sub?.status || "no subscription"} />
+          <StatusBadge
+            status={sub?.status || "none"}
+            label={sub?.status || "no subscription"}
+          />
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-4 border-t border-gray-100 pt-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600"><Mail size={14} className="text-gray-400" /> {user.email || "No email"}</div>
-          <div className="flex items-center gap-2 text-sm text-gray-600"><Phone size={14} className="text-gray-400" /> {user.phone || "No phone"}</div>
-          <div className="flex items-center gap-2 text-sm text-gray-600"><Shield size={14} className="text-gray-400" /> {user.role}</div>
-          <div className="flex items-center gap-2 text-sm text-gray-600"><Headphones size={14} className="text-gray-400" /> {listenLogs.length} episodes listened to</div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Mail size={14} className="text-gray-400" />{" "}
+            {user.email || "No email"}
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Phone size={14} className="text-gray-400" />{" "}
+            {user.phone || "No phone"}
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Shield size={14} className="text-gray-400" /> {user.role}
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Headphones size={14} className="text-gray-400" />{" "}
+            {listenLogs.length} episodes listened to
+          </div>
         </div>
 
         <div className="mt-6 flex gap-3 border-t border-gray-100 pt-4">
           {sub && sub.status !== "cancelled" && (
-            <button onClick={() => setOverrideModal("cancel")} className="rounded-full bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600">
+            <button
+              onClick={() => setOverrideModal("cancel")}
+              className="rounded-full bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600"
+            >
               Cancel subscription now
             </button>
           )}
-          <button onClick={() => setOverrideModal("delete")} className="inline-flex items-center gap-1.5 rounded-full border border-red-200 px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-50">
+          <button
+            onClick={() => setOverrideModal("delete")}
+            className="inline-flex items-center gap-1.5 rounded-full border border-red-200 px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
+          >
             <AlertTriangle size={14} /> Delete User
           </button>
         </div>
@@ -109,7 +148,9 @@ export default function UserDetail() {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex-1 rounded-full px-4 py-2 text-sm font-medium capitalize transition-colors ${
-              activeTab === tab ? "bg-mayden-magenta text-white" : "text-gray-500 hover:text-gray-700"
+              activeTab === tab
+                ? "bg-mayden-magenta text-white"
+                : "text-gray-500 hover:text-gray-700"
             }`}
           >
             {tab}
@@ -119,12 +160,32 @@ export default function UserDetail() {
 
       {activeTab === "overview" && sub && (
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-serif font-bold text-mayden-dark">Current Subscription</h2>
+          <h2 className="mb-4 text-lg font-serif font-bold text-mayden-dark">
+            Current Subscription
+          </h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div><p className="mb-1 text-xs text-gray-500">Plan</p><p className="font-medium capitalize">{sub.plan}</p></div>
-            <div><p className="mb-1 text-xs text-gray-500">Status</p><StatusBadge status={sub.status} /></div>
-            <div><p className="mb-1 text-xs text-gray-500">Started</p><p className="font-medium">{new Date(sub.startDate).toLocaleDateString()}</p></div>
-            <div><p className="mb-1 text-xs text-gray-500">Next Renewal</p><p className="font-medium">{sub.nextRenewal ? new Date(sub.nextRenewal).toLocaleDateString() : "—"}</p></div>
+            <div>
+              <p className="mb-1 text-xs text-gray-500">Plan</p>
+              <p className="font-medium capitalize">{sub.plan}</p>
+            </div>
+            <div>
+              <p className="mb-1 text-xs text-gray-500">Status</p>
+              <StatusBadge status={sub.status} />
+            </div>
+            <div>
+              <p className="mb-1 text-xs text-gray-500">Started</p>
+              <p className="font-medium">
+                {new Date(sub.startDate).toLocaleDateString()}
+              </p>
+            </div>
+            <div>
+              <p className="mb-1 text-xs text-gray-500">Next Renewal</p>
+              <p className="font-medium">
+                {sub.nextRenewal
+                  ? new Date(sub.nextRenewal).toLocaleDateString()
+                  : "—"}
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -138,17 +199,32 @@ export default function UserDetail() {
 
       {activeTab === "subscriptions" && (
         <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <h2 className="mb-3 px-2 pt-1 font-serif text-lg font-bold text-mayden-dark">Subscription History</h2>
+          <h2 className="mb-3 px-2 pt-1 font-serif text-lg font-bold text-mayden-dark">
+            Subscription History
+          </h2>
           <AdminTable
-            columns={[{ label: "Plan" }, { label: "Status" }, { label: "Started" }, { label: "Next Renewal" }]}
+            columns={[
+              { label: "Plan" },
+              { label: "Status" },
+              { label: "Started" },
+              { label: "Next Renewal" },
+            ]}
             empty="No subscriptions"
           >
             {subHistory.map((s) => (
               <tr key={s.id}>
                 <td className="px-4 py-3 capitalize">{s.plan}</td>
-                <td className="px-4 py-3"><StatusBadge status={s.status} /></td>
-                <td className="px-4 py-3 text-gray-500">{new Date(s.startDate).toLocaleDateString()}</td>
-                <td className="px-4 py-3 text-gray-500">{s.nextRenewal ? new Date(s.nextRenewal).toLocaleDateString() : "—"}</td>
+                <td className="px-4 py-3">
+                  <StatusBadge status={s.status} />
+                </td>
+                <td className="px-4 py-3 text-gray-500">
+                  {new Date(s.startDate).toLocaleDateString()}
+                </td>
+                <td className="px-4 py-3 text-gray-500">
+                  {s.nextRenewal
+                    ? new Date(s.nextRenewal).toLocaleDateString()
+                    : "—"}
+                </td>
               </tr>
             ))}
           </AdminTable>
@@ -157,17 +233,32 @@ export default function UserDetail() {
 
       {activeTab === "payments" && (
         <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <h2 className="mb-3 px-2 pt-1 font-serif text-lg font-bold text-mayden-dark">Payment History</h2>
+          <h2 className="mb-3 px-2 pt-1 font-serif text-lg font-bold text-mayden-dark">
+            Payment History
+          </h2>
           <AdminTable
-            columns={[{ label: "Date" }, { label: "Amount" }, { label: "Status" }, { label: "Reference" }]}
+            columns={[
+              { label: "Date" },
+              { label: "Amount" },
+              { label: "Status" },
+              { label: "Reference" },
+            ]}
             empty="No payments"
           >
             {payments.map((p) => (
               <tr key={p.id}>
-                <td className="px-4 py-3 text-gray-600">{new Date(p.createdAt).toLocaleDateString()}</td>
-                <td className="px-4 py-3 font-medium">{p.amount === 0 ? "Manual" : `₦${p.amount.toLocaleString()}`}</td>
-                <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
-                <td className="px-4 py-3 font-mono text-xs text-gray-500">{p.reference}</td>
+                <td className="px-4 py-3 text-gray-600">
+                  {new Date(p.createdAt).toLocaleDateString()}
+                </td>
+                <td className="px-4 py-3 font-medium">
+                  {p.amount === 0 ? "Manual" : `₦${p.amount.toLocaleString()}`}
+                </td>
+                <td className="px-4 py-3">
+                  <StatusBadge status={p.status} />
+                </td>
+                <td className="px-4 py-3 font-mono text-xs text-gray-500">
+                  {p.reference}
+                </td>
               </tr>
             ))}
           </AdminTable>
@@ -176,16 +267,30 @@ export default function UserDetail() {
 
       {activeTab === "activity" && (
         <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <h2 className="mb-3 px-2 pt-1 font-serif text-lg font-bold text-mayden-dark">Episode Listening Activity</h2>
+          <h2 className="mb-3 px-2 pt-1 font-serif text-lg font-bold text-mayden-dark">
+            Episode Listening Activity
+          </h2>
           <AdminTable
-            columns={[{ label: "Episode" }, { label: "Day Type" }, { label: "Listened At" }]}
+            columns={[
+              { label: "Episode" },
+              { label: "Day Type" },
+              { label: "Listened At" },
+            ]}
             empty="No listening activity"
           >
             {listenLogs.map((log) => (
               <tr key={log.id}>
-                <td className="px-4 py-3 font-medium text-mayden-dark">{log.episode?.title || "—"}</td>
-                <td className="px-4 py-3"><span className="text-xs capitalize text-gray-500">{DAY_LABELS[log.episode?.dayType] || log.episode?.dayType}</span></td>
-                <td className="px-4 py-3 text-xs text-gray-500">{new Date(log.createdAt).toLocaleString()}</td>
+                <td className="px-4 py-3 font-medium text-mayden-dark">
+                  {log.episode?.title || "—"}
+                </td>
+                <td className="px-4 py-3">
+                  <span className="text-xs capitalize text-gray-500">
+                    {DAY_LABELS[log.episode?.dayType] || log.episode?.dayType}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-xs text-gray-500">
+                  {new Date(log.createdAt).toLocaleString()}
+                </td>
               </tr>
             ))}
           </AdminTable>
@@ -200,8 +305,14 @@ export default function UserDetail() {
                 <AlertTriangle size={20} className="text-red-600" />
               </div>
               <div>
-                <h3 className="font-bold text-mayden-dark">{overrideModal === "delete" ? "Delete User" : "Cancel Subscription"}</h3>
-                <p className="text-xs text-gray-500">This action cannot be undone</p>
+                <h3 className="font-bold text-mayden-dark">
+                  {overrideModal === "delete"
+                    ? "Delete User"
+                    : "Cancel Subscription"}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  This action cannot be undone
+                </p>
               </div>
             </div>
             <p className="mb-4 text-sm text-gray-600">
@@ -219,9 +330,25 @@ export default function UserDetail() {
               />
             )}
             <div className="flex justify-end gap-3">
-              <button onClick={() => { setOverrideModal(null); setReason(""); }} className="rounded-full px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">Cancel</button>
-              <button onClick={handleOverride} disabled={overriding} className="rounded-full bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50">
-                {overriding ? "Processing…" : overrideModal === "delete" ? "Delete User" : "Cancel Subscription"}
+              <button
+                onClick={() => {
+                  setOverrideModal(null);
+                  setReason("");
+                }}
+                className="rounded-full px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleOverride}
+                disabled={overriding}
+                className="rounded-full bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
+              >
+                {overriding
+                  ? "Processing…"
+                  : overrideModal === "delete"
+                    ? "Delete User"
+                    : "Cancel Subscription"}
               </button>
             </div>
           </div>
