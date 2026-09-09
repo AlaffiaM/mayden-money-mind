@@ -18,12 +18,12 @@ export function ToastProvider({ children }) {
       setToasts((prev) => [...prev, { id, type, message }]);
       setTimeout(() => dismiss(id), 3500);
     },
-    [dismiss]
+    [dismiss],
   );
 
   const toast = useCallback(
     (message, type = "success") => push(type, message),
-    [push]
+    [push],
   );
 
   return (
@@ -37,19 +37,29 @@ export function ToastProvider({ children }) {
               type === "success"
                 ? "border-emerald-200"
                 : type === "error"
-                ? "border-amber-200"
-                : "border-gray-200"
+                  ? "border-amber-200"
+                  : "border-gray-200"
             }`}
           >
             {type === "success" ? (
-              <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-600" />
+              <CheckCircle2
+                size={18}
+                className="mt-0.5 flex-shrink-0 text-emerald-600"
+              />
             ) : type === "error" ? (
-              <XCircle size={18} className="mt-0.5 flex-shrink-0 text-amber-600" />
+              <XCircle
+                size={18}
+                className="mt-0.5 flex-shrink-0 text-amber-600"
+              />
             ) : (
               <Info size={18} className="mt-0.5 flex-shrink-0 text-gray-400" />
             )}
             <p className="flex-1 text-sm text-mayden-dark">{message}</p>
-            <button onClick={() => dismiss(id)} aria-label="Dismiss" className="text-gray-300 hover:text-gray-500">
+            <button
+              onClick={() => dismiss(id)}
+              aria-label="Dismiss"
+              className="text-gray-300 hover:text-gray-500"
+            >
               <X size={14} />
             </button>
           </div>
