@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
-import { usePlayer } from "../context/PlayerContext";
+import { usePlayer } from "../context/usePlayer";
 import { Search, Play, Pause } from "lucide-react";
 import SubscriberLayout from "../components/layout/SubscriberLayout";
 
