@@ -1,5 +1,5 @@
 import { Play, Pause, X } from "lucide-react";
-import { usePlayer } from "../../context/PlayerContext";
+import { usePlayer } from "../../context/usePlayer";
 
 const formatTime = (s) => {
   if (!s || !isFinite(s)) return "0:00";
