@@ -1,5 +1,5 @@
 import { Play, Pause } from "lucide-react";
-import { usePlayer } from "../../context/PlayerContext";
+import { usePlayer } from "../../context/usePlayer";
 
 const dayColors = {
   monday: "bg-blue-100 text-blue-600",
