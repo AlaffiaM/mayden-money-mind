@@ -1,5 +1,5 @@
 import { prisma } from "../config/prisma.js";
-import { brevoConfigured, sendEmail } from "./emailService.js";
+import { brevoConfigured, emailTemplate, sendEmail } from "./emailService.js";
 import logger from "../utils/logger.js";
 
 const RECONCILIATION_EMAIL = process.env.RECONCILIATION_EMAIL || "";
@@ -11,6 +11,15 @@ function esc(value) {
   if (value === null || value === undefined) return "";
   const s = String(value);
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 // Email a CSV of payments for the window
@@ -82,9 +91,206 @@ function previousMonthWindow(now = new Date()) {
   return { from: start, to: end, label: start.toISOString().slice(0, 7) };
 }
 
+async function buildSubscriptionsCsv({ from, to }) {
+  const subscriptions = await prisma.subscription.findMany({
+    where: { createdAt: { gte: from, lt: to } },
+    include: { user: { select: { fullName: true, email: true, phone: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const rows = [
+    ["Subscription ID", "User ID", "Full Name", "Email", "Phone", "Plan", "Status", "Started", "Next Renewal", "Auto-Renew"],
+    ...subscriptions.map((s) => [
+      s.id,
+      s.userId,
+      s.user.fullName || "",
+      s.user.email || "",
+      s.user.phone || "",
+      s.plan,
+      s.status,
+      s.startDate.toISOString(),
+      s.nextRenewal ? s.nextRenewal.toISOString() : "",
+      s.autoRenew ? "yes" : "no",
+    ]),
+  ];
+  const csv = "\uFEFF" + rows.map((r) => r.map(esc).join(",")).join("\r\n");
+  return { csv, count: subscriptions.length };
+}
+
+async function buildUsersCsv({ from, to }) {
+  const users = await prisma.user.findMany({
+    where: { createdAt: { gte: from, lt: to } },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      phone: true,
+      role: true,
+      emailVerified: true,
+      createdAt: true,
+      utmSource: true,
+      utmMedium: true,
+      utmCampaign: true,
+      _count: { select: { listenLogs: true } },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const rows = [
+    ["User ID", "Full Name", "Email", "Phone", "Role", "Email Verified", "Registered", "UTM Source", "UTM Medium", "UTM Campaign", "Episodes Listened"],
+    ...users.map((u) => [
+      u.id,
+      u.fullName,
+      u.email || "",
+      u.phone || "",
+      u.role,
+      u.emailVerified ? "yes" : "no",
+      u.createdAt.toISOString(),
+      u.utmSource || "",
+      u.utmMedium || "",
+      u.utmCampaign || "",
+      u._count.listenLogs,
+    ]),
+  ];
+  const csv = "\uFEFF" + rows.map((r) => r.map(esc).join(",")).join("\r\n");
+  return { csv, count: users.length };
+}
+
+async function buildMonthlySummary({ from, to }) {
+  const [paymentsAgg, failedCount, subscriptions, newUsers, listens, uniqueListeners, episodes, activeAgg, statusCounts, utm] = await Promise.all([
+    prisma.payment.aggregate({ where: { status: "success", paidAt: { gte: from, lt: to } }, _sum: { amount: true }, _count: { _all: true } }),
+    prisma.payment.count({ where: { status: "failed", paidAt: { gte: from, lt: to } } }),
+    prisma.subscription.findMany({ where: { createdAt: { gte: from, lt: to } }, select: { plan: true } }),
+    prisma.user.count({ where: { createdAt: { gte: from, lt: to } } }),
+    prisma.listenLog.count({ where: { createdAt: { gte: from, lt: to } } }),
+    prisma.listenLog.findMany({ where: { createdAt: { gte: from, lt: to } }, select: { userId: true }, distinct: ["userId"] }),
+    prisma.episode.count({ where: { status: "published", publishDate: { gte: from, lt: to } } }),
+    prisma.payment.aggregate({ where: { status: "success" }, _count: { _all: true } }),
+    prisma.subscription.groupBy({ by: ["status"], _count: { _all: true } }),
+    prisma.user.groupBy({ by: ["utmSource"], _count: { _all: true }, where: { createdAt: { gte: from, lt: to } } }),
+  ]);
+
+  const planSplit = subscriptions.reduce((acc, s) => {
+    acc[s.plan] = (acc[s.plan] || 0) + 1;
+    return acc;
+  }, {});
+  const statusCountsBy = Object.fromEntries(statusCounts.map((s) => [s.status, s._count._all]));
+
+  return {
+    revenue: paymentsAgg._sum.amount || 0,
+    paymentCount: paymentsAgg._count,
+    failedCount,
+    planSplit,
+    newSubs: subscriptions.length,
+    newUsers,
+    listens,
+    uniqueListeners: uniqueListeners.length,
+    episodes,
+    allTimePayments: activeAgg._count,
+    statusCounts: statusCountsBy,
+    utm: utm.sort((a, b) => b._count._all - a._count._all).slice(0, 5),
+  };
+}
+
+function fmtNgn(value) {
+  return value.toLocaleString("en-NG", { style: "currency", currency: "NGN" });
+}
+
+function summaryRow(label, value) {
+  return `<tr><td style="padding:9px 14px;border-bottom:1px solid #ece7df;color:#4a463f;">${escapeHtml(label)}</td><td style="padding:9px 14px;border-bottom:1px solid #ece7df;font-weight:600;color:#1a1a1a;text-align:right;">${escapeHtml(value)}</td></tr>`;
+}
+
+function summaryTable(title, rows) {
+  const body = rows.map(([label, value]) => summaryRow(label, value)).join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #ece7df;border-radius:12px;margin-bottom:22px;"><tr><td style="background:#faf6ef;border-bottom:1px solid #ece7df;padding:10px 14px;font-weight:700;color:#1a1a1a;font-size:13px;">${title}</td></tr>${body}</table>`;
+}
+
+function buildMonthlyHtml(summary, label) {
+  const monthName = new Date(summary.startTime).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  const statusRows = Object.entries(summary.statusCounts).length
+    ? Object.entries(summary.statusCounts).map(([status, count]) => [status, count])
+    : [["active", 0]];
+  const planRows = Object.entries(summary.planSplit).length
+    ? Object.entries(summary.planSplit).map(([plan, count]) => [plan, count])
+    : [["no new plans", 0]];
+  const utmRows = summary.utm.length
+    ? summary.utm.map((u) => [u.utmSource || "(not set)", u._count._all])
+    : [["no signups this month", 0]];
+
+  const bodyHtml = `
+<p>Here is the Money &amp; Mind monthly report for <strong>${escapeHtml(monthName)}</strong>.</p>
+${summaryTable("Payments", [
+  ["Successful payments", summary.paymentCount],
+  ["Total revenue", fmtNgn(summary.revenue)],
+  ["Failed payments", summary.failedCount],
+])}
+${summaryTable("Growth", [
+  ["New registered users", summary.newUsers],
+  ["New subscriptions", summary.newSubs],
+  ["Episodes published", summary.episodes],
+  ["Total listens", summary.listens],
+  ["Unique listeners", summary.uniqueListeners],
+])}
+${summaryTable("Subscription status (today)", statusRows)}
+${summaryTable("New plans", planRows)}
+${summaryTable("Top acquisition sources", utmRows)}
+<p style="font-size:12px;color:#8a8a8a;">All-time successful payments: ${summary.allTimePayments}. Full details are in the attached CSVs (payments, subscriptions and new users for ${escapeHtml(label)}).</p>`;
+
+  return emailTemplate({ title: `${label} Monthly Report`, bodyHtml });
+}
+
+async function sendMonthlyReport({ from, to, label }) {
+  const [paymentsCsv, subscriptionsCsv, usersCsv, summary] = await Promise.all([
+    buildPaymentsCsv({ from, to }),
+    buildSubscriptionsCsv({ from, to }),
+    buildUsersCsv({ from, to }),
+    buildMonthlySummary({ from, to }),
+  ]);
+  summary.startTime = from.getTime();
+
+  const admins = await prisma.user.findMany({ where: { role: "admin" }, select: { email: true } });
+  const recipients = [...new Set([RECONCILIATION_EMAIL, ...admins.map((u) => (u.email || "").trim()).filter(Boolean)])];
+
+  if (!brevoConfigured() || recipients.length === 0) {
+    console.log("[reconciliation] monthly email skipped — set BREVO_API_KEY, BREVO_FROM_EMAIL, RECONCILIATION_EMAIL or admin-role users");
+    return { sent: false, reason: "no recipients or brevo not configured" };
+  }
+
+  const attachment = (name, csv) => ({ name, content: Buffer.from(csv, "utf-8").toString("base64") });
+
+  let anySent = false;
+  for (const to of recipients) {
+    if (!to) continue;
+    try {
+      await sendEmail({
+        to,
+        subject: `Monthly Money & Mind Report — ${label}`,
+        htmlContent: buildMonthlyHtml({ ...summary, startTime: from.getTime() }, label),
+        attachments: [
+          attachment(`payments-${label}.csv`, paymentsCsv.csv),
+          attachment(`subscriptions-${label}.csv`, subscriptionsCsv.csv),
+          attachment(`users-${label}.csv`, usersCsv.csv),
+        ],
+      });
+      anySent = true;
+    } catch (err) {
+      console.error(`[reconciliation] monthly email to ${to} failed:`, err.message);
+    }
+  }
+
+  return { sent: anySent, recipients: recipients.length };
+}
+
 async function runMonthlyReconciliation(now = new Date()) {
   const { from, to, label } = previousMonthWindow(now);
-  return runReconciliationForWindow({ from, to, kind: "Monthly", label });
+  try {
+    const result = await sendMonthlyReport({ from, to, label });
+    console.log(`[reconciliation] monthly ${label}: revenue + ${result.recipients ?? 0} recipient(s), email ${result.sent ? "sent" : "skipped: " + result.reason}`);
+    return { date: label, kind: "Monthly", ...result };
+  } catch (err) {
+    console.error("[reconciliation] monthly job failed:", err.message);
+    return { date: label, kind: "Monthly", sent: false, reason: err.message };
+  }
 }
 
 // Run daily + monthly reconciliation reports
