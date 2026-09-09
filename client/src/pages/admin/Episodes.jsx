@@ -4,6 +4,11 @@ import { Plus, Trash2, Play, Pause, Calendar, Headphones, X, ChevronLeft, Chevro
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { BUSINESS_UTC_OFFSET_MIN, businessDateStr as toLocalDateStr, businessDayOfWeek, businessToday } from "../../utils/businessTime.js";
+import AdminPageHeading from "../../components/admin/AdminPageHeading";
+import Loader from "../../components/admin/Loader";
+import ConfirmModal from "../../components/admin/ConfirmModal";
+import StatusBadge from "../../components/admin/StatusBadge";
+import { useToast } from "../../components/admin/useToast";
 
 const DAY_TYPES = [
   { key: "monday", label: "Monday", pillar: "Motivation & Vision", color: "bg-mayden-coral-tint text-orange-700" },
@@ -12,12 +17,6 @@ const DAY_TYPES = [
   { key: "thursday", label: "Thursday", pillar: "Success Stories", color: "bg-mayden-purple-tint text-purple-700" },
   { key: "friday", label: "Friday", pillar: "Financial Wins", color: "bg-mayden-gold-tint text-amber-700" },
 ];
-
-const STATUS_BADGE = {
-  draft: "bg-gray-100 text-gray-600",
-  scheduled: "bg-amber-100 text-amber-700",
-  published: "bg-emerald-100 text-emerald-700",
-};
 
 function formatRuntime(seconds) {
   if (!seconds) return "";
@@ -71,7 +70,7 @@ function RichTextEditor({ value, onChange }) {
       <div className="flex items-center gap-1 p-2 border-b border-gray-100 bg-gray-50 flex-wrap">
         <button onClick={() => editor.chain().focus().toggleBold().run()} className={`px-2 py-1 text-xs rounded font-bold ${editor.isActive("bold") ? "bg-mayden-magenta text-white" : "text-gray-600 hover:bg-gray-200"}`}>B</button>
         <button onClick={() => editor.chain().focus().toggleItalic().run()} className={`px-2 py-1 text-xs rounded italic ${editor.isActive("italic") ? "bg-mayden-magenta text-white" : "text-gray-600 hover:bg-gray-200"}`}>I</button>
-        <button onClick={() => editor.chain().focus().toggleBulletList().run()} className={`px-2 py-1 text-xs rounded ${editor.isActive("bulletList") ? "bg-mayden-magenta text-white" : "text-gray-600 hover:bg-gray-200"}`}>• List</button>
+        <button onClick={() => editor.chain().focus().toggleBulletList().run()} className={`px-2 py-1 text-xs rounded ${editor.isActive("bulletList") ? "bg-mayden-magenta text-white" : "text-gray-600 hover:bg-gray-200"}`}>â€¢ List</button>
         <button onClick={() => editor.chain().focus().toggleOrderedList().run()} className={`px-2 py-1 text-xs rounded ${editor.isActive("orderedList") ? "bg-mayden-magenta text-white" : "text-gray-600 hover:bg-gray-200"}`}>1. List</button>
         <button onClick={() => editor.chain().focus().toggleBlockquote().run()} className={`px-2 py-1 text-xs rounded ${editor.isActive("blockquote") ? "bg-mayden-magenta text-white" : "text-gray-600 hover:bg-gray-200"}`}>Quote</button>
         <button onClick={() => setShowLinkInput(!showLinkInput)} className={`px-2 py-1 text-xs rounded ${showLinkInput || editor.isActive("link") ? "bg-mayden-magenta text-white" : "text-gray-600 hover:bg-gray-200"}`}><Link2 size={12} /></button>
@@ -111,7 +110,7 @@ function WeekCalendar({ episodes, weekOffset, onPublish }) {
   return (
     <div className="grid grid-cols-5 gap-3">
       {days.map((day) => (
-        <div key={day.key} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 min-h-[180px]">
+        <div key={day.key} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm min-h-[180px]">
           <div className="flex items-center justify-between mb-3">
             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${day.color}`}>{day.label}</span>
             <span className="text-xs text-gray-400">{formatShort(day.dateStr)}</span>
@@ -119,9 +118,7 @@ function WeekCalendar({ episodes, weekOffset, onPublish }) {
           {day.episode ? (
             <div>
               <p className="text-sm font-medium text-mayden-dark line-clamp-2 mb-1">{day.episode.title}</p>
-              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full uppercase ${STATUS_BADGE[day.episode.status]}`}>
-                {day.episode.status}
-              </span>
+              <StatusBadge status={day.episode.status} />
               {day.episode.runTimeSeconds > 0 && (
                 <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
                   <Clock size={8} /> {formatRuntime(day.episode.runTimeSeconds)}
@@ -163,13 +160,8 @@ export default function Episodes() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkDeleteTarget, setBulkDeleteTarget] = useState(false);
-  const [toast, setToast] = useState(null);
   const previewRef = useRef(null);
-
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+  const toast = useToast();
 
   const fetchEpisodes = () => {
     api.get("/admin/episodes").then(({ data }) => setEpisodes(data)).catch(() => {}).finally(() => setLoading(false));
@@ -270,10 +262,10 @@ export default function Episodes() {
         await api.put(`/admin/episodes/${editingEp.id}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
         setShowModal(false);
         fetchEpisodes();
-        showToast("Episode updated");
+        toast("Episode updated");
       } else {
         if (currentDayFiles.length === 0) {
-          showToast("No audio files available for this day type", "error");
+          toast("No audio files available for this day type", "error");
           return;
         }
         const dates = getWeeklyDatesForDayType(form.dayType, currentDayFiles.length);
@@ -293,10 +285,10 @@ export default function Episodes() {
         const { data } = await api.post("/admin/episodes/batch", { episodes });
         setShowModal(false);
         fetchEpisodes();
-        showToast(`${data.length} ${form.dayType} episodes scheduled`);
+        toast(`${data.length} ${form.dayType} episodes scheduled`);
       }
     } catch (err) {
-      showToast(err.response?.data?.error || "Failed to save episode", "error");
+      toast(err.response?.data?.error || "Failed to save episode", "error");
     } finally {
       setSaving(false);
     }
@@ -306,9 +298,9 @@ export default function Episodes() {
     try {
       await api.post(`/admin/episodes/${id}/publish`);
       fetchEpisodes();
-      showToast("Episode published — subscribers notified");
+      toast("Episode published â€” subscribers notified");
     } catch (err) {
-      showToast(err.response?.data?.error || "Failed to publish", "error");
+      toast(err.response?.data?.error || "Failed to publish", "error");
     }
   };
 
@@ -318,9 +310,9 @@ export default function Episodes() {
       await api.delete(`/admin/episodes/${deleteTarget.id}`);
       setDeleteTarget(null);
       fetchEpisodes();
-      showToast("Episode deleted");
+      toast("Episode deleted");
     } catch (err) {
-      showToast(err.response?.data?.error || "Failed to delete", "error");
+      toast(err.response?.data?.error || "Failed to delete", "error");
     }
   };
 
@@ -339,9 +331,9 @@ export default function Episodes() {
       }
       setSelectedIds([]);
       fetchEpisodes();
-      showToast(`${toPublish.length} episodes published`);
+      toast(`${toPublish.length} episodes published`);
     } catch (err) {
-      showToast(err.response?.data?.error || "Failed to publish", "error");
+      toast(err.response?.data?.error || "Failed to publish", "error");
     }
   };
 
@@ -353,9 +345,9 @@ export default function Episodes() {
       setBulkDeleteTarget(false);
       setSelectedIds([]);
       fetchEpisodes();
-      showToast(`${selectedIds.length} episodes deleted`);
+      toast(`${selectedIds.length} episodes deleted`);
     } catch (err) {
-      showToast(err.response?.data?.error || "Failed to delete", "error");
+      toast(err.response?.data?.error || "Failed to delete", "error");
     }
   };
 
@@ -394,9 +386,9 @@ export default function Episodes() {
       const assigned = await assignAudioInOrder(selectedIds, false);
       setSelectedIds([]);
       fetchEpisodes();
-      showToast(assigned > 0 ? `Audio assigned to ${assigned} episodes` : "No audio files available for the selected day(s)");
+      toast(assigned > 0 ? `Audio assigned to ${assigned} episodes` : "No audio files available for the selected day(s)");
     } catch (err) {
-      showToast(err.response?.data?.error || "Failed to assign audio", "error");
+      toast(err.response?.data?.error || "Failed to assign audio", "error");
     }
   };
 
@@ -405,15 +397,15 @@ export default function Episodes() {
       const source = ids || episodes.filter((e) => !e.audioUrl).map((e) => e.id);
       const targets = source.filter((id) => !episodes.find((e) => e.id === id)?.audioUrl);
       if (targets.length === 0) {
-        showToast("No episodes are missing audio");
+        toast("No episodes are missing audio");
         return;
       }
       const assigned = await assignAudioInOrder(targets, true);
       setSelectedIds([]);
       fetchEpisodes();
-      showToast(assigned > 0 ? `Audio assigned to ${assigned} episodes` : "No audio files available for those day(s)");
+      toast(assigned > 0 ? `Audio assigned to ${assigned} episodes` : "No audio files available for those day(s)");
     } catch (err) {
-      showToast(err.response?.data?.error || "Failed to assign audio", "error");
+      toast(err.response?.data?.error || "Failed to assign audio", "error");
     }
   };
 
@@ -468,41 +460,37 @@ export default function Episodes() {
   const batchDates = !editingEp ? getWeeklyDatesForDayType(form.dayType, batchCount) : [];
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-mayden-magenta border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <Loader label="Loading episodes…" />;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-mayden-dark">Episodes</h1>
-          <p className="text-sm text-gray-400 mt-1">Create episodes with audio and show notes. They auto-publish on the scheduled date and notify subscribers.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {episodes.some((e) => !e.audioUrl) && (
-            <button onClick={() => handleAssignMissingAudio()} className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600">
-              <Music size={16} /> Assign Missing Audio
+      <AdminPageHeading
+        title="Episodes"
+        subtitle="Create episodes with audio and show notes. They auto-publish on the scheduled date and notify subscribers."
+        actions={
+          <div className="flex items-center gap-2">
+            {episodes.some((e) => !e.audioUrl) && (
+              <button onClick={() => handleAssignMissingAudio()} className="flex items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-600">
+                <Music size={16} /> Assign Missing Audio
+              </button>
+            )}
+            <button onClick={openCreate} className="flex items-center gap-2 rounded-full bg-mayden-magenta px-4 py-2 text-sm font-medium text-white shadow-md shadow-mayden-magenta/20 transition-colors hover:bg-mayden-magenta/90">
+              <Plus size={16} /> New Episode
             </button>
-          )}
-          <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-mayden-magenta text-white rounded-lg text-sm font-medium hover:bg-mayden-magenta/90">
-            <Plus size={16} /> New Episode
-          </button>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
-      <div className="flex items-center gap-4">
-        <button onClick={() => setWeekOffset(weekOffset - 1)} className="p-2 rounded-lg hover:bg-gray-100"><ChevronLeft size={18} /></button>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Calendar size={16} />
+      <div className="flex items-center gap-3">
+        <button onClick={() => setWeekOffset(weekOffset - 1)} aria-label="Previous week" className="rounded-full border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:border-mayden-magenta hover:text-mayden-magenta"><ChevronLeft size={18} /></button>
+        <div className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm text-gray-600 shadow-sm">
+          <Calendar size={16} className="text-mayden-magenta" />
           <span>Week of {formatLong(toLocalDateStr(businessWeekStart(toLocalDateStr(new Date()), weekOffset)))}</span>
         </div>
-        <button onClick={() => setWeekOffset(weekOffset + 1)} className="p-2 rounded-lg hover:bg-gray-100"><ChevronRight size={18} /></button>
+        <button onClick={() => setWeekOffset(weekOffset + 1)} aria-label="Next week" className="rounded-full border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:border-mayden-magenta hover:text-mayden-magenta"><ChevronRight size={18} /></button>
         {weekOffset !== 0 && (
-          <button onClick={() => setWeekOffset(0)} className="text-xs text-mayden-magenta hover:underline">Today</button>
+          <button onClick={() => setWeekOffset(0)} className="text-xs font-medium text-mayden-magenta hover:underline">Today</button>
         )}
       </div>
 
@@ -522,21 +510,21 @@ export default function Episodes() {
             )}
           </div>
           {selectedIds.length > 0 && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs text-gray-500">{selectedIds.length} selected</span>
-              <button onClick={handleBulkAssignAudio} className="px-3 py-1.5 bg-blue-500 text-white text-xs font-medium rounded-lg hover:bg-blue-600 flex items-center gap-1">
+              <button onClick={handleBulkAssignAudio} className="flex items-center gap-1 rounded-full bg-blue-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-600">
                 <Music size={12} /> Assign Audio
               </button>
-              <button onClick={() => handleAssignMissingAudio(selectedIds)} className="px-3 py-1.5 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600 flex items-center gap-1">
+              <button onClick={() => handleAssignMissingAudio(selectedIds)} className="flex items-center gap-1 rounded-full bg-amber-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-amber-600">
                 <Music size={12} /> Assign Missing
               </button>
-              <button onClick={handleBulkPublish} className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 flex items-center gap-1">
+              <button onClick={handleBulkPublish} className="flex items-center gap-1 rounded-full bg-emerald-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-600">
                 <Send size={12} /> Publish
               </button>
-              <button onClick={() => setBulkDeleteTarget(true)} className="px-3 py-1.5 bg-red-500 text-white text-xs font-medium rounded-lg hover:bg-red-600 flex items-center gap-1">
+              <button onClick={() => setBulkDeleteTarget(true)} className="flex items-center gap-1 rounded-full bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-600">
                 <Trash2 size={12} /> Delete
               </button>
-              <button onClick={() => setSelectedIds([])} className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700">Clear</button>
+              <button onClick={() => setSelectedIds([])} className="px-2 py-1.5 text-xs text-gray-500 hover:text-gray-700">Clear</button>
             </div>
           )}
         </div>
@@ -557,7 +545,7 @@ export default function Episodes() {
           const weeks = Object.entries(weekMap).sort(([a], [b]) => b.localeCompare(a));
 
           if (weeks.length === 0) {
-            return <p className="text-center text-gray-400 py-12 bg-white rounded-xl border border-gray-100">No episodes yet. Click "New Episode" to get started.</p>;
+            return <p className="rounded-2xl border border-gray-100 bg-white py-12 text-center text-gray-400">No episodes yet. Click "New Episode" to get started.</p>;
           }
 
           return weeks.map(([weekKey, weekEps]) => {
@@ -565,7 +553,7 @@ export default function Episodes() {
             const friday = new Date(`${mondayStr}T00:00:00Z`);
             friday.setUTCDate(friday.getUTCDate() + 4);
             const fridayStr = toLocalDateStr(friday);
-            const weekLabel = `${formatShort(mondayStr)} – ${formatLong(fridayStr)}`;
+            const weekLabel = `${formatShort(mondayStr)} â€“ ${formatLong(fridayStr)}`;
 
             const weekDayEps = DAY_TYPES.map((dt) => {
               const ep = weekEps.find((e) => e.dayType === dt.key);
@@ -586,8 +574,8 @@ export default function Episodes() {
             };
 
             return (
-              <div key={weekKey} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-100">
+              <div key={weekKey} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                <div className="flex items-center justify-between border-b border-gray-100 bg-mayden-gray/60 px-4 py-2">
                   <div className="flex items-center gap-3">
                     <button
                       onClick={toggleWeekSelect}
@@ -617,7 +605,7 @@ export default function Episodes() {
                         <>
                           <button
                             onClick={() => toggleRowPlay(day.episode)}
-                            title={day.episode.audioUrl ? "Play audio" : "No audio — edit to assign"}
+                            title={day.episode.audioUrl ? "Play audio" : "No audio â€” edit to assign"}
                             className={`shrink-0 p-1 rounded-full transition-colors ${
                               playingRowId === day.episode.id
                                 ? "text-white bg-mayden-magenta"
@@ -629,7 +617,7 @@ export default function Episodes() {
                             {playingRowId === day.episode.id ? <Pause size={12} /> : <Play size={12} />}
                           </button>
                           <span className="text-xs font-medium text-mayden-dark truncate flex-1 min-w-0">{day.episode.title}</span>
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full uppercase shrink-0 ${STATUS_BADGE[day.episode.status]}`}>{day.episode.status}</span>
+                          <StatusBadge status={day.episode.status} />
                           <span className="text-[10px] text-gray-400 shrink-0 flex items-center gap-1"><Headphones size={10} />{day.episode.listenCount || 0}</span>
                           {day.episode.runTimeSeconds > 0 && <span className="text-[10px] text-gray-400 shrink-0">{formatRuntime(day.episode.runTimeSeconds)}</span>}
                           {!day.episode.audioUrl && <span className="text-[10px] text-amber-500 shrink-0">No audio</span>}
@@ -655,12 +643,12 @@ export default function Episodes() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <div>
                 <h3 className="font-bold text-mayden-dark">{editingEp ? "Edit Episode" : "New Episode"}</h3>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {editingEp ? "Update episode details" : "Pick a day type — episodes are created for every week the day has audio"}
+                  {editingEp ? "Update episode details" : "Pick a day type â€” episodes are created for every week the day has audio"}
                 </p>
               </div>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
@@ -680,7 +668,7 @@ export default function Episodes() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Day Type</label>
                   <select value={form.dayType} onChange={(e) => setForm({ ...form, dayType: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
-                    {DAY_TYPES.map((d) => <option key={d.key} value={d.key}>{d.label} — {d.pillar}</option>)}
+                    {DAY_TYPES.map((d) => <option key={d.key} value={d.key}>{d.label} â€” {d.pillar}</option>)}
                   </select>
                   <p className="text-[10px] text-gray-400 mt-1">Pillar: {currentDayPillar}</p>
                 </div>
@@ -720,7 +708,7 @@ export default function Episodes() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Audio — {currentDayPillar} ({form.dayType})
+                  Audio â€” {currentDayPillar} ({form.dayType})
                 </label>
                 {currentDayFiles.length === 0 ? (
                   <p className="text-xs text-gray-400 py-3">No audio files available for this day. Add files to server/storage/audio/Maiden/</p>
@@ -768,8 +756,8 @@ export default function Episodes() {
               </div>
             </div>
             <div className="flex gap-3 justify-end p-5 border-t border-gray-100">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-              <button onClick={handleSave} disabled={saving || !form.title || (!editingEp && batchCount === 0)} className="px-4 py-2 bg-mayden-magenta text-white text-sm font-medium rounded-lg hover:bg-mayden-magenta/90 disabled:opacity-50">
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-full">Cancel</button>
+              <button onClick={handleSave} disabled={saving || !form.title || (!editingEp && batchCount === 0)} className="px-4 py-2 bg-mayden-magenta text-white text-sm font-medium rounded-full hover:bg-mayden-magenta/90 disabled:opacity-50">
                 {saving ? "Saving..." : editingEp ? "Update" : `Schedule ${batchCount} Episodes`}
               </button>
             </div>
@@ -777,43 +765,22 @@ export default function Episodes() {
         </div>
       )}
 
-      {deleteTarget && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-sm p-6 text-center">
-            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-              <Trash2 size={20} className="text-red-500" />
-            </div>
-            <h3 className="font-bold text-mayden-dark mb-2">Delete Episode</h3>
-            <p className="text-sm text-gray-500 mb-6">Are you sure you want to delete "{deleteTarget.title}"? This cannot be undone.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setDeleteTarget(null)} className="flex-1 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg border border-gray-200">Cancel</button>
-              <button onClick={handleDelete} className="flex-1 px-4 py-2.5 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600">Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Delete Episode"
+        message={deleteTarget ? `Are you sure you want to delete "${deleteTarget.title}"? This cannot be undone.` : ""}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
 
-      {bulkDeleteTarget && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-sm p-6 text-center">
-            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-              <Trash2 size={20} className="text-red-500" />
-            </div>
-            <h3 className="font-bold text-mayden-dark mb-2">Delete {selectedIds.length} Episodes</h3>
-            <p className="text-sm text-gray-500 mb-6">Are you sure you want to delete {selectedIds.length} episodes? This cannot be undone.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setBulkDeleteTarget(false)} className="flex-1 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg border border-gray-200">Cancel</button>
-              <button onClick={handleBulkDelete} className="flex-1 px-4 py-2.5 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600">Delete All</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {toast && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-all ${toast.type === "error" ? "bg-red-500 text-white" : "bg-emerald-500 text-white"}`}>
-          {toast.message}
-        </div>
-      )}
+      <ConfirmModal
+        open={bulkDeleteTarget}
+        title={`Delete ${selectedIds.length} Episodes`}
+        message={`Are you sure you want to delete ${selectedIds.length} episodes? This cannot be undone.`}
+        confirmLabel="Delete All"
+        onConfirm={handleBulkDelete}
+        onCancel={() => setBulkDeleteTarget(false)}
+      />
     </div>
   );
 }
