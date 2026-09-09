@@ -45,7 +45,10 @@ export default function ForgotPassword() {
       }
       footer={
         <p>
-          <Link to="/login" className="text-mayden-magenta font-semibold hover:underline">
+          <Link
+            to="/login"
+            className="text-mayden-magenta font-semibold hover:underline"
+          >
             Back to sign in
           </Link>
         </p>
@@ -57,8 +60,11 @@ export default function ForgotPassword() {
           {email.trim().toLowerCase() && (
             <p>
               If an account exists for{" "}
-              <span className="font-semibold">{email.trim().toLowerCase()}</span>,
-              a 6-digit reset code is on its way. The code expires in 30 minutes.
+              <span className="font-semibold">
+                {email.trim().toLowerCase()}
+              </span>
+              , a 6-digit reset code is on its way. The code expires in 30
+              minutes.
             </p>
           )}
           <Link
@@ -71,17 +77,23 @@ export default function ForgotPassword() {
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {error && (
-            <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-center text-sm text-red-600">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-center text-sm text-amber-700">
               {error}
             </div>
           )}
 
           <div>
-            <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="email"
+              className="mb-1.5 block text-sm font-medium text-gray-700"
+            >
               Email
             </label>
             <div className="relative">
-              <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Mail
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
               <input
                 id="email"
                 type="email"
