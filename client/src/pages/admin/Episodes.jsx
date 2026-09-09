@@ -434,7 +434,7 @@ export default function Episodes() {
     try {
       await api.post(`/admin/episodes/${id}/publish`);
       fetchEpisodes();
-      toast("Episode published â€” subscribers notified");
+      toast("Episode published — subscribers notified");
     } catch (err) {
       toast(err.response?.data?.error || "Failed to publish", "error");
     }
@@ -777,7 +777,7 @@ export default function Episodes() {
             const friday = new Date(`${mondayStr}T00:00:00Z`);
             friday.setUTCDate(friday.getUTCDate() + 4);
             const fridayStr = toLocalDateStr(friday);
-            const weekLabel = `${formatShort(mondayStr)} â€“ ${formatLong(fridayStr)}`;
+            const weekLabel = `${formatShort(mondayStr)} – ${formatLong(fridayStr)}`;
 
             const weekDayEps = DAY_TYPES.map((dt) => {
               const ep = weekEps.find((e) => e.dayType === dt.key);
@@ -865,7 +865,7 @@ export default function Episodes() {
                             title={
                               day.episode.audioUrl
                                 ? "Play audio"
-                                : "No audio â€” edit to assign"
+                                : "No audio — edit to assign"
                             }
                             className={`shrink-0 p-1 rounded-full transition-colors ${
                               playingRowId === day.episode.id
@@ -947,7 +947,7 @@ export default function Episodes() {
                 <p className="text-xs text-gray-400 mt-0.5">
                   {editingEp
                     ? "Update episode details"
-                    : "Pick a day type â€” episodes are created for every week the day has audio"}
+                    : "Pick a day type — episodes are created for every week the day has audio"}
                 </p>
               </div>
               <button
@@ -984,7 +984,7 @@ export default function Episodes() {
                   >
                     {DAY_TYPES.map((d) => (
                       <option key={d.key} value={d.key}>
-                        {d.label} â€” {d.pillar}
+                        {d.label} — {d.pillar}
                       </option>
                     ))}
                   </select>
@@ -1039,7 +1039,7 @@ export default function Episodes() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Audio â€” {currentDayPillar} ({form.dayType})
+                  Audio — {currentDayPillar} ({form.dayType})
                 </label>
                 {currentDayFiles.length === 0 ? (
                   <p className="text-xs text-gray-400 py-3">
