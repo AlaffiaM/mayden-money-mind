@@ -46,8 +46,12 @@ export default function InstallBanner() {
           <Download size={18} className="text-mayden-magenta" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-mayden-dark">Add to Home Screen</p>
-          <p className="text-xs text-gray-500">For the best experience, add Money & Mind to your home screen.</p>
+          <p className="text-sm font-semibold text-mayden-dark">
+            Add to Home Screen
+          </p>
+          <p className="text-xs text-gray-500">
+            For the best experience, add Money & Mind to your home screen.
+          </p>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <button
