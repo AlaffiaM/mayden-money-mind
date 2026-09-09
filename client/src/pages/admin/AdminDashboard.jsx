@@ -121,11 +121,11 @@ export default function AdminDashboard() {
       label: "Today's Episode",
       value: stats.todayEpisode ? stats.todayEpisode.title : "Missing",
       icon: stats.todayEpisode ? FileText : AlertCircle,
-      accent: stats.todayEpisode ? "text-blue-600" : "text-red-500",
+      accent: stats.todayEpisode ? "text-blue-600" : "text-mayden-magenta",
       sub: stats.todayEpisode ? (
         <span className="text-xs text-gray-400 capitalize">{stats.todayEpisode.status}</span>
       ) : (
-        <span className="text-xs text-red-500">No episode published</span>
+        <span className="text-xs text-gray-500">No episode scheduled yet</span>
       ),
     },
   ];
@@ -168,7 +168,7 @@ export default function AdminDashboard() {
             </div>
           </div>
         ) : (
-          <p className="py-8 text-center text-sm text-gray-400">No subscriber data yet</p>
+          <p className="py-8 text-center text-sm text-gray-500">No subscriber data yet</p>
         )}
       </AdminCard>
 
@@ -205,7 +205,7 @@ export default function AdminDashboard() {
           </AdminTable>
         ) : (
           <p className="py-6 text-center text-sm text-gray-400">
-            No UTM-attributed signups yet — users landing from the Mayden site will appear here.
+            No UTM-attributed signups yet. Visitors coming from the Mayden site will appear here.
           </p>
         )}
       </AdminCard>
