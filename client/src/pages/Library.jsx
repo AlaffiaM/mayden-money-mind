@@ -6,7 +6,7 @@ import SubscriberLayout from "../components/layout/SubscriberLayout";
 
 const moodTags = [
   { label: "I want focus", query: "monday" },
-  { label: "I want save", query: "tuesday" },
+  { label: "I want to save", query: "tuesday" },
   { label: "I want peace", query: "wednesday" },
   { label: "I want inspiration", query: "thursday" },
   { label: "I want to celebrate", query: "friday" },
