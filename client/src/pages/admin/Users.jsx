@@ -37,7 +37,8 @@ export default function Users() {
     const params = {};
     if (debouncedSearch) params.search = debouncedSearch;
     if (statusFilter) params.status = statusFilter;
-    api.get("/admin/users", { params })
+    api
+      .get("/admin/users", { params })
       .then(({ data }) => setUsers(data))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -57,11 +58,17 @@ export default function Users() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeading title="Users" subtitle="Every account, their subscription state and activity." />
+      <AdminPageHeading
+        title="Users"
+        subtitle="Every account, their subscription state and activity."
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -77,7 +84,9 @@ export default function Users() {
             className="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-mayden-magenta focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20"
           >
             {STATUS_FILTERS.map((f) => (
-              <option key={f.value} value={f.value}>{f.label}</option>
+              <option key={f.value} value={f.value}>
+                {f.label}
+              </option>
             ))}
           </select>
         </div>
@@ -97,7 +106,9 @@ export default function Users() {
       >
         {loading ? (
           <tr>
-            <td colSpan={7} className="py-12 text-center"><InlineLoader /></td>
+            <td colSpan={7} className="py-12 text-center">
+              <InlineLoader />
+            </td>
           </tr>
         ) : (
           users.map((u) => (
@@ -109,20 +120,32 @@ export default function Users() {
                   </div>
                   <div>
                     <p className="font-medium text-mayden-dark">{u.fullName}</p>
-                    <p className="text-xs text-gray-400">{u.email || u.phone}</p>
+                    <p className="text-xs text-gray-400">
+                      {u.email || u.phone}
+                    </p>
                   </div>
                 </div>
               </td>
-              <td className="px-4 py-3"><StatusBadge status={u.subscription?.status || "none"} /></td>
-              <td className="px-4 py-3 text-gray-500 capitalize">{u.subscription?.plan || "—"}</td>
-              <td className="px-4 py-3 text-xs text-gray-500">
-                {u.subscription?.nextRenewal ? new Date(u.subscription.nextRenewal).toLocaleDateString() : "—"}
+              <td className="px-4 py-3">
+                <StatusBadge status={u.subscription?.status || "none"} />
+              </td>
+              <td className="px-4 py-3 text-gray-500 capitalize">
+                {u.subscription?.plan || "—"}
               </td>
               <td className="px-4 py-3 text-xs text-gray-500">
-                {u.lastActive ? new Date(u.lastActive).toLocaleDateString() : "—"}
+                {u.subscription?.nextRenewal
+                  ? new Date(u.subscription.nextRenewal).toLocaleDateString()
+                  : "—"}
+              </td>
+              <td className="px-4 py-3 text-xs text-gray-500">
+                {u.lastActive
+                  ? new Date(u.lastActive).toLocaleDateString()
+                  : "—"}
               </td>
               <td className="px-4 py-3 text-gray-500">
-                <span className="inline-flex items-center gap-1"><Headphones size={12} /> {u.episodesListened || 0}</span>
+                <span className="inline-flex items-center gap-1">
+                  <Headphones size={12} /> {u.episodesListened || 0}
+                </span>
               </td>
               <td className="px-4 py-3 text-right">
                 <div className="flex items-center justify-end gap-2">
@@ -149,7 +172,11 @@ export default function Users() {
       <ConfirmModal
         open={!!deleteTarget}
         title="Delete User"
-        message={deleteTarget ? `Permanently delete ${deleteTarget.fullName} and all their data (subscriptions, payments, listen history)?` : ""}
+        message={
+          deleteTarget
+            ? `Permanently delete ${deleteTarget.fullName} and all their data (subscriptions, payments, listen history)?`
+            : ""
+        }
         confirmLabel="Delete User"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
