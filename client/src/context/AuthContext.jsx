@@ -4,7 +4,6 @@ import api from "../services/api";
 import { AuthContext } from "./authContext";
 
 export function AuthProvider({ children }) {
-
   const [user, setUser] = useState(() => {
     const stored = sessionStorage.getItem("user");
     return stored ? JSON.parse(stored) : null;
@@ -18,7 +17,11 @@ export function AuthProvider({ children }) {
       const { data } = await api.post("/auth/login", { email, password });
 
       if (adminLogin && data.user.role !== "admin") {
-        throw { response: { data: { error: "This account does not have admin access." } } };
+        throw {
+          response: {
+            data: { error: "This account does not have admin access." },
+          },
+        };
       }
 
       sessionStorage.setItem("token", data.token);
@@ -86,10 +89,18 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, setUser, login, register, logout, loading, verifyEmail, resendVerification }}
+      value={{
+        user,
+        setUser,
+        login,
+        register,
+        logout,
+        loading,
+        verifyEmail,
+        resendVerification,
+      }}
     >
       {children}
     </AuthContext.Provider>
   );
 }
-
