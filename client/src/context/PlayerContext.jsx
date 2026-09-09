@@ -1,12 +1,21 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useAuth } from "./AuthContext";
 import api from "../services/api";
 import { useAudio } from "../hooks/useAudio";
+import { useToast } from "../components/admin/useToast";
 
 const PlayerContext = createContext(null);
 
 export function PlayerProvider({ children }) {
   const { user } = useAuth();
+  const toast = useToast();
   const {
     audioRef,
     playing,
@@ -61,7 +70,9 @@ export function PlayerProvider({ children }) {
         if (!data?.url) throw new Error("No stream url");
         const resp = await fetch(data.url);
         if (!resp.ok) throw new Error("Stream fetch failed");
-        const blob = new Blob([await resp.arrayBuffer()], { type: "audio/mpeg" });
+        const blob = new Blob([await resp.arrayBuffer()], {
+          type: "audio/mpeg",
+        });
         const url = URL.createObjectURL(blob);
 
         if (blobUrlRef.current) {
@@ -80,18 +91,25 @@ export function PlayerProvider({ children }) {
         }
       } catch (err) {
         setLoading(false);
+        let message =
+          "Could not load audio. Please check your connection and try again.";
         if (err?.response?.status === 403) {
-          setError("Active subscription required — renew your subscription to play.");
+          if (err.response?.data?.error === "Episode not yet unlocked") {
+            message =
+              "This episode will be available on its scheduled release date.";
+          } else {
+            message = "An active subscription is required to play this episode.";
+          }
         } else if (err?.response?.status === 404) {
-          setError("This episode's audio is not available yet.");
+          message = "This episode's audio is not available yet.";
         } else if (err?.response?.status === 401) {
-          setError("Please log in to play this episode.");
-        } else {
-          setError("Could not load audio. Please check your connection and try again.");
+          message = "Please log in to play this episode.";
         }
+        setError(null);
+        toast(message, "error");
       }
     },
-    [audioRef, episode, play, setError]
+    [audioRef, episode, play, setError, toast],
   );
 
   return (
