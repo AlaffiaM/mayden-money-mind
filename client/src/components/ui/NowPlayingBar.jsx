@@ -9,11 +9,14 @@ const formatTime = (s) => {
 };
 
 export default function NowPlayingBar() {
-  const { episode, playing, current, duration, loading, toggle, seek, close } = usePlayer();
+  const { episode, playing, current, duration, loading, toggle, seek, close } =
+    usePlayer();
 
   if (!episode) return null;
 
-  const dayLabel = episode.dayType ? episode.dayType.charAt(0).toUpperCase() + episode.dayType.slice(1) : "";
+  const dayLabel = episode.dayType
+    ? episode.dayType.charAt(0).toUpperCase() + episode.dayType.slice(1)
+    : "";
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-4 pb-4 safe-area-bottom">
@@ -53,13 +56,18 @@ export default function NowPlayingBar() {
                 className="h-1 flex-1 cursor-pointer overflow-hidden rounded-full bg-gray-200"
                 onClick={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
-                  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                  const pct = Math.max(
+                    0,
+                    Math.min(1, (e.clientX - rect.left) / rect.width),
+                  );
                   seek(pct * (duration || 0));
                 }}
               >
                 <div
                   className="h-full rounded-full bg-mayden-magenta transition-all duration-150"
-                  style={{ width: `${duration > 0 ? (current / duration) * 100 : 0}%` }}
+                  style={{
+                    width: `${duration > 0 ? (current / duration) * 100 : 0}%`,
+                  }}
                 />
               </div>
               <span className="w-8 flex-shrink-0 text-[10px] tabular-nums text-gray-400">
