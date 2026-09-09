@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import { Loader2 } from "lucide-react";
 
 const DIGITS = [0, 1, 2, 3, 4, 5];
