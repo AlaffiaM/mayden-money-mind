@@ -4,16 +4,16 @@ REST API server for the Money & Mind subscription audio platform. Handles authen
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Runtime | Node.js (ES Modules) |
-| Framework | Express 5 |
-| Database | PostgreSQL via Prisma ORM 7 |
-| Authentication | JWT + bcryptjs |
-| Payments | Paystack |
-| File Uploads | Multer (50MB max, audio only) |
-| Security | Helmet, CORS |
-| Logging | Morgan |
+| Layer          | Technology                    |
+| -------------- | ----------------------------- |
+| Runtime        | Node.js (ES Modules)          |
+| Framework      | Express 5                     |
+| Database       | PostgreSQL via Prisma ORM 7   |
+| Authentication | JWT + bcryptjs                |
+| Payments       | Paystack                      |
+| File Uploads   | Multer (50MB max, audio only) |
+| Security       | Helmet, CORS                  |
+| Logging        | Morgan                        |
 
 ## Getting Started
 
@@ -29,29 +29,29 @@ Server runs on `http://localhost:5000`.
 
 ## Scripts
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start development server with nodemon |
-| `npm start` | Start production server |
+| Command        | Description                                            |
+| -------------- | ------------------------------------------------------ |
+| `npm run dev`  | Start development server with nodemon                  |
+| `npm start`    | Start production server                                |
 | `npm run seed` | Create or rotate the admin user from env vars (upsert) |
 
 ## Environment Variables
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | PostgreSQL connection string (e.g. from Supabase) |
-| `JWT_SECRET` | Secret key for JWT signing (must be a strong, unique value in production) |
-| `PORT` | Server port (default `5000`) |
-| `PAYSTACK_SECRET_KEY` | Paystack API secret key (live or test) |
-| `FRONTEND_URL` | Frontend base URL for payment redirects/callbacks (default `http://localhost:5173`); a trailing slash is tolerated and stripped |
-| `CLIENT_ORIGINS` | Comma-separated CORS allowlist of browser origins (default `http://localhost:5173`; merged with the hardcoded `https://mayden-money-mind.vercel.app` production origin) |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Credentials for the admin user — `npm run seed` upserts them |
-| `BREVO_API_KEY` | Brevo transactional API key for the reconciliation emails and password-reset emails (Brevo: SMTP & API → API Keys) |
-| `BREVO_FROM_EMAIL` | Verified sender address in Brevo for all outgoing mail (reports + reset codes) |
-| `RECONCILIATION_EMAIL` | Recipient of the daily/monthly payment CSV reports |
-| `RECONCILIATION_HOUR` | Hour (UTC) the daily report runs — default `23` (23:00 UTC = midnight Lagos), reports the previous calendar day |
-| `MONTHLY_REPORT_HOUR` | Hour (UTC) the monthly report runs — default `23` |
-| `MONTHLY_REPORT_DAY` | Day-of-month the monthly report runs — default `1` (reports the previous calendar month) |
+| Variable                         | Description                                                                                                                                                                                                  |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`                   | PostgreSQL connection string (e.g. from Supabase)                                                                                                                                                            |
+| `JWT_SECRET`                     | Secret key for JWT signing (must be a strong, unique value in production)                                                                                                                                    |
+| `PORT`                           | Server port (default `5000`)                                                                                                                                                                                 |
+| `PAYSTACK_SECRET_KEY`            | Paystack API secret key (live or test)                                                                                                                                                                       |
+| `FRONTEND_URL`                   | Frontend base URL for payment redirects/callbacks (default `https://mayden-money-mind.vercel.app`); a trailing slash is tolerated and stripped                                                               |
+| `CLIENT_ORIGINS`                 | Optional comma-separated CORS allowlist of additional browser origins. The server always allows `http://localhost:5173`, `https://mayden-money-mind.vercel.app`, and `https://moneyandmind.alaffiaradio.com` |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Credentials for the admin user — `npm run seed` upserts them                                                                                                                                                 |
+| `BREVO_API_KEY`                  | Brevo transactional API key for the reconciliation emails and password-reset emails (Brevo: SMTP & API → API Keys)                                                                                           |
+| `BREVO_FROM_EMAIL`               | Verified sender address in Brevo for all outgoing mail (reports + reset codes)                                                                                                                               |
+| `RECONCILIATION_EMAIL`           | Recipient of the daily/monthly payment CSV reports                                                                                                                                                           |
+| `RECONCILIATION_HOUR`            | Hour (UTC) the daily report runs — default `23` (23:00 UTC = midnight Lagos), reports the previous calendar day                                                                                              |
+| `MONTHLY_REPORT_HOUR`            | Hour (UTC) the monthly report runs — default `23`                                                                                                                                                            |
+| `MONTHLY_REPORT_DAY`             | Day-of-month the monthly report runs — default `1` (reports the previous calendar month)                                                                                                                     |
 
 ## Production Deployment
 
@@ -103,16 +103,15 @@ src/
 │   ├── renewalService.js     # Grace period processor (every 12h)
 │   ├── autoPublishService.js # Auto-publish scheduler (every 15min)
 │   ├── dailyReminderService.js # Daily "time to listen" in-app reminder (every 15min)
+│   ├── subscribeReminderService.js # Re-engagement reminders for recently lapsed subscribers (every 12h)
 │   ├── reconciliationService.js # Daily (midnight) + monthly (1st) payment CSV → finance email
+│   ├── verificationService.js # Email verification code creation and validation
 │   ├── emailService.js       # Shared Brevo transactional email sender
 │   └── audioStorageService.js# Multer config for audio uploads
 │
 └── utils/
     ├── helpers.js            # Reference generation, date helpers
     └── audioAccessControl.js # Signed-URL signing/verification
-
-tests/
-├── (removed)
 
 prisma/
 ├── schema.prisma             # Database schema (8 models)
@@ -122,102 +121,108 @@ prisma/
 
 ## Database Models
 
-| Model | Purpose |
-|---|---|
-| **User** | Users with email/phone, password hash, role (user/admin), password-reset token fields |
-| **Subscription** | Plans (weekly/monthly) with status lifecycle + Paystack recurring codes (`paystackSubscriptionCode`, `paystackPlanCode`)
-| **Payment** | Paystack payment records with references |
-| **Episode** | Audio episodes with day type, show notes, publish date |
-| **ListenLog** | Tracks which episodes users have listened to |
-| **Notification** | In-app notifications with channel info + `subscribersOnly` flag |
-| **NotificationRead** | Per-user read tracking for notifications |
-| **Setting** | Key-value app configuration (pricing, scheduling, labels) |
+| Model                | Purpose                                                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **User**             | Users with email/phone, password hash, role (user/admin), password-reset token fields                                    |
+| **Subscription**     | Plans (weekly/monthly) with status lifecycle + Paystack recurring codes (`paystackSubscriptionCode`, `paystackPlanCode`) |
+| **Payment**          | Paystack payment records with references                                                                                 |
+| **Episode**          | Audio episodes with day type, show notes, publish date                                                                   |
+| **ListenLog**        | Tracks which episodes users have listened to                                                                             |
+| **Notification**     | In-app notifications with channel info + `subscribersOnly` flag                                                          |
+| **NotificationRead** | Per-user read tracking for notifications                                                                                 |
+| **Setting**          | Key-value app configuration (pricing, scheduling, labels)                                                                |
 
 ## API Routes
 
 ### Authentication
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/api/auth/register` | No | Create account, returns JWT |
-| POST | `/api/auth/login` | No | Login, returns JWT |
-| POST | `/api/auth/forgot-password` | No | Email a one-time password-reset code (no account enumeration) |
-| POST | `/api/auth/reset-password` | No | Set a new password with a valid reset code |
+| Method | Path                            | Auth | Description                                                   |
+| ------ | ------------------------------- | ---- | ------------------------------------------------------------- |
+| POST   | `/api/auth/register`            | No   | Create account, returns JWT                                   |
+| POST   | `/api/auth/login`               | No   | Login, returns JWT                                            |
+| POST   | `/api/auth/forgot-password`     | No   | Email a one-time password-reset code (no account enumeration) |
+| POST   | `/api/auth/reset-password`      | No   | Set a new password with a valid reset code                    |
+| POST   | `/api/auth/verify-email`        | No   | Verify an email with a 6-digit code                           |
+| POST   | `/api/auth/resend-verification` | No   | Send a new email-verification code                            |
 
 ### Episodes
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/api/episodes` | No | List published episodes |
-| GET | `/api/episodes/today` | No | Today's episode |
-| GET | `/api/episodes/:id` | No | Single episode |
-| GET | `/api/episodes/library` | Yes | User's listened episodes |
-| POST | `/api/episodes/:id/listen` | Yes | Log listen event |
+| Method | Path                       | Auth | Description              |
+| ------ | -------------------------- | ---- | ------------------------ |
+| GET    | `/api/episodes`            | No   | List published episodes  |
+| GET    | `/api/episodes/today`      | No   | Today's episode          |
+| GET    | `/api/episodes/:id`        | No   | Single episode           |
+| GET    | `/api/episodes/library`    | Yes  | User's listened episodes |
+| POST   | `/api/episodes/:id/listen` | Yes  | Log listen event         |
 
 ### Subscriptions
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/api/subscriptions/mine` | Yes | Current user's subscription |
-| GET | `/api/subscriptions/mine/status` | Yes | Lightweight status check |
-| POST | `/api/subscriptions` | Yes | Create new subscription |
-| PATCH | `/api/subscriptions/:id` | Yes | Pause / resume / cancel |
-| PATCH | `/api/subscriptions/:id/auto-renew` | Yes | Toggle automatic card renewal |
+| Method | Path                                | Auth | Description                   |
+| ------ | ----------------------------------- | ---- | ----------------------------- |
+| GET    | `/api/subscriptions/mine`           | Yes  | Current user's subscription   |
+| GET    | `/api/subscriptions/mine/status`    | Yes  | Lightweight status check      |
+| POST   | `/api/subscriptions`                | Yes  | Create new subscription       |
+| PATCH  | `/api/subscriptions/:id`            | Yes  | Pause / resume / cancel       |
+| PATCH  | `/api/subscriptions/:id/auto-renew` | Yes  | Toggle automatic card renewal |
 
 ### Payments
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/api/payments/initialize` | Yes | Start Paystack transaction |
-| POST | `/api/payments/verify` | Yes | Verify payment by reference |
-| GET | `/api/payments/callback` | No | Paystack redirect callback |
-| POST | `/api/payments/webhook` | No | Paystack webhook |
+| Method | Path                       | Auth | Description                 |
+| ------ | -------------------------- | ---- | --------------------------- |
+| POST   | `/api/payments/initialize` | Yes  | Start Paystack transaction  |
+| POST   | `/api/payments/verify`     | Yes  | Verify payment by reference |
+| GET    | `/api/payments/callback`   | No   | Paystack redirect callback  |
+| POST   | `/api/payments/webhook`    | No   | Paystack webhook            |
 
 ### Notifications
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/api/notifications/latest` | Yes | User's notifications (last 20) |
-| POST | `/api/notifications/:id/read` | Yes | Mark notification as read |
+| Method | Path                          | Auth | Description                    |
+| ------ | ----------------------------- | ---- | ------------------------------ |
+| GET    | `/api/notifications/latest`   | Yes  | User's notifications (last 20) |
+| POST   | `/api/notifications/:id/read` | Yes  | Mark notification as read      |
 
 ### Admin (`/api/admin`) — all require admin role
 
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/admin/stats` | Dashboard metrics + growth chart |
-| GET | `/api/admin/settings` | Get all settings |
-| PUT | `/api/admin/settings` | Update settings |
-| GET | `/api/admin/users` | List users (search + filter) |
-| GET | `/api/admin/users/:id` | User detail |
-| DELETE | `/api/admin/users/:id` | Delete user |
-| POST | `/api/admin/users/:id/override` | Force cancel subscription |
-| GET | `/api/admin/episodes` | List all episodes |
-| POST | `/api/admin/episodes` | Create episode (with audio upload) |
-| PUT | `/api/admin/episodes/:id` | Update episode |
-| POST | `/api/admin/episodes/:id/publish` | Publish episode |
-| DELETE | `/api/admin/episodes/:id` | Delete episode |
-| GET | `/api/admin/subscriptions` | List all subscriptions |
-| GET | `/api/admin/subscriptions/revenue` | Payment history |
-| POST | `/api/admin/subscriptions/send-reminder` | Send payment reminders |
-| GET | `/api/admin/notifications` | List notifications |
-| POST | `/api/admin/notifications` | Create notification |
-| POST | `/api/admin/notifications/test` | Preview notification |
-| DELETE | `/api/admin/notifications/:id` | Delete notification |
-| DELETE | `/api/admin/notifications` | Clear all notifications |
-| GET | `/api/admin/audio-files` | Browse uploaded audio files |
-| GET | `/api/admin/reports/utm` | UTM attribution funnel (registered → paid → active by source) |
-| GET | `/api/admin/payments/export?days=1` | CSV of successful payments (or `?from=ISO&to=ISO`) |
+| Method | Path                                     | Description                                                   |
+| ------ | ---------------------------------------- | ------------------------------------------------------------- |
+| GET    | `/api/admin/stats`                       | Dashboard metrics + growth chart                              |
+| GET    | `/api/admin/settings`                    | Get all settings                                              |
+| PUT    | `/api/admin/settings`                    | Update settings                                               |
+| GET    | `/api/admin/users`                       | List users (search + filter)                                  |
+| GET    | `/api/admin/users/:id`                   | User detail                                                   |
+| DELETE | `/api/admin/users/:id`                   | Delete user                                                   |
+| POST   | `/api/admin/users/:id/override`          | Force cancel subscription                                     |
+| GET    | `/api/admin/episodes`                    | List all episodes                                             |
+| POST   | `/api/admin/episodes`                    | Create episode (with audio upload)                            |
+| POST   | `/api/admin/episodes/batch`              | Create multiple scheduled episodes                            |
+| PUT    | `/api/admin/episodes/:id`                | Update episode                                                |
+| POST   | `/api/admin/episodes/:id/publish`        | Publish episode                                               |
+| DELETE | `/api/admin/episodes/:id`                | Delete episode                                                |
+| POST   | `/api/admin/episodes/:id/stream`         | Get a signed stream URL for an episode                        |
+| GET    | `/api/admin/subscriptions`               | List all subscriptions                                        |
+| GET    | `/api/admin/subscriptions/revenue`       | Payment history                                               |
+| POST   | `/api/admin/subscriptions/send-reminder` | Send payment reminders                                        |
+| GET    | `/api/admin/notifications`               | List notifications                                            |
+| POST   | `/api/admin/notifications`               | Create notification                                           |
+| POST   | `/api/admin/notifications/test`          | Preview notification                                          |
+| DELETE | `/api/admin/notifications/:id`           | Delete notification                                           |
+| DELETE | `/api/admin/notifications`               | Clear all notifications                                       |
+| GET    | `/api/admin/audio-files`                 | Browse uploaded audio files                                   |
+| GET    | `/api/admin/reports/utm`                 | UTM attribution funnel (registered → paid → active by source) |
+| GET    | `/api/admin/payments/export?days=1`      | CSV of successful payments (or `?from=ISO&to=ISO`)            |
+| GET    | `/api/admin/audio-files`                 | List available uploaded audio files                           |
 
 ### Utility
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/api/health` | No | Health check |
-| GET | `/api/settings/pricing` | No | Public pricing info |
+| Method | Path                    | Auth | Description         |
+| ------ | ----------------------- | ---- | ------------------- |
+| GET    | `/api/health`           | No   | Health check        |
+| GET    | `/api/settings/pricing` | No   | Public pricing info |
 
 ## Background Services
 
 ### Renewal Processor
+
 - Runs every **12 hours**
 - Expires `active` subscriptions whose renewal date passed with `autoRenew: false` (no further charge attempted)
 - Handles `past_due` subscriptions with a configurable grace period (default 48h)
@@ -225,16 +230,19 @@ prisma/
 - Auto-cancels when grace period expires
 
 ### Auto-Publisher
+
 - Runs every **15 minutes**
 - Publishes episodes when their `publishDate` + configured release time (default 6:00 AM) has passed
 - Does **not** send notifications — subscribers get the daily reminder instead (below)
 
 ### Daily Listen Reminder
+
 - Runs every **15 minutes**, fires **once per day** (idempotent via the `lastDailyReminderDate` setting) at the same release time as the auto-publisher (default 6:00 AM)
 - Creates a single `subscribersOnly` in-app notification for active subscribers ("Time to Listen"), naming today's episode when one is published
 - Non-subscribers never see these — `GET /api/notifications/latest` filters them out
 
 ### Password Reset Emails
+
 - `POST /api/auth/forgot-password` emails a one-time 6-digit reset code via Brevo (needs `BREVO_API_KEY` + `BREVO_FROM_EMAIL`). Without Brevo keys the server logs the code instead and still returns success — so local dev works without setup.
 
 ## Subscription Lifecycle
