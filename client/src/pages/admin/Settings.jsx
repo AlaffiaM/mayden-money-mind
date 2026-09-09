@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import api from "../../services/api";
 import { Save, CreditCard, Clock, Tag } from "lucide-react";
 import AdminPageHeading from "../../components/admin/AdminPageHeading";
-import AdminCard from "../../components/admin/AdminCard";
 import Loader from "../../components/admin/Loader";
 import { useToast } from "../../components/admin/useToast";
 
@@ -57,7 +56,9 @@ export default function Settings() {
         setSettings(data);
         try {
           setDayLabels(JSON.parse(data.dayLabels || "{}"));
-        } catch {}
+        } catch (error) {
+          console.error("Unable to read saved day labels.", error);
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -74,7 +75,9 @@ export default function Settings() {
       setSettings(data);
       try {
         setDayLabels(JSON.parse(data.dayLabels || "{}"));
-      } catch {}
+      } catch (error) {
+        console.error("Unable to read returned day labels.", error);
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
