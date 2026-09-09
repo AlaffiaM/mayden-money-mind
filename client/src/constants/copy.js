@@ -3,7 +3,7 @@ export const LANDING = {
     headlineBold: "Master your money.",
     headlineLight: "Protect your peace.",
     subheadline:
-      "A premium, 2-minute daily audio series designed exclusively to help the Mayden woman conquer financial anxiety, build wealth-generating habits, and regulate her nervous system.",
+      "A premium, 2-minute daily audio series designed for women in the Mayden community to ease financial anxiety, build wealth-generating habits, and regulate the nervous system.",
     ctaPlay: "▶ Play a Sample",
     trust: [
       { icon: "Lock", text: "Secured by Mayden Microfinance Bank" },
@@ -24,7 +24,7 @@ export const LANDING = {
     body: `You manage the business, the family, and the future. But the stress of carrying it all lives in your body. Financial anxiety drives burnout, and burnout leads to poor financial decisions. "Money & Mind" bridges the gap between your bank balance and your mental health. No long podcasts. No overwhelming financial jargon. Just two minutes of clarity, delivered to your phone every morning.`,
   },
   audio: {
-    headline: "Press Play on Your Peace of Mind.",
+    headline: "Press play for peace of mind.",
     title: "Motivation Monday — Vision Setting",
     subtitle: "Motivation Monday — 60 sec",
     caption: "Listen to a sample episode: 'Motivation Monday — Vision Setting'",
@@ -66,12 +66,12 @@ export const LANDING = {
   },
   pricing: {
     headline: "Invest in Your Mind for Less Than the Cost of a Data Bundle.",
-    note: "Auto-deducted seamlessly from your Mayden account. Cancel anytime.",
+    note: "Your subscription is deducted automatically from your Mayden account. Cancel anytime.",
     cta: "Activate My Subscription",
     trust: "Secure, one-click billing integrated directly with Mayden Microfinance Bank.",
     included: [
       "Daily 2-minute audio delivered every morning",
-      "Somatic exercises & breathing techniques",
+      "Somatic exercises and breathing techniques",
       "Real stories from real women",
       "Cancel anytime, no hidden fees",
     ],
@@ -81,7 +81,7 @@ export const LANDING = {
     items: [
       {
         question: "How does the auto-deduction work?",
-        answer: "Your subscription is securely deducted from your Mayden account using one-click billing. No card details needed.",
+        answer: "Your subscription is securely deducted from your Mayden account using one-click billing. Card details are only required if you choose card payments.",
       },
       {
         question: "Can I switch from weekly to monthly?",
