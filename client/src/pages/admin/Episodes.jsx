@@ -132,7 +132,7 @@ function RichTextEditor({ value, onChange }) {
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           className={`px-2 py-1 text-xs rounded ${editor.isActive("bulletList") ? "bg-mayden-magenta text-white" : "text-gray-600 hover:bg-gray-200"}`}
         >
-          â€¢ List
+          • List
         </button>
         <button
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
