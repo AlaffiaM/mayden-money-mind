@@ -33,7 +33,11 @@ function EqBars() {
   return (
     <div className="flex h-4 items-end gap-[3px]">
       {heights.map((h, i) => (
-        <span key={i} className="eq-bar w-[3px] rounded-full bg-mayden-magenta" style={{ height: h }} />
+        <span
+          key={i}
+          className="eq-bar w-[3px] rounded-full bg-mayden-magenta"
+          style={{ height: h }}
+        />
       ))}
     </div>
   );
@@ -45,18 +49,20 @@ export default function Library() {
   const { episode: activeEp, playing, playEpisode, toggle } = usePlayer();
 
   useEffect(() => {
-    api.get("/episodes/my-library").then(({ data }) => setEpisodes(data)).catch(() => {});
+    api
+      .get("/episodes/my-library")
+      .then(({ data }) => setEpisodes(data))
+      .catch(() => {});
   }, []);
 
   const dayTypes = ["monday", "tuesday", "wednesday", "thursday", "friday"];
   const isDayType = dayTypes.includes(search.toLowerCase());
 
-  const filtered = episodes.filter(
-    (ep) =>
-      isDayType
-        ? ep.dayType?.toLowerCase() === search.toLowerCase()
-        : ep.title?.toLowerCase().includes(search.toLowerCase()) ||
-          ep.showNotes?.toLowerCase().includes(search.toLowerCase())
+  const filtered = episodes.filter((ep) =>
+    isDayType
+      ? ep.dayType?.toLowerCase() === search.toLowerCase()
+      : ep.title?.toLowerCase().includes(search.toLowerCase()) ||
+        ep.showNotes?.toLowerCase().includes(search.toLowerCase()),
   );
 
   const formatDate = (iso) => {
@@ -79,7 +85,9 @@ export default function Library() {
   return (
     <SubscriberLayout>
       <div className="mb-6">
-        <h1 className="mb-2 text-2xl font-serif font-bold text-mayden-dark lg:text-3xl">My Library</h1>
+        <h1 className="mb-2 text-2xl font-serif font-bold text-mayden-dark lg:text-3xl">
+          My Library
+        </h1>
         <p className="mb-4 text-sm text-gray-500">
           Episodes you've listened to. Your library stays with you even if your
           subscription lapses — renew to play again.
@@ -88,7 +96,9 @@ export default function Library() {
           {moodTags.map((tag) => (
             <button
               key={tag.label}
-              onClick={() => setSearch((s) => (s === tag.query ? "" : tag.query))}
+              onClick={() =>
+                setSearch((s) => (s === tag.query ? "" : tag.query))
+              }
               className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
                 search === tag.query
                   ? "bg-mayden-magenta text-white border-mayden-magenta"
@@ -100,7 +110,10 @@ export default function Library() {
           ))}
         </div>
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             placeholder="Search your library..."
@@ -136,13 +149,21 @@ export default function Library() {
                     </span>
                     {isPlaying && <EqBars />}
                     {isActive && !isPlaying && (
-                      <span className="text-xs font-medium text-mayden-magenta">Paused</span>
+                      <span className="text-xs font-medium text-mayden-magenta">
+                        Paused
+                      </span>
                     )}
                   </div>
-                  <h3 className="mb-1 text-base font-semibold text-mayden-dark">{ep.title}</h3>
-                  <p className="text-sm text-gray-500 line-clamp-2">{ep.showNotes}</p>
+                  <h3 className="mb-1 text-base font-semibold text-mayden-dark">
+                    {ep.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 line-clamp-2">
+                    {ep.showNotes}
+                  </p>
                   {ep.lastListened && (
-                    <p className="mt-1 text-xs text-gray-400">Last listened: {formatDate(ep.lastListened)}</p>
+                    <p className="mt-1 text-xs text-gray-400">
+                      Last listened: {formatDate(ep.lastListened)}
+                    </p>
                   )}
                   {!canPlay(ep) && (
                     <p className="mt-1 text-xs text-gray-400">
@@ -160,7 +181,11 @@ export default function Library() {
                       : "cursor-not-allowed bg-gray-200 text-gray-400"
                   }`}
                 >
-                  {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
+                  {isPlaying ? (
+                    <Pause size={20} />
+                  ) : (
+                    <Play size={20} className="ml-0.5" />
+                  )}
                 </button>
               </div>
             </div>
