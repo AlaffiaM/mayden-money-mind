@@ -15,23 +15,7 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (res) => res,
-  (err) => {
-    const fullUrl = `${err.config?.baseURL || ""}${err.config?.url || ""}`;
-    const method = (err.config?.method || "?").toUpperCase();
-    const status = err.response?.status;
-
-    window.dispatchEvent(
-      new CustomEvent("api:error", {
-        detail: {
-          method,
-          url: fullUrl,
-          status: status || null,
-          message: err.response?.data?.error || err.message,
-        },
-      })
-    );
-    return Promise.reject(err);
-  }
+  (err) => Promise.reject(err),
 );
 
 export default api;
