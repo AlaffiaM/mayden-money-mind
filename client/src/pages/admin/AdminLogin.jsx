@@ -25,21 +25,30 @@ export default function AdminLogin() {
       subtitle="Sign in with an administrator account"
       footer={
         <span className="flex items-center justify-center gap-1.5">
-          <Shield size={12} /> Admin access only. Contact the system administrator if you need access.
+          <Shield size={12} /> Admin access only. Contact the system
+          administrator if you need access.
         </span>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="rounded-xl border border-red-100 bg-red-50 p-3 text-center text-sm text-red-600">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-center text-sm text-amber-700">
             {error}
           </div>
         )}
 
         <div>
-          <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-700">Email</label>
+          <label
+            htmlFor="email"
+            className="mb-1.5 block text-sm font-medium text-gray-700"
+          >
+            Email
+          </label>
           <div className="relative">
-            <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Mail
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               id="email"
               type="email"
