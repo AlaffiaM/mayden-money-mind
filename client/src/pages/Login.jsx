@@ -94,7 +94,7 @@ export default function Login() {
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-mayden-magenta py-3 text-sm font-semibold text-white transition-colors hover:bg-mayden-magenta/90 disabled:opacity-50"
         >
           {loading && <Loader2 size={16} className="animate-spin" />}
-          {loading ? "Signing in..." : "Sign In"}
+          {loading ? "Signing in…" : "Sign in"}
         </button>
       </form>
     </AuthLayout>
