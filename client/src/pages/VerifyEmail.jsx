@@ -21,7 +21,10 @@ export default function VerifyEmail() {
 
   useEffect(() => {
     if (status !== "success") return;
-    const id = setTimeout(() => navigate("/dashboard", { replace: true }), 1500);
+    const id = setTimeout(
+      () => navigate("/dashboard", { replace: true }),
+      1500,
+    );
     return () => clearTimeout(id);
   }, [status, navigate]);
 
@@ -80,7 +83,11 @@ export default function VerifyEmail() {
           />
         </label>
 
-        <VerifyCodeForm email={email} onSuccess={() => setStatus("success")} onError={() => setResendMsg("")} />
+        <VerifyCodeForm
+          email={email}
+          onSuccess={() => setStatus("success")}
+          onError={() => setResendMsg("")}
+        />
 
         <div className="border-t border-gray-100 pt-4">
           <button
@@ -91,12 +98,19 @@ export default function VerifyEmail() {
             <RefreshCw size={16} />
             Resend verification code
           </button>
-          {resendMsg && <p className="mt-3 text-center text-sm text-gray-600">{resendMsg}</p>}
+          {resendMsg && (
+            <p className="mt-3 text-center text-sm text-gray-600">
+              {resendMsg}
+            </p>
+          )}
         </div>
 
         <p className="text-center text-sm text-gray-500">
           No account yet?{" "}
-          <Link to="/register" className="text-mayden-magenta font-semibold hover:underline">
+          <Link
+            to="/register"
+            className="text-mayden-magenta font-semibold hover:underline"
+          >
             Register
           </Link>
         </p>
