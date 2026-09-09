@@ -16,7 +16,7 @@ import AdminStatCard from "../../components/admin/AdminStatCard";
 import AdminCard from "../../components/admin/AdminCard";
 import AdminTable from "../../components/admin/AdminTable";
 import Loader from "../../components/admin/Loader";
-import { useToast } from "../../components/admin/useToast";
+import { useToast } from "../../components/admin/useToast.js";
 
 function MiniLineChart({ data, color = "#EC268F", height = 60 }) {
   if (!data || data.length === 0) return null;
