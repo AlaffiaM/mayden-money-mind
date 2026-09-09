@@ -242,7 +242,9 @@ function WeekCalendar({ episodes, weekOffset, onPublish }) {
               )}
             </div>
           ) : (
-            <p className="mt-6 text-center text-xs text-gray-400">No episode scheduled</p>
+            <p className="mt-6 text-center text-xs text-gray-400">
+              No episode scheduled
+            </p>
           )}
         </div>
       ))}
@@ -767,8 +769,12 @@ export default function Episodes() {
           if (weeks.length === 0) {
             return (
               <div className="rounded-2xl border border-dashed border-gray-200 bg-white py-12 text-center">
-                <p className="text-lg font-medium text-mayden-dark">No episodes scheduled yet</p>
-                <p className="mt-2 text-sm text-gray-500">Create your first release to start building the week.</p>
+                <p className="text-lg font-medium text-mayden-dark">
+                  No episodes scheduled yet
+                </p>
+                <p className="mt-2 text-sm text-gray-500">
+                  Create your first release to start building the week.
+                </p>
               </div>
             );
           }
@@ -830,7 +836,7 @@ export default function Episodes() {
                   <span className="text-[10px] text-gray-400">
                     {weekSelected > 0
                       ? `${weekSelected}/${weekTotal} selected`
-                      : `${weekTotal} eps`}
+                      : `${weekTotal} episodes`}
                   </span>
                 </div>
                 <div className="divide-y divide-gray-50">
@@ -948,7 +954,7 @@ export default function Episodes() {
                 <p className="text-xs text-gray-400 mt-0.5">
                   {editingEp
                     ? "Update episode details"
-                    : "Pick a day type — episodes are created for every week the day has audio"}
+                    : "Choose a weekday. An episode will be scheduled for each week with an available audio file."}
                 </p>
               </div>
               <button
@@ -990,12 +996,12 @@ export default function Episodes() {
                     ))}
                   </select>
                   <p className="text-[10px] text-gray-400 mt-1">
-                    Pillar: {currentDayPillar}
+                    Theme: {currentDayPillar}
                   </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Runtime
+                    Duration
                   </label>
                   <div className="flex items-center gap-2">
                     <input
@@ -1042,11 +1048,12 @@ export default function Episodes() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Audio — {currentDayPillar} ({form.dayType})
+                  Audio for {currentDayPillar}
                 </label>
                 {currentDayFiles.length === 0 ? (
                   <p className="text-xs text-gray-500 py-3">
-                    No audio files are available for this day yet. Upload a file to begin.
+                    No audio files are available for this day yet. Upload a file
+                    to begin.
                   </p>
                 ) : (
                   <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-48 overflow-y-auto">
