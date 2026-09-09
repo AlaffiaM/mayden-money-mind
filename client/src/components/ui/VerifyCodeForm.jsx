@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { Loader2 } from "lucide-react";
 
@@ -54,14 +54,7 @@ export default function VerifyCodeForm({ email, onSuccess, onError }) {
     focusIndex(Math.min(startIdx + text.length, 5));
   };
 
-  useEffect(() => {
-    if (complete && !loading && !workingRef.current) {
-      const id = setTimeout(() => submit(), 300);
-      return () => clearTimeout(id);
-    }
-  }, [complete, code]);
-
-  const submit = async () => {
+  const submit = useCallback(async () => {
     if (!complete || loading || workingRef.current) return;
     workingRef.current = true;
     setError("");
@@ -69,14 +62,24 @@ export default function VerifyCodeForm({ email, onSuccess, onError }) {
       const data = await verifyEmail(email, code);
       onSuccess?.(data);
     } catch (err) {
-      setError(err.response?.data?.error || "Couldn't verify that code. Please try again.");
+      setError(
+        err.response?.data?.error ||
+          "Couldn't verify that code. Please try again.",
+      );
       onError?.(err);
       setDigits(DIGITS.map(() => ""));
       focusIndex(0);
     } finally {
       workingRef.current = false;
     }
-  };
+  }, [complete, email, loading, code, verifyEmail, onSuccess, onError]);
+
+  useEffect(() => {
+    if (complete && !loading && !workingRef.current) {
+      const id = setTimeout(() => submit(), 300);
+      return () => clearTimeout(id);
+    }
+  }, [complete, loading, submit]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -104,7 +107,9 @@ export default function VerifyCodeForm({ email, onSuccess, onError }) {
         ))}
       </div>
 
-      {error && <p className="mt-3 text-center text-sm text-red-600">{error}</p>}
+      {error && (
+        <p className="mt-3 text-center text-sm text-red-600">{error}</p>
+      )}
 
       <button
         type="submit"
