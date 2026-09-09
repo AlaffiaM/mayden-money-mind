@@ -1,8 +1,7 @@
-import { createContext, useContext, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
-
-const AuthContext = createContext(null);
+import { AuthContext } from "./authContext";
 
 export function AuthProvider({ children }) {
 
@@ -94,4 +93,3 @@ export function AuthProvider({ children }) {
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
