@@ -28,7 +28,7 @@ import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import Loader from "../../components/admin/Loader";
 import ConfirmModal from "../../components/admin/ConfirmModal";
 import StatusBadge from "../../components/admin/StatusBadge";
-import { useToast } from "../../components/admin/useToast";
+import { useToast } from "../../components/admin/useToast.js";
 
 const DAY_TYPES = [
   {
