@@ -9,7 +9,7 @@ const formatTime = (s) => {
 };
 
 export default function NowPlayingBar() {
-  const { episode, playing, current, duration, error, loading, toggle, seek, close } = usePlayer();
+  const { episode, playing, current, duration, loading, toggle, seek, close } = usePlayer();
 
   if (!episode) return null;
 
@@ -66,7 +66,6 @@ export default function NowPlayingBar() {
                 {formatTime(duration)}
               </span>
             </div>
-            {error && <p className="mt-1 text-[10px] text-red-500">{error}</p>}
           </div>
 
           <button
