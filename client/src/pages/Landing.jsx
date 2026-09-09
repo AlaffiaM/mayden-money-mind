@@ -9,7 +9,6 @@ import {
   Shield,
   Clock,
   ArrowRight,
-  Send,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import LogoLockup from "../components/ui/LogoLockup";
@@ -269,24 +268,17 @@ export default function Landing() {
 
       <footer className="bg-gray-50 border-t border-gray-200 px-4 pt-12 pb-8 mt-0">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-sm font-semibold text-mayden-dark mb-3">
+          <div className="mb-10 text-center">
+            <p className="mb-3 text-sm font-semibold text-mayden-dark">
               {LANDING.footer.newsletter.headline}
             </p>
-            <form
-              className="flex max-w-md mx-auto gap-2"
-              onSubmit={(e) => e.preventDefault()}
+            <Button
+              onClick={handleSubscribe}
+              pill
+              className="px-7 py-2.5 text-sm lg:px-8 lg:py-3 lg:text-base"
             >
-              <input
-                type="email"
-                placeholder={LANDING.footer.newsletter.placeholder}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20 focus:border-mayden-magenta"
-              />
-              <button className="px-5 py-2.5 bg-mayden-magenta text-white rounded-xl text-sm font-semibold hover:bg-mayden-magenta/90 transition-colors flex items-center gap-1.5">
-                <Send size={14} />
-                {LANDING.footer.newsletter.cta}
-              </button>
-            </form>
+              {LANDING.footer.newsletter.cta}
+            </Button>
           </div>
 
           <p className="text-xs text-gray-400 text-center mb-8">
