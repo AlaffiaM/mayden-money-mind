@@ -16,7 +16,10 @@ function validate(form) {
   if (!EMAIL_RE.test(form.email.trim())) {
     errors.email = "A valid email is required";
   }
-  if (form.phone.trim() && (form.phone.trim().length < 7 || form.phone.trim().length > 20)) {
+  if (
+    form.phone.trim() &&
+    (form.phone.trim().length < 7 || form.phone.trim().length > 20)
+  ) {
     errors.phone = "Enter a valid phone number";
   }
   if (form.password.length < 8) {
@@ -60,7 +63,8 @@ export default function Register() {
   const [serverError, setServerError] = useState("");
 
   const setField = (field) => (e) => {
-    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    const value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
     setForm((f) => ({ ...f, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
@@ -78,17 +82,19 @@ export default function Register() {
         form.email.trim().toLowerCase(),
         form.phone.trim(),
         form.password,
-        getUtm()
+        getUtm(),
       );
     } catch (err) {
-      setServerError(err.response?.data?.error || "Registration failed. Please try again.");
+      setServerError(
+        err.response?.data?.error || "Registration failed. Please try again.",
+      );
     }
   };
 
   const strength = passwordStrength(form.password);
   const inputClass = (hasError) =>
     `w-full rounded-lg border py-2.5 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20 focus:border-mayden-magenta ${
-      hasError ? "border-red-400" : "border-gray-200"
+      hasError ? "border-amber-300" : "border-gray-200"
     }`;
 
   return (
@@ -98,7 +104,10 @@ export default function Register() {
       footer={
         <p>
           Already have an account?{" "}
-          <Link to="/login" className="text-mayden-magenta font-semibold hover:underline">
+          <Link
+            to="/login"
+            className="text-mayden-magenta font-semibold hover:underline"
+          >
             Sign in
           </Link>
         </p>
@@ -106,17 +115,23 @@ export default function Register() {
     >
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         {serverError && (
-          <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-center text-sm text-red-600">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-center text-sm text-amber-700">
             {serverError}
           </div>
         )}
 
         <div>
-          <label htmlFor="fullName" className="mb-1.5 block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="fullName"
+            className="mb-1.5 block text-sm font-medium text-gray-700"
+          >
             Full Name
           </label>
           <div className="relative">
-            <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <User
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               id="fullName"
               type="text"
@@ -129,15 +144,23 @@ export default function Register() {
               placeholder="Your full name"
             />
           </div>
-          {errors.fullName && <p className="mt-1.5 text-xs text-red-600">{errors.fullName}</p>}
+          {errors.fullName && (
+            <p className="mt-1.5 text-xs text-amber-700">{errors.fullName}</p>
+          )}
         </div>
 
         <div>
-          <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="email"
+            className="mb-1.5 block text-sm font-medium text-gray-700"
+          >
             Email
           </label>
           <div className="relative">
-            <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Mail
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               id="email"
               type="email"
@@ -149,15 +172,23 @@ export default function Register() {
               placeholder="you@email.com"
             />
           </div>
-          {errors.email && <p className="mt-1.5 text-xs text-red-600">{errors.email}</p>}
+          {errors.email && (
+            <p className="mt-1.5 text-xs text-amber-700">{errors.email}</p>
+          )}
         </div>
 
         <div>
-          <label htmlFor="phone" className="mb-1.5 block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="phone"
+            className="mb-1.5 block text-sm font-medium text-gray-700"
+          >
             Phone (optional)
           </label>
           <div className="relative">
-            <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Phone
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               id="phone"
               type="tel"
@@ -168,7 +199,9 @@ export default function Register() {
               placeholder="080 1234 5678"
             />
           </div>
-          {errors.phone && <p className="mt-1.5 text-xs text-red-600">{errors.phone}</p>}
+          {errors.phone && (
+            <p className="mt-1.5 text-xs text-amber-700">{errors.phone}</p>
+          )}
         </div>
 
         <PasswordInput
@@ -223,13 +256,18 @@ export default function Register() {
                 Terms of Service
               </Link>{" "}
               and{" "}
-              <Link to="/privacy" className="text-mayden-magenta hover:underline">
+              <Link
+                to="/privacy"
+                className="text-mayden-magenta hover:underline"
+              >
                 Privacy Policy
               </Link>
             </span>
           </label>
           {errors.acceptedTerms && (
-            <p className="mt-1.5 text-xs text-red-600">{errors.acceptedTerms}</p>
+            <p className="mt-1.5 text-xs text-amber-700">
+              {errors.acceptedTerms}
+            </p>
           )}
         </div>
 
@@ -243,7 +281,8 @@ export default function Register() {
         </button>
 
         <p className="text-center text-xs text-gray-400">
-          We'll email you a 6-digit code to verify your account before you can start listening.
+          We'll email you a 6-digit code to verify your account before you can
+          start listening.
         </p>
       </form>
     </AuthLayout>
