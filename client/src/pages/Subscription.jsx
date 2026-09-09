@@ -14,12 +14,14 @@ import {
   RotateCcw,
 } from "lucide-react";
 import SubscriberLayout from "../components/layout/SubscriberLayout";
+import { useToast } from "../components/admin/useToast";
 
 export default function Subscription() {
   const navigate = useNavigate();
   const { subscription, loading, subscribe, update, setAutoRenew, refetch } =
     useSubscription();
   const { pricing } = usePricing();
+  const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlStatus = searchParams.get("status");
   const urlReference = searchParams.get("reference");
@@ -116,7 +118,7 @@ export default function Subscription() {
         navigate("/dashboard", { replace: true });
       }
     } catch {
-      alert("We couldn't complete your subscription. Please try again.");
+      toast("We couldn't complete your subscription. Please try again.", "error");
     }
   };
 
@@ -126,7 +128,7 @@ export default function Subscription() {
       await update(subscription.id, { status: "cancelled" });
       navigate("/subscription", { replace: true });
     } catch {
-      alert("We couldn't update your subscription. Please try again.");
+      toast("We couldn't update your subscription. Please try again.", "error");
     }
   };
 
@@ -151,7 +153,7 @@ export default function Subscription() {
         }
       }
     } catch {
-      alert("We couldn't update automatic renewal. Please try again.");
+      toast("We couldn't update automatic renewal. Please try again.", "error");
     }
   };
 
