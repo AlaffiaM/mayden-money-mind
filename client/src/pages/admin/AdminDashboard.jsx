@@ -1,7 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
-import { Users, CreditCard, TrendingDown, FileText, AlertCircle, Activity, Download, ArrowUpRight } from "lucide-react";
+import {
+  Users,
+  CreditCard,
+  TrendingDown,
+  FileText,
+  AlertCircle,
+  Activity,
+  Download,
+  ArrowUpRight,
+} from "lucide-react";
 import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import AdminStatCard from "../../components/admin/AdminStatCard";
 import AdminCard from "../../components/admin/AdminCard";
@@ -30,7 +39,11 @@ function MiniLineChart({ data, color = "#EC268F", height = 60 }) {
   ].join(" ");
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ height }}>
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="w-full"
+      style={{ height }}
+    >
       <defs>
         <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.3" />
@@ -38,17 +51,29 @@ function MiniLineChart({ data, color = "#EC268F", height = 60 }) {
         </linearGradient>
       </defs>
       <polygon points={areaPoints} fill="url(#chartGrad)" />
-      <polyline points={points.join(" ")} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <polyline
+        points={points.join(" ")}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 function TrendBadge({ value, suffix = "%" }) {
-  if (value === 0 || value === undefined || value === null) return <span className="text-xs text-gray-400">—</span>;
+  if (value === 0 || value === undefined || value === null)
+    return <span className="text-xs text-gray-400">—</span>;
   const positive = value > 0;
   return (
-    <span className={`inline-flex items-center gap-0.5 rounded-full bg-white/5 px-1.5 py-0.5 text-xs font-medium ${positive ? "text-emerald-600" : "text-red-500"}`}>
-      {positive ? "+" : ""}{value}{suffix}
+    <span
+      className={`inline-flex items-center gap-0.5 rounded-full bg-white/5 px-1.5 py-0.5 text-xs font-medium ${positive ? "text-emerald-600" : "text-red-500"}`}
+    >
+      {positive ? "+" : ""}
+      {value}
+      {suffix}
     </span>
   );
 }
@@ -62,10 +87,7 @@ export default function AdminDashboard() {
   const toast = useToast();
 
   useEffect(() => {
-    Promise.all([
-      api.get("/admin/stats"),
-      api.get("/admin/reports/utm"),
-    ])
+    Promise.all([api.get("/admin/stats"), api.get("/admin/reports/utm")])
       .then(([statsRes, utmRes]) => {
         setStats(statsRes.data);
         setUtmReport(utmRes.data);
@@ -77,7 +99,9 @@ export default function AdminDashboard() {
   const downloadCsv = async () => {
     setDownloading(true);
     try {
-      const res = await api.get("/admin/payments/export?days=1", { responseType: "blob" });
+      const res = await api.get("/admin/payments/export?days=1", {
+        responseType: "blob",
+      });
       const url = URL.createObjectURL(res.data);
       const a = document.createElement("a");
       a.href = url;
@@ -123,7 +147,9 @@ export default function AdminDashboard() {
       icon: stats.todayEpisode ? FileText : AlertCircle,
       accent: stats.todayEpisode ? "text-blue-600" : "text-mayden-magenta",
       sub: stats.todayEpisode ? (
-        <span className="text-xs text-gray-400 capitalize">{stats.todayEpisode.status}</span>
+        <span className="text-xs text-gray-400 capitalize">
+          {stats.todayEpisode.status}
+        </span>
       ) : (
         <span className="text-xs text-gray-500">No episode scheduled yet</span>
       ),
@@ -134,7 +160,7 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       <AdminPageHeading
         title="Dashboard"
-        subtitle="A pulse on revenue, subscribers and growth."
+        subtitle="An overview of revenue, subscribers, and growth."
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -158,29 +184,49 @@ export default function AdminDashboard() {
           <div>
             <div className="mb-2 flex items-end justify-between text-xs text-gray-400">
               <span>{stats.subscriberGrowth[0]?.date}</span>
-              <span>{stats.subscriberGrowth[stats.subscriberGrowth.length - 1]?.date}</span>
+              <span>
+                {
+                  stats.subscriberGrowth[stats.subscriberGrowth.length - 1]
+                    ?.date
+                }
+              </span>
             </div>
             <MiniLineChart data={stats.subscriberGrowth} height={120} />
             <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
-              <span>Min: {Math.min(...stats.subscriberGrowth.map((d) => d.count))}</span>
-              <span>Max: {Math.max(...stats.subscriberGrowth.map((d) => d.count))}</span>
-              <span>Total: {stats.subscriberGrowth.reduce((s, d) => s + d.count, 0)}</span>
+              <span>
+                Min: {Math.min(...stats.subscriberGrowth.map((d) => d.count))}
+              </span>
+              <span>
+                Max: {Math.max(...stats.subscriberGrowth.map((d) => d.count))}
+              </span>
+              <span>
+                Total: {stats.subscriberGrowth.reduce((s, d) => s + d.count, 0)}
+              </span>
             </div>
           </div>
         ) : (
-          <p className="py-8 text-center text-sm text-gray-500">No subscriber data yet</p>
+          <p className="py-8 text-center text-sm text-gray-500">
+            No subscriber data yet
+          </p>
         )}
       </AdminCard>
 
       <AdminCard
-        title="Reconciliation & UTM"
-        actions={<button onClick={downloadCsv} disabled={downloading} className="inline-flex items-center gap-2 rounded-full bg-mayden-magenta px-4 py-2 text-sm font-medium text-white shadow-md shadow-mayden-magenta/20 transition-colors hover:bg-mayden-magenta/90 disabled:opacity-50">
-          <Download size={15} />
-          {downloading ? "Downloading…" : "Download CSV (last 24h)"}
-        </button>}
+        title="Payment reconciliation and campaign tracking"
+        actions={
+          <button
+            onClick={downloadCsv}
+            disabled={downloading}
+            className="inline-flex items-center gap-2 rounded-full bg-mayden-magenta px-4 py-2 text-sm font-medium text-white shadow-md shadow-mayden-magenta/20 transition-colors hover:bg-mayden-magenta/90 disabled:opacity-50"
+          >
+            <Download size={15} />
+            {downloading ? "Downloading…" : "Download CSV (last 24h)"}
+          </button>
+        }
       >
         <p className="mb-4 text-xs text-gray-400">
-          Successful payments for finance reconciliation. Reports are also emailed automatically — daily at midnight and monthly on the 1st.
+          Successful payments for finance reconciliation. Reports are also
+          emailed automatically — daily at midnight and monthly on the 1st.
         </p>
 
         {utmReport?.sources?.length > 0 ? (
@@ -195,8 +241,12 @@ export default function AdminDashboard() {
           >
             {utmReport.sources.map((s) => (
               <tr key={`${s.utmSource}-${s.utmCampaign || ""}`}>
-                <td className="px-4 py-3 font-medium text-mayden-dark">{s.utmSource || "direct"}</td>
-                <td className="px-4 py-3 text-gray-500">{s.utmCampaign || "—"}</td>
+                <td className="px-4 py-3 font-medium text-mayden-dark">
+                  {s.utmSource || "direct"}
+                </td>
+                <td className="px-4 py-3 text-gray-500">
+                  {s.utmCampaign || "—"}
+                </td>
                 <td className="px-4 py-3 text-gray-500">{s.registered}</td>
                 <td className="px-4 py-3 text-gray-500">{s.paid}</td>
                 <td className="px-4 py-3 text-gray-500">{s.active}</td>
@@ -205,7 +255,8 @@ export default function AdminDashboard() {
           </AdminTable>
         ) : (
           <p className="py-6 text-center text-sm text-gray-400">
-            No UTM-attributed signups yet. Visitors coming from the Mayden site will appear here.
+            No campaign-attributed signups yet. Visitors coming from the Mayden site
+            will appear here.
           </p>
         )}
       </AdminCard>
@@ -217,9 +268,14 @@ export default function AdminDashboard() {
         >
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">Total Users</p>
-            <ArrowUpRight size={16} className="text-gray-300 transition-colors group-hover:text-mayden-magenta" />
+            <ArrowUpRight
+              size={16}
+              className="text-gray-300 transition-colors group-hover:text-mayden-magenta"
+            />
           </div>
-          <p className="mt-1 text-2xl font-bold text-mayden-dark">{stats.totalUsers}</p>
+          <p className="mt-1 text-2xl font-bold text-mayden-dark">
+            {stats.totalUsers}
+          </p>
         </button>
         <button
           onClick={() => navigate("/admin/episodes")}
@@ -227,9 +283,14 @@ export default function AdminDashboard() {
         >
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">Episodes Published</p>
-            <ArrowUpRight size={16} className="text-gray-300 transition-colors group-hover:text-mayden-magenta" />
+            <ArrowUpRight
+              size={16}
+              className="text-gray-300 transition-colors group-hover:text-mayden-magenta"
+            />
           </div>
-          <p className="mt-1 text-2xl font-bold text-mayden-dark">{stats.totalEpisodes}</p>
+          <p className="mt-1 text-2xl font-bold text-mayden-dark">
+            {stats.totalEpisodes}
+          </p>
         </button>
       </div>
     </div>
