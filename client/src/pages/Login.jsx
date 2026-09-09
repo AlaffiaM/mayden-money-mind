@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { Mail, Loader2 } from "lucide-react";
 import PasswordInput from "../components/ui/PasswordInput";
 import AuthLayout from "../components/ui/AuthLayout";
