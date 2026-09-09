@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import api from "../../services/api";
 import { LogOut, Library, Home, CreditCard, Bell, X } from "lucide-react";
 import LogoutButton from "../ui/LogoutButton";
