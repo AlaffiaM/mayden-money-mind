@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { CheckCircle2, RefreshCw } from "lucide-react";
 import VerifyCodeForm from "../components/ui/VerifyCodeForm";
 import AuthLayout from "../components/ui/AuthLayout";
