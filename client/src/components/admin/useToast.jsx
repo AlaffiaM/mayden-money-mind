@@ -37,14 +37,14 @@ export function ToastProvider({ children }) {
               type === "success"
                 ? "border-emerald-200"
                 : type === "error"
-                ? "border-red-200"
+                ? "border-amber-200"
                 : "border-gray-200"
             }`}
           >
             {type === "success" ? (
               <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-600" />
             ) : type === "error" ? (
-              <XCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
+              <XCircle size={18} className="mt-0.5 flex-shrink-0 text-amber-600" />
             ) : (
               <Info size={18} className="mt-0.5 flex-shrink-0 text-gray-400" />
             )}
