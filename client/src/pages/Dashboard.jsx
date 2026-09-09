@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { useSubscription } from "../hooks/useSubscription";
-import { usePlayer } from "../context/PlayerContext";
+import { usePlayer } from "../context/usePlayer";
 import api from "../services/api";
 import AudioPlayer from "../components/ui/AudioPlayer";
 import Carousel from "../components/ui/Carousel";
