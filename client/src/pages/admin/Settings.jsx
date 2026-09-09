@@ -3,7 +3,7 @@ import api from "../../services/api";
 import { Save, CreditCard, Clock, Tag } from "lucide-react";
 import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import Loader from "../../components/admin/Loader";
-import { useToast } from "../../components/admin/useToast";
+import { useToast } from "../../components/admin/useToast.js";
 
 const DEFAULT_DAY_LABELS = {
   monday: "Motivation Mondays",
