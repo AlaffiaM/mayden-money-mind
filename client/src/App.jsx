@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { PlayerProvider } from "./context/PlayerContext";
 import { captureUtm } from "./utils/utm";
@@ -23,7 +29,6 @@ import AdminNotifications from "./pages/admin/Notifications";
 import AdminSettings from "./pages/admin/Settings";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminLayout from "./components/layout/AdminLayout";
-import ErrorBanner from "./components/ui/ErrorBanner";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Support from "./pages/Support";
@@ -45,7 +50,8 @@ function SubscriberRoute({ children }) {
       setHasAccess(false);
       return;
     }
-    api.get("/subscriptions/mine")
+    api
+      .get("/subscriptions/mine")
       .then(({ data }) => setHasAccess(data?.status === "active"))
       .catch((err) => {
         if (err.response?.status === 401) logout();
@@ -56,7 +62,8 @@ function SubscriberRoute({ children }) {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (user.role !== "admin" && !user.emailVerified) return <Navigate to="/verify-email-sent" replace />;
+  if (user.role !== "admin" && !user.emailVerified)
+    return <Navigate to="/verify-email-sent" replace />;
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -71,7 +78,8 @@ function SubscriberRoute({ children }) {
 function VerifiedRoute({ children }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== "admin" && !user.emailVerified) return <Navigate to="/verify-email-sent" replace />;
+  if (user.role !== "admin" && !user.emailVerified)
+    return <Navigate to="/verify-email-sent" replace />;
   return children;
 }
 
@@ -93,18 +101,88 @@ function AppRoutes() {
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/verify-email-sent" element={<VerifyEmailSent />} />
 
-      <Route path="/dashboard" element={<SubscriberRoute><Dashboard /></SubscriberRoute>} />
-      <Route path="/library" element={<VerifiedRoute><Library /></VerifiedRoute>} />
-      <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
+      <Route
+        path="/dashboard"
+        element={
+          <SubscriberRoute>
+            <Dashboard />
+          </SubscriberRoute>
+        }
+      />
+      <Route
+        path="/library"
+        element={
+          <VerifiedRoute>
+            <Library />
+          </VerifiedRoute>
+        }
+      />
+      <Route
+        path="/subscription"
+        element={
+          <ProtectedRoute>
+            <Subscription />
+          </ProtectedRoute>
+        }
+      />
 
       <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-      <Route path="/admin/episodes" element={<AdminRoute><AdminEpisodes /></AdminRoute>} />
-      <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-      <Route path="/admin/users/:id" element={<AdminRoute><AdminUserDetail /></AdminRoute>} />
-      <Route path="/admin/subscriptions" element={<AdminRoute><AdminSubscriptions /></AdminRoute>} />
-      <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
-      <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/episodes"
+        element={
+          <AdminRoute>
+            <AdminEpisodes />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <AdminRoute>
+            <AdminUsers />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/users/:id"
+        element={
+          <AdminRoute>
+            <AdminUserDetail />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/subscriptions"
+        element={
+          <AdminRoute>
+            <AdminSubscriptions />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/notifications"
+        element={
+          <AdminRoute>
+            <AdminNotifications />
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/admin/settings"
+        element={
+          <AdminRoute>
+            <AdminSettings />
+          </AdminRoute>
+        }
+      />
 
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
@@ -124,7 +202,6 @@ function NormalizedRoutes() {
 }
 
 export default function App() {
-
   useEffect(() => {
     captureUtm();
   }, []);
@@ -133,7 +210,6 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <PlayerProvider>
-          <ErrorBanner />
           <NormalizedRoutes />
         </PlayerProvider>
       </AuthProvider>
