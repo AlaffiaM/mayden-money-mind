@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -11,24 +11,24 @@ import { useAuth } from "./context/useAuth";
 import { PlayerProvider } from "./context/PlayerContext";
 import { captureUtm } from "./utils/utm";
 import api from "./services/api";
-import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import VerifyEmail from "./pages/VerifyEmail";
-import VerifyEmailSent from "./pages/VerifyEmailSent";
-import Dashboard from "./pages/Dashboard";
-import Library from "./pages/Library";
-import Subscription from "./pages/Subscription";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminEpisodes from "./pages/admin/Episodes";
-import AdminUsers from "./pages/admin/Users";
-import AdminUserDetail from "./pages/admin/UserDetail";
-import AdminSubscriptions from "./pages/admin/Subscriptions";
-import AdminNotifications from "./pages/admin/Notifications";
-import AdminSettings from "./pages/admin/Settings";
-import AdminLogin from "./pages/admin/AdminLogin";
+const Landing = lazy(() => import("./pages/Landing"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
+const VerifyEmailSent = lazy(() => import("./pages/VerifyEmailSent"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Library = lazy(() => import("./pages/Library"));
+const Subscription = lazy(() => import("./pages/Subscription"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminEpisodes = lazy(() => import("./pages/admin/Episodes"));
+const AdminUsers = lazy(() => import("./pages/admin/Users"));
+const AdminUserDetail = lazy(() => import("./pages/admin/UserDetail"));
+const AdminSubscriptions = lazy(() => import("./pages/admin/Subscriptions"));
+const AdminNotifications = lazy(() => import("./pages/admin/Notifications"));
+const AdminSettings = lazy(() => import("./pages/admin/Settings"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 import AdminLayout from "./components/layout/AdminLayout";
 import { ToastProvider } from "./components/admin/ToastProvider";
 import Terms from "./pages/Terms";
@@ -92,7 +92,14 @@ function AdminRoute({ children }) {
 
 function AppRoutes() {
   return (
-    <Routes>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-mayden-magenta border-t-transparent" />
+        </div>
+      }
+    >
+      <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -189,7 +196,8 @@ function AppRoutes() {
       <Route path="/support" element={<Support />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
 
