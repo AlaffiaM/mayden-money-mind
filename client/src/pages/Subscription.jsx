@@ -14,7 +14,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import SubscriberLayout from "../components/layout/SubscriberLayout";
-import { useToast } from "../components/admin/useToast";
+import { useToast } from "../components/admin/useToast.js";
 
 export default function Subscription() {
   const navigate = useNavigate();
@@ -74,7 +74,8 @@ export default function Subscription() {
 
   useEffect(() => {
     if (urlStatus === "success" && !urlReference) {
-      pollForActivation();
+      const activationTimer = setTimeout(pollForActivation, 0);
+      return () => clearTimeout(activationTimer);
     }
   }, [urlStatus, urlReference, pollForActivation]);
 
