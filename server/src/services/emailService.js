@@ -54,7 +54,7 @@ export function emailTemplate({ title, bodyHtml, footerText = "Money & Mind by M
           <tr>
             <td align="center" style="padding:22px 0 8px;font-size:11px;color:#a8a29b;line-height:1.8;">
               ${escapeHtml(footerText)}<br />
-              You're receiving this email because of your Money &amp; Mind account.<br />
+              You're receiving this email because you have a Money &amp; Mind account.<br />
               <span style="color:#c9c2b9;">© ${year} Mayden Microfinance Bank</span>
             </td>
           </tr>
@@ -103,7 +103,7 @@ export async function sendWelcomeEmail({ to, fullName, plan, nextRenewal }) {
 
   const bodyHtml = `
 <p>Hi ${escapeHtml(fullName)},</p>
-<p>Welcome to <strong>Money &amp; Mind</strong> — we're so glad you're here. You've just given yourself a daily two-minute ritual for calm, confident money.</p>
+<p>Welcome to <strong>Money &amp; Mind</strong> — we're so glad you're here. You've just given yourself a daily two-minute ritual to feel calmer and more confident about money.</p>
 <p>Your subscription is active:</p>
 <p style="text-align:center;background:#faf6ef;border:1px solid #ece7df;border-radius:10px;padding:12px 16px;"><strong>${escapeHtml(planLabel)}</strong><br/>Next renewal: ${escapeHtml(renewalDate)}</p>
 <p>Your daily audio is ready every morning.</p>
@@ -122,7 +122,7 @@ export async function sendAccountWelcomeEmail({ to, fullName }) {
   const bodyHtml = `
 <p>Hi ${escapeHtml(fullName)},</p>
 <p>You're in — your email is confirmed and your <strong>Money &amp; Mind</strong> account is ready.</p>
-<p>Every morning you'll get a short, calming two-minute audio to help you think clearly and act with confidence about your money — no jargon, no stress.</p>
+<p>Every morning, you'll get a short, calming two-minute audio to help you think clearly and act with confidence about your money — no jargon, no stress.</p>
 <p><strong>What's next:</strong></p>
 <ul style="margin:0 0 16px;padding-left:20px;">
   <li>Visit the dashboard to start listening</li>
@@ -176,7 +176,7 @@ export async function sendPasswordResetEmail({ to, fullName, code }) {
 <p>Hi ${escapeHtml(fullName)},</p>
 <p>We received a request to recover your <strong>Money &amp; Mind</strong> password. Use the code below to choose a new one:</p>
 ${codeBox(code)}
-<p style="font-size:13px;color:#8a8a8a;">If this wasn't you, you can safely ignore this email — your password stays as it is.</p>`;
+<p style="font-size:13px;color:#8a8a8a;">If you didn't request this email, you can safely ignore it — your password will remain unchanged.</p>`;
 
   return sendEmail({
     to,
