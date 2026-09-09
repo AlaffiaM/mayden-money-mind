@@ -98,7 +98,8 @@ export function PlayerProvider({ children }) {
             message =
               "This episode will be available on its scheduled release date.";
           } else {
-            message = "An active subscription is required to play this episode.";
+            message =
+              "An active subscription is required to play this episode.";
           }
         } else if (err?.response?.status === 404) {
           message = "This episode's audio is not available yet.";
