@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
-import { Users, CreditCard, FileText, TrendingUp, TrendingDown, Activity, AlertCircle, Download, BarChart3 } from "lucide-react";
+import { Users, CreditCard, TrendingDown, FileText, AlertCircle, Activity, Download, ArrowUpRight } from "lucide-react";
+import AdminPageHeading from "../../components/admin/AdminPageHeading";
+import AdminStatCard from "../../components/admin/AdminStatCard";
+import AdminCard from "../../components/admin/AdminCard";
+import AdminTable from "../../components/admin/AdminTable";
+import Loader from "../../components/admin/Loader";
+import { useToast } from "../../components/admin/useToast";
 
 function MiniLineChart({ data, color = "#EC268F", height = 60 }) {
   if (!data || data.length === 0) return null;
@@ -41,8 +47,7 @@ function TrendBadge({ value, suffix = "%" }) {
   if (value === 0 || value === undefined || value === null) return <span className="text-xs text-gray-400">—</span>;
   const positive = value > 0;
   return (
-    <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${positive ? "text-emerald-600" : "text-red-500"}`}>
-      {positive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+    <span className={`inline-flex items-center gap-0.5 rounded-full bg-white/5 px-1.5 py-0.5 text-xs font-medium ${positive ? "text-emerald-600" : "text-red-500"}`}>
       {positive ? "+" : ""}{value}{suffix}
     </span>
   );
@@ -54,6 +59,7 @@ export default function AdminDashboard() {
   const [downloading, setDownloading] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
     Promise.all([
@@ -78,23 +84,15 @@ export default function AdminDashboard() {
       a.download = `payments-last24h-${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
+      toast("Payment CSV downloaded.");
     } catch {
-      window.dispatchEvent(
-        new CustomEvent("api:error", { detail: { status: 500, message: "Failed to download CSV" } })
-      );
+      toast("Failed to download CSV.", "error");
     } finally {
       setDownloading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-mayden-magenta border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
+  if (loading) return <Loader label="Loading dashboard…" />;
   if (!stats) return <p className="text-gray-500">Failed to load dashboard.</p>;
 
   const cards = [
@@ -102,140 +100,136 @@ export default function AdminDashboard() {
       label: "Revenue This Month",
       value: `₦${(stats.revenue || 0).toLocaleString()}`,
       icon: CreditCard,
-      color: "bg-emerald-500",
-      trend: stats.revenueTrend,
+      accent: "text-emerald-600 bg-emerald-50",
+      sub: <TrendBadge value={stats.revenueTrend} />,
     },
     {
       label: "Active Subscribers",
       value: stats.activeSubscriptions || 0,
       icon: Users,
-      color: "bg-mayden-magenta",
-      trend: stats.subscriptionTrend,
+      accent: "text-mayden-magenta",
+      sub: <TrendBadge value={stats.subscriptionTrend} />,
     },
     {
       label: "Churn Rate",
       value: `${stats.churnRate || 0}%`,
       icon: TrendingDown,
-      color: "bg-amber-500",
+      accent: "text-amber-600",
+      sub: null,
     },
     {
       label: "Today's Episode",
       value: stats.todayEpisode ? stats.todayEpisode.title : "Missing",
-      sub: stats.todayEpisode ? stats.todayEpisode.status : "No episode published",
       icon: stats.todayEpisode ? FileText : AlertCircle,
-      color: stats.todayEpisode ? "bg-blue-500" : "bg-red-500",
+      accent: stats.todayEpisode ? "text-blue-600" : "text-red-500",
+      sub: stats.todayEpisode ? (
+        <span className="text-xs text-gray-400 capitalize">{stats.todayEpisode.status}</span>
+      ) : (
+        <span className="text-xs text-red-500">No episode published</span>
+      ),
     },
   ];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-mayden-dark">Dashboard</h1>
+      <AdminPageHeading
+        title="Dashboard"
+        subtitle="A pulse on revenue, subscribers and growth."
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => (
-          <div key={card.label} className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-            <div className="flex items-start justify-between mb-3">
-              <div className={`w-10 h-10 rounded-lg ${card.color} flex items-center justify-center`}>
-                <card.icon size={20} className="text-white" />
-              </div>
-              {card.trend !== undefined && <TrendBadge value={card.trend} />}
-            </div>
-            <p className="text-2xl font-bold text-mayden-dark truncate">{card.value}</p>
-            <p className="text-xs text-gray-500 mt-1">{card.label}</p>
-            {card.sub && <p className="text-xs text-gray-400 mt-0.5 capitalize">{card.sub}</p>}
-          </div>
+          <AdminStatCard
+            key={card.label}
+            icon={card.icon}
+            label={card.label}
+            value={card.value}
+            accent={card.accent}
+            sub={card.sub}
+          />
         ))}
       </div>
 
-      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-mayden-dark">Subscriber Growth (30 Days)</h2>
-          <Activity size={16} className="text-gray-400" />
-        </div>
+      <AdminCard
+        title="Subscriber Growth (30 Days)"
+        actions={<Activity size={16} className="text-gray-400" />}
+      >
         {stats.subscriberGrowth && stats.subscriberGrowth.length > 0 ? (
           <div>
-            <div className="flex items-end justify-between text-xs text-gray-400 mb-2">
+            <div className="mb-2 flex items-end justify-between text-xs text-gray-400">
               <span>{stats.subscriberGrowth[0]?.date}</span>
               <span>{stats.subscriberGrowth[stats.subscriberGrowth.length - 1]?.date}</span>
             </div>
             <MiniLineChart data={stats.subscriberGrowth} height={120} />
-            <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
-              <span>Min: {Math.min(...stats.subscriberGrowth.map(d => d.count))}</span>
-              <span>Max: {Math.max(...stats.subscriberGrowth.map(d => d.count))}</span>
+            <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
+              <span>Min: {Math.min(...stats.subscriberGrowth.map((d) => d.count))}</span>
+              <span>Max: {Math.max(...stats.subscriberGrowth.map((d) => d.count))}</span>
               <span>Total: {stats.subscriberGrowth.reduce((s, d) => s + d.count, 0)}</span>
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-400 text-center py-8">No subscriber data yet</p>
+          <p className="py-8 text-center text-sm text-gray-400">No subscriber data yet</p>
         )}
-      </div>
+      </AdminCard>
 
-      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-mayden-dark">Reconciliation &amp; UTM</h2>
-          <BarChart3 size={16} className="text-gray-400" />
-        </div>
-
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-2">
-          <button
-            onClick={downloadCsv}
-            disabled={downloading}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-mayden-magenta text-white text-sm font-medium hover:bg-mayden-magenta/90 transition-colors disabled:opacity-50"
-          >
-            <Download size={16} />
-            {downloading ? "Downloading..." : "Download CSV (last 24h)"}
-          </button>
-        </div>
-        <p className="text-xs text-gray-400 mb-1">
-          Successful payments for finance reconciliation. Reports are emailed automatically — daily at midnight and monthly on the 1st.
+      <AdminCard
+        title="Reconciliation & UTM"
+        actions={<button onClick={downloadCsv} disabled={downloading} className="inline-flex items-center gap-2 rounded-full bg-mayden-magenta px-4 py-2 text-sm font-medium text-white shadow-md shadow-mayden-magenta/20 transition-colors hover:bg-mayden-magenta/90 disabled:opacity-50">
+          <Download size={15} />
+          {downloading ? "Downloading…" : "Download CSV (last 24h)"}
+        </button>}
+      >
+        <p className="mb-4 text-xs text-gray-400">
+          Successful payments for finance reconciliation. Reports are also emailed automatically — daily at midnight and monthly on the 1st.
         </p>
 
         {utmReport?.sources?.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
-                  <th className="py-2 pr-4">Source</th>
-                  <th className="py-2 pr-4">Campaign</th>
-                  <th className="py-2 pr-4">Registered</th>
-                  <th className="py-2 pr-4">Paid</th>
-                  <th className="py-2">Active Subscribers</th>
-                </tr>
-              </thead>
-              <tbody>
-                {utmReport.sources.map((s) => (
-                  <tr key={`${s.utmSource}-${s.utmCampaign || ""}`} className="border-b border-gray-50">
-                    <td className="py-2.5 pr-4 font-medium text-mayden-dark">{s.utmSource || "direct"}</td>
-                    <td className="py-2.5 pr-4 text-gray-500">{s.utmCampaign || "—"}</td>
-                    <td className="py-2.5 pr-4 text-gray-500">{s.registered}</td>
-                    <td className="py-2.5 pr-4 text-gray-500">{s.paid}</td>
-                    <td className="py-2.5 text-gray-500">{s.active}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <AdminTable
+            columns={[
+              { label: "Source" },
+              { label: "Campaign" },
+              { label: "Registered" },
+              { label: "Paid" },
+              { label: "Active Subscribers" },
+            ]}
+          >
+            {utmReport.sources.map((s) => (
+              <tr key={`${s.utmSource}-${s.utmCampaign || ""}`}>
+                <td className="px-4 py-3 font-medium text-mayden-dark">{s.utmSource || "direct"}</td>
+                <td className="px-4 py-3 text-gray-500">{s.utmCampaign || "—"}</td>
+                <td className="px-4 py-3 text-gray-500">{s.registered}</td>
+                <td className="px-4 py-3 text-gray-500">{s.paid}</td>
+                <td className="px-4 py-3 text-gray-500">{s.active}</td>
+              </tr>
+            ))}
+          </AdminTable>
         ) : (
-          <p className="text-sm text-gray-400 text-center py-6">
+          <p className="py-6 text-center text-sm text-gray-400">
             No UTM-attributed signups yet — users landing from the Mayden site will appear here.
           </p>
         )}
-      </div>
+      </AdminCard>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <button
           onClick={() => navigate("/admin/subscriptions")}
-          className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm text-left hover:border-mayden-magenta/30 transition-colors"
+          className="group rounded-2xl border border-gray-100 bg-white p-5 text-left shadow-sm transition-all hover:border-mayden-magenta/30 hover:shadow-md"
         >
-          <p className="text-sm text-gray-500 mb-1">Total Users</p>
-          <p className="text-2xl font-bold text-mayden-dark">{stats.totalUsers}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500">Total Users</p>
+            <ArrowUpRight size={16} className="text-gray-300 transition-colors group-hover:text-mayden-magenta" />
+          </div>
+          <p className="mt-1 text-2xl font-bold text-mayden-dark">{stats.totalUsers}</p>
         </button>
         <button
           onClick={() => navigate("/admin/episodes")}
-          className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm text-left hover:border-mayden-magenta/30 transition-colors"
+          className="group rounded-2xl border border-gray-100 bg-white p-5 text-left shadow-sm transition-all hover:border-mayden-magenta/30 hover:shadow-md"
         >
-          <p className="text-sm text-gray-500 mb-1">Episodes Published</p>
-          <p className="text-2xl font-bold text-mayden-dark">{stats.totalEpisodes}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500">Episodes Published</p>
+            <ArrowUpRight size={16} className="text-gray-300 transition-colors group-hover:text-mayden-magenta" />
+          </div>
+          <p className="mt-1 text-2xl font-bold text-mayden-dark">{stats.totalEpisodes}</p>
         </button>
       </div>
     </div>
