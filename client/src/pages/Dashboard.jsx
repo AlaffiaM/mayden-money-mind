@@ -79,14 +79,14 @@ export default function Dashboard() {
   return (
     <SubscriberLayout>
       <div
-        className={`mb-8 rounded-2xl p-4 -mx-4 transition-all duration-500 ${
-          isTodayPlaying ? "bg-gradient-to-b from-mayden-magenta/5 to-transparent" : ""
+        className={`mb-8 rounded-[28px] border border-mayden-magenta/10 bg-gradient-to-r from-white via-mayden-magenta/5 to-white p-5 shadow-sm transition-all duration-500 ${
+          isTodayPlaying ? "ring-1 ring-mayden-magenta/15" : ""
         }`}
       >
-        <h1 className="text-2xl lg:text-3xl font-serif font-bold text-mayden-dark mb-1">
-          {greeting()}, {user?.fullName?.split(" ")[0]}. Take a breath.
+        <h1 className="text-2xl lg:text-3xl font-serif font-bold text-mayden-dark mb-1 leading-tight">
+          {greeting()}, {user?.fullName?.split(" ")[0]}. Welcome in.
         </h1>
-        <p className="text-sm text-gray-500">Your day starts here — one gentle minute at a time.</p>
+        <p className="text-sm text-gray-500">Your gentle reset starts here — one thoughtful minute at a time.</p>
       </div>
 
       {todayEpisode ? (
@@ -98,7 +98,7 @@ export default function Dashboard() {
             <span className="rounded-full bg-mayden-magenta/10 px-3 py-1 text-xs font-semibold text-mayden-magenta">
               {todayDayName}
             </span>
-            <span className="text-xs text-gray-400">Today's episode</span>
+            <span className="text-xs text-gray-400">Today’s focus</span>
           </div>
           <h2 className="mb-6 text-xl font-serif font-bold text-mayden-dark lg:text-2xl">{heroTitle}</h2>
 
@@ -128,8 +128,9 @@ export default function Dashboard() {
           )}
         </div>
       ) : (
-        <div className="mb-8 rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm">
-          <p className="text-gray-500">No episode for today yet. Check back soon!</p>
+        <div className="mb-8 rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center shadow-sm">
+          <p className="text-lg font-medium text-mayden-dark">Your next gentle reset is on the way.</p>
+          <p className="mt-2 text-sm text-gray-500">A fresh episode will appear here soon.</p>
         </div>
       )}
 
@@ -166,7 +167,7 @@ export default function Dashboard() {
               <EpisodeCard key={ep.id} episode={ep} onPlay={scrollToHero} />
             ))}
             {filteredEpisodes.length === 0 && (
-              <p className="text-center text-sm text-gray-400 py-8">No episodes match your search.</p>
+              <p className="text-center text-sm text-gray-500 py-8">No episodes match that mood right now. Try another theme.</p>
             )}
           </div>
         ) : (
@@ -183,7 +184,7 @@ export default function Dashboard() {
               );
             })}
             {episodes.length === 0 && (
-              <p className="text-center text-sm text-gray-400 py-8">No episodes in the Vault yet.</p>
+              <p className="text-center text-sm text-gray-500 py-8">Your vault is empty right now. New recordings will appear here soon.</p>
             )}
           </>
         )}
@@ -192,20 +193,20 @@ export default function Dashboard() {
       {subscription && subscription.status === "active" && (
         <div className="mb-8 flex items-center justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 ring-1 ring-emerald-200/80">
               <CreditCard size={18} className="text-emerald-600" />
             </div>
             <div>
               <p className="text-sm font-medium text-mayden-dark">
                 Active – {subscription.plan === "weekly" ? "₦100/Weekly" : "₦350/Monthly"}
               </p>
-              <div className="flex items-center gap-1 text-xs text-gray-400">
+              <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
                 <Calendar size={11} />
                 Next renewal: {new Date(subscription.nextRenewal).toLocaleDateString()}
               </div>
             </div>
           </div>
-          <a href="/subscription" className="text-xs font-medium text-mayden-magenta hover:underline">
+          <a href="/subscription" className="text-xs font-medium text-mayden-magenta transition-colors hover:text-mayden-magenta/80">
             Manage
           </a>
         </div>
