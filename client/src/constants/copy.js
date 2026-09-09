@@ -14,9 +14,21 @@ export const LANDING = {
   howItWorks: {
     headline: "How it works",
     steps: [
-      { step: "1", title: "Subscribe", description: "Choose weekly or monthly" },
-      { step: "2", title: "Receive Daily Audio", description: "2 min every morning" },
-      { step: "3", title: "Build Wealth & Peace", description: "Grow your money & mind" },
+      {
+        step: "1",
+        title: "Subscribe",
+        description: "Choose weekly or monthly",
+      },
+      {
+        step: "2",
+        title: "Receive Daily Audio",
+        description: "2 min every morning",
+      },
+      {
+        step: "3",
+        title: "Build Wealth & Peace",
+        description: "Grow your money & mind",
+      },
     ],
   },
   empathy: {
@@ -59,7 +71,8 @@ export const LANDING = {
       {
         day: "Financial Fridays",
         icon: "TrendingUp",
-        description: "Weekly resets, celebrating wins, and separating self-worth from net worth.",
+        description:
+          "Weekly resets, celebrating wins, and separating self-worth from net worth.",
         tint: "bg-mayden-gold-tint",
       },
     ],
@@ -68,7 +81,8 @@ export const LANDING = {
     headline: "Invest in Your Mind for Less Than the Cost of a Data Bundle.",
     note: "Your subscription is deducted automatically from your Mayden account. Cancel anytime.",
     cta: "Activate My Subscription",
-    trust: "Secure, one-click billing integrated directly with Mayden Microfinance Bank.",
+    trust:
+      "Secure, one-click billing integrated directly with Mayden Microfinance Bank.",
     included: [
       "Daily 2-minute audio delivered every morning",
       "Somatic exercises and breathing techniques",
@@ -81,19 +95,23 @@ export const LANDING = {
     items: [
       {
         question: "How does the auto-deduction work?",
-        answer: "Your subscription is securely deducted from your Mayden account using one-click billing. Card details are only required if you choose card payments.",
+        answer:
+          "Your subscription is securely deducted from your Mayden account using one-click billing. Card details are only required if you choose card payments.",
       },
       {
         question: "Can I switch from weekly to monthly?",
-        answer: "Yes, you can change your plan anytime from your subscription management page.",
+        answer:
+          "Yes, you can change your plan anytime from your subscription management page.",
       },
       {
         question: "What happens if I miss a day?",
-        answer: "All episodes are saved in your personal Vault. Listen anytime, at your own pace.",
+        answer:
+          "All episodes are saved in your personal Vault. Listen anytime, at your own pace.",
       },
       {
         question: "How do I cancel?",
-        answer: "Cancel instantly from your account settings. No calls, no emails, no hassle.",
+        answer:
+          "Cancel instantly from your account settings. No calls, no emails, no hassle.",
       },
     ],
   },
@@ -103,7 +121,8 @@ export const LANDING = {
       placeholder: "Your email address",
       cta: "Subscribe Free",
     },
-    delivery: "Delivered via in-app notification. Best experience: Add to Home Screen.",
+    delivery:
+      "Delivered via in-app notification. Best experience: Add to Home Screen.",
     links: [
       { label: "Terms & Conditions", href: "/terms" },
       { label: "Privacy Policy (NDPA compliant)", href: "/privacy" },
