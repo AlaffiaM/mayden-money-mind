@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
 import { useAudio } from "../../hooks/useAudio";
 import { usePlayer } from "../../context/PlayerContext";
+import { useToast } from "../admin/useToast";
 
 function Waveform({ playing }) {
   return (
-    <div className={`flex items-center justify-center gap-[3px] h-8 ${playing ? "waveform-playing" : ""}`}>
+    <div
+      className={`flex items-center justify-center gap-[3px] h-8 ${playing ? "waveform-playing" : ""}`}
+    >
       {[...Array(7)].map((_, i) => (
         <div
           key={i}
@@ -27,7 +30,8 @@ function RadialPulse({ active }) {
       <div
         className="w-48 h-48 lg:w-64 lg:h-64 rounded-full"
         style={{
-          background: "radial-gradient(circle, rgba(236,38,143,0.15) 0%, rgba(236,38,143,0.05) 40%, transparent 70%)",
+          background:
+            "radial-gradient(circle, rgba(236,38,143,0.15) 0%, rgba(236,38,143,0.05) 40%, transparent 70%)",
           animation: active ? "radial-pulse 4s ease-in-out infinite" : "none",
         }}
       />
@@ -45,7 +49,17 @@ const formatTime = (s) => {
 const preventSave = (e) => e.preventDefault();
 
 function GlobalPlayer({ episode, large = false }) {
-  const { playing, current, duration, error, loading, episode: activeEp, playEpisode, toggle, seek, skip } = usePlayer();
+  const {
+    playing,
+    current,
+    duration,
+    loading,
+    episode: activeEp,
+    playEpisode,
+    toggle,
+    seek,
+    skip,
+  } = usePlayer();
 
   const isActive = activeEp?.id === episode.id;
   const isPlaying = isActive && playing;
@@ -57,11 +71,16 @@ function GlobalPlayer({ episode, large = false }) {
   };
 
   return (
-    <div className="w-full select-none" onContextMenu={preventSave} onDragStart={preventSave}>
-      {error && isActive && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 text-xs text-red-600">{error}</div>
-      )}
-      <div className={large ? "flex flex-col items-center" : "flex items-center gap-4"}>
+    <div
+      className="w-full select-none"
+      onContextMenu={preventSave}
+      onDragStart={preventSave}
+    >
+      <div
+        className={
+          large ? "flex flex-col items-center" : "flex items-center gap-4"
+        }
+      >
         {large && <Waveform playing={isPlaying} />}
 
         <div className={`relative flex items-center ${large ? "my-4" : ""}`}>
@@ -75,7 +94,9 @@ function GlobalPlayer({ episode, large = false }) {
                 className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-mayden-magenta hover:border-mayden-magenta/30 transition-all flex items-center justify-center shadow-sm"
               >
                 <SkipBack size={18} />
-                <span className="absolute -bottom-0.5 text-[8px] font-bold text-gray-400">15</span>
+                <span className="absolute -bottom-0.5 text-[8px] font-bold text-gray-400">
+                  15
+                </span>
               </button>
             )}
 
@@ -87,7 +108,9 @@ function GlobalPlayer({ episode, large = false }) {
               } flex items-center justify-center`}
             >
               {loading ? (
-                <div className={`border-2 border-white border-t-transparent rounded-full animate-spin ${large ? "w-8 h-8" : "w-5 h-5"}`} />
+                <div
+                  className={`border-2 border-white border-t-transparent rounded-full animate-spin ${large ? "w-8 h-8" : "w-5 h-5"}`}
+                />
               ) : isPlaying ? (
                 <Pause size={large ? 36 : 20} />
               ) : (
@@ -102,7 +125,9 @@ function GlobalPlayer({ episode, large = false }) {
                 className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-mayden-magenta hover:border-mayden-magenta/30 transition-all flex items-center justify-center shadow-sm"
               >
                 <SkipForward size={18} />
-                <span className="absolute -bottom-0.5 text-[8px] font-bold text-gray-400">15</span>
+                <span className="absolute -bottom-0.5 text-[8px] font-bold text-gray-400">
+                  15
+                </span>
               </button>
             )}
           </div>
@@ -110,21 +135,30 @@ function GlobalPlayer({ episode, large = false }) {
 
         <div className={`flex-1 ${large ? "w-full mt-2" : ""}`}>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-400 w-10 text-right tabular-nums">{formatTime(isActive ? current : 0)}</span>
+            <span className="text-xs text-gray-400 w-10 text-right tabular-nums">
+              {formatTime(isActive ? current : 0)}
+            </span>
             <div
               className="flex-1 h-1.5 bg-gray-200 rounded-full cursor-pointer relative overflow-hidden"
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
-                const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                const pct = Math.max(
+                  0,
+                  Math.min(1, (e.clientX - rect.left) / rect.width),
+                );
                 seek(pct * (duration || displayDuration));
               }}
             >
               <div
                 className="h-full bg-mayden-magenta rounded-full transition-all duration-150"
-                style={{ width: `${duration > 0 ? ((isActive ? current : 0) / duration) * 100 : 0}%` }}
+                style={{
+                  width: `${duration > 0 ? ((isActive ? current : 0) / duration) * 100 : 0}%`,
+                }}
               />
             </div>
-            <span className="text-xs text-gray-400 w-10 tabular-nums">{formatTime(isActive ? displayDuration : 0)}</span>
+            <span className="text-xs text-gray-400 w-10 tabular-nums">
+              {formatTime(isActive ? displayDuration : 0)}
+            </span>
           </div>
         </div>
       </div>
@@ -133,7 +167,23 @@ function GlobalPlayer({ episode, large = false }) {
 }
 
 function PlayerWithSrc({ src, large = false }) {
-  const { playing, currentTime, duration, error, audioRef, toggle, handleTimeUpdate, handleLoadedMetadata, handleError, seek, skip } = useAudio();
+  const toast = useToast();
+  const {
+    playing,
+    currentTime,
+    duration,
+    audioRef,
+    toggle,
+    handleTimeUpdate,
+    handleLoadedMetadata,
+    handleError,
+    seek,
+    skip,
+  } = useAudio();
+
+  useEffect(() => {
+    if (error) toast(error, "error");
+  }, [error, toast]);
 
   const handleToggle = () => {
     if (!audioRef.current) return;
@@ -141,7 +191,11 @@ function PlayerWithSrc({ src, large = false }) {
   };
 
   return (
-    <div className="w-full select-none" onContextMenu={preventSave} onDragStart={preventSave}>
+    <div
+      className="w-full select-none"
+      onContextMenu={preventSave}
+      onDragStart={preventSave}
+    >
       <audio
         ref={audioRef}
         src={src || undefined}
@@ -152,10 +206,11 @@ function PlayerWithSrc({ src, large = false }) {
         onError={handleError}
         preload="metadata"
       />
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 text-xs text-red-600">{error}</div>
-      )}
-      <div className={large ? "flex flex-col items-center" : "flex items-center gap-4"}>
+      <div
+        className={
+          large ? "flex flex-col items-center" : "flex items-center gap-4"
+        }
+      >
         {large && <Waveform playing={playing} />}
 
         <div className={`relative flex items-center ${large ? "my-4" : ""}`}>
@@ -168,7 +223,9 @@ function PlayerWithSrc({ src, large = false }) {
                 className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-mayden-magenta hover:border-mayden-magenta/30 transition-all flex items-center justify-center shadow-sm"
               >
                 <SkipBack size={18} />
-                <span className="absolute -bottom-0.5 text-[8px] font-bold text-gray-400">15</span>
+                <span className="absolute -bottom-0.5 text-[8px] font-bold text-gray-400">
+                  15
+                </span>
               </button>
             )}
 
@@ -191,7 +248,9 @@ function PlayerWithSrc({ src, large = false }) {
                 className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-mayden-magenta hover:border-mayden-magenta/30 transition-all flex items-center justify-center shadow-sm"
               >
                 <SkipForward size={18} />
-                <span className="absolute -bottom-0.5 text-[8px] font-bold text-gray-400">15</span>
+                <span className="absolute -bottom-0.5 text-[8px] font-bold text-gray-400">
+                  15
+                </span>
               </button>
             )}
           </div>
@@ -199,21 +258,30 @@ function PlayerWithSrc({ src, large = false }) {
 
         <div className={`flex-1 ${large ? "w-full mt-2" : ""}`}>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-400 w-10 text-right tabular-nums">{formatTime(currentTime)}</span>
+            <span className="text-xs text-gray-400 w-10 text-right tabular-nums">
+              {formatTime(currentTime)}
+            </span>
             <div
               className="flex-1 h-1.5 bg-gray-200 rounded-full cursor-pointer relative overflow-hidden"
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
-                const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                const pct = Math.max(
+                  0,
+                  Math.min(1, (e.clientX - rect.left) / rect.width),
+                );
                 seek(pct * duration);
               }}
             >
               <div
                 className="h-full bg-mayden-magenta rounded-full transition-all duration-150"
-                style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                style={{
+                  width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
+                }}
               />
             </div>
-            <span className="text-xs text-gray-400 w-10 tabular-nums">{formatTime(duration)}</span>
+            <span className="text-xs text-gray-400 w-10 tabular-nums">
+              {formatTime(duration)}
+            </span>
           </div>
         </div>
       </div>
