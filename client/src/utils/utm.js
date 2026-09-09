@@ -1,5 +1,11 @@
 const STORAGE_KEY = "utmParams";
-const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"];
+const UTM_KEYS = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_term",
+  "utm_content",
+];
 
 export function captureUtm() {
   try {
@@ -12,8 +18,8 @@ export function captureUtm() {
     if (Object.keys(captured).length > 0) {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(captured));
     }
-  } catch {
-
+  } catch (error) {
+    console.error("Unable to capture campaign parameters.", error);
   }
 }
 
