@@ -18,7 +18,11 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-export function emailTemplate({ title, bodyHtml, footerText = "Money & Mind by Mayden Microfinance Bank" }) {
+export function emailTemplate({
+  title,
+  bodyHtml,
+  footerText = "Money & Mind by Mayden Microfinance Bank",
+}) {
   const year = new Date().getFullYear();
   return `<!doctype html>
 <html lang="en">
@@ -93,7 +97,8 @@ export async function sendUserEmail({ to, subject, title, body }) {
 
 // Welcome email with plan details
 export async function sendWelcomeEmail({ to, fullName, plan, nextRenewal }) {
-  const planLabel = plan === "weekly" ? "Weekly — ₦100 / week" : "Monthly — ₦350 / month";
+  const planLabel =
+    plan === "weekly" ? "Weekly — ₦100 / week" : "Monthly — ₦350 / month";
   const renewalDate = new Date(nextRenewal).toLocaleDateString("en-GB", {
     weekday: "long",
     year: "numeric",
@@ -166,7 +171,10 @@ export async function sendSubscriptionReminderEmail({ to, fullName }) {
   return sendEmail({
     to,
     subject: "Your Money & Mind subscription has ended",
-    htmlContent: emailTemplate({ title: "Your subscription has ended", bodyHtml }),
+    htmlContent: emailTemplate({
+      title: "Your subscription has ended",
+      bodyHtml,
+    }),
   });
 }
 
@@ -185,7 +193,14 @@ ${codeBox(code)}
   });
 }
 
-export async function sendEmail({ to, subject, textContent, htmlContent, attachment, attachments }) {
+export async function sendEmail({
+  to,
+  subject,
+  textContent,
+  htmlContent,
+  attachment,
+  attachments,
+}) {
   if (!brevoConfigured()) {
     console.log("[email] skipped — set BREVO_API_KEY and BREVO_FROM_EMAIL");
     return { sent: false, reason: "brevo not configured" };
