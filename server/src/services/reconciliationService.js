@@ -26,7 +26,7 @@ function escapeHtml(value) {
 async function sendReconciliationEmail({ csv, from, kind = "Daily", label }) {
   const labelValue = label || from.toISOString().slice(0, 10);
   const subject = `${kind} Payment Reconciliation — ${labelValue}`;
-  const text = `${kind} payment reconciliation report for ${labelValue} attached.`;
+  const text = `The ${kind.toLowerCase()} payment reconciliation report for ${labelValue} is attached.`;
 
   if (brevoConfigured() && RECONCILIATION_EMAIL) {
     await sendEmail({
@@ -234,7 +234,7 @@ ${summaryTable("Growth", [
 ${summaryTable("Subscription status (today)", statusRows)}
 ${summaryTable("New plans", planRows)}
 ${summaryTable("Top acquisition sources", utmRows)}
-<p style="font-size:12px;color:#8a8a8a;">All-time successful payments: ${summary.allTimePayments}. Full details are in the attached CSVs (payments, subscriptions and new users for ${escapeHtml(label)}).</p>`;
+<p style="font-size:12px;color:#8a8a8a;">All-time successful payments: ${summary.allTimePayments}. The attached CSV files contain payment, subscription, and new-user details for ${escapeHtml(label)}.</p>`;
 
   return emailTemplate({ title: `${label} Monthly Report`, bodyHtml });
 }
