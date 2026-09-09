@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
 import { useAudio } from "../../hooks/useAudio";
-import { usePlayer } from "../../context/PlayerContext";
+import { usePlayer } from "../../context/usePlayer";
 import { useToast } from "../admin/useToast";
 
 function Waveform({ playing }) {
@@ -172,6 +172,7 @@ function PlayerWithSrc({ src, large = false }) {
     playing,
     currentTime,
     duration,
+    error,
     audioRef,
     toggle,
     handleTimeUpdate,
