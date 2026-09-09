@@ -50,7 +50,9 @@ export default function ResetPassword() {
       });
       setDone(true);
     } catch (err) {
-      setError(err.response?.data?.error || "Something went wrong. Please try again.");
+      setError(
+        err.response?.data?.error || "Something went wrong. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -63,7 +65,10 @@ export default function ResetPassword() {
         subtitle="Your password has been updated"
         footer={
           <p>
-            <Link to="/login" className="text-mayden-magenta font-semibold hover:underline">
+            <Link
+              to="/login"
+              className="text-mayden-magenta font-semibold hover:underline"
+            >
               Go to sign in
             </Link>
           </p>
@@ -86,7 +91,10 @@ export default function ResetPassword() {
       subtitle="Enter the 6-digit code from the email, then choose a new password"
       footer={
         <p>
-          <Link to="/forgot-password" className="text-mayden-magenta font-semibold hover:underline">
+          <Link
+            to="/forgot-password"
+            className="text-mayden-magenta font-semibold hover:underline"
+          >
             Request a new code
           </Link>
         </p>
@@ -94,17 +102,23 @@ export default function ResetPassword() {
     >
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         {error && (
-          <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-center text-sm text-red-600">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-center text-sm text-amber-700">
             {error}
           </div>
         )}
 
         <div>
-          <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="email"
+            className="mb-1.5 block text-sm font-medium text-gray-700"
+          >
             Email
           </label>
           <div className="relative">
-            <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Mail
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               id="email"
               type="email"
@@ -119,11 +133,17 @@ export default function ResetPassword() {
         </div>
 
         <div>
-          <label htmlFor="code" className="mb-1.5 block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="code"
+            className="mb-1.5 block text-sm font-medium text-gray-700"
+          >
             Verification code
           </label>
           <div className="relative">
-            <KeyRound size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <KeyRound
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               id="code"
               type="text"
