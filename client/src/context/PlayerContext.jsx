@@ -141,4 +141,3 @@ export function PlayerProvider({ children }) {
     </PlayerContext.Provider>
   );
 }
-
