@@ -21,7 +21,9 @@ function Section({ icon: Icon, title, children }) {
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-mayden-magenta/10">
           <Icon size={18} className="text-mayden-magenta" />
         </div>
-        <h2 className="font-serif text-lg font-bold text-mayden-dark">{title}</h2>
+        <h2 className="font-serif text-lg font-bold text-mayden-dark">
+          {title}
+        </h2>
       </div>
       {children}
     </div>
@@ -31,7 +33,9 @@ function Section({ icon: Icon, title, children }) {
 function Field({ label, children, hint }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-gray-700">{label}</label>
+      <label className="mb-1 block text-sm font-medium text-gray-700">
+        {label}
+      </label>
       {children}
       {hint && <p className="mt-1 text-xs text-gray-400">{hint}</p>}
     </div>
@@ -47,10 +51,13 @@ export default function Settings() {
   const toast = useToast();
 
   useEffect(() => {
-    api.get("/admin/settings")
+    api
+      .get("/admin/settings")
       .then(({ data }) => {
         setSettings(data);
-        try { setDayLabels(JSON.parse(data.dayLabels || "{}")); } catch {}
+        try {
+          setDayLabels(JSON.parse(data.dayLabels || "{}"));
+        } catch {}
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -65,7 +72,9 @@ export default function Settings() {
       const payload = { ...settings, dayLabels: JSON.stringify(dayLabels) };
       const { data } = await api.put("/admin/settings", payload);
       setSettings(data);
-      try { setDayLabels(JSON.parse(data.dayLabels || "{}")); } catch {}
+      try {
+        setDayLabels(JSON.parse(data.dayLabels || "{}"));
+      } catch {}
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -77,52 +86,93 @@ export default function Settings() {
 
   if (loading) return <Loader label="Loading settings…" />;
 
-  const inputClass = "w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-mayden-magenta focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20";
+  const inputClass =
+    "w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-mayden-magenta focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20";
 
   return (
     <div className="space-y-6">
-      <AdminPageHeading title="Settings" subtitle="Pricing, episode schedule and day-type labels." />
+      <AdminPageHeading
+        title="Settings"
+        subtitle="Pricing, episode schedule and day-type labels."
+      />
 
       <Section icon={CreditCard} title="Pricing">
         <div className="grid grid-cols-2 gap-4">
           <Field label="Weekly Price (₦)">
-            <input type="number" value={settings.weeklyPrice || ""} onChange={(e) => update("weeklyPrice", e.target.value)} className={inputClass} />
+            <input
+              type="number"
+              value={settings.weeklyPrice || ""}
+              onChange={(e) => update("weeklyPrice", e.target.value)}
+              className={inputClass}
+            />
           </Field>
           <Field label="Monthly Price (₦)">
-            <input type="number" value={settings.monthlyPrice || ""} onChange={(e) => update("monthlyPrice", e.target.value)} className={inputClass} />
+            <input
+              type="number"
+              value={settings.monthlyPrice || ""}
+              onChange={(e) => update("monthlyPrice", e.target.value)}
+              className={inputClass}
+            />
           </Field>
         </div>
-        <Field label="Currency" hint="ISO 4217 currency code">
-          <input value={settings.currency || ""} onChange={(e) => update("currency", e.target.value)} className={inputClass} />
+        <Field label="Currency" hint="Three-letter currency code, such as NGN.">
+          <input
+            value={settings.currency || ""}
+            onChange={(e) => update("currency", e.target.value)}
+            className={inputClass}
+          />
         </Field>
       </Section>
 
       <Section icon={Clock} title="Episode & Renewal">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Episode Release Time" hint="Time of day episodes are published (24h format)">
-            <input type="time" value={settings.episodeReleaseTime || "06:00"} onChange={(e) => update("episodeReleaseTime", e.target.value)} className={inputClass} />
+          <Field
+            label="Episode Release Time"
+            hint="Time of day episodes are published (24h format)"
+          >
+            <input
+              type="time"
+              value={settings.episodeReleaseTime || "06:00"}
+              onChange={(e) => update("episodeReleaseTime", e.target.value)}
+              className={inputClass}
+            />
           </Field>
-          <Field label="Grace Period (hours)" hint="Time after failed renewal before past_due status">
-            <input type="number" value={settings.gracePeriodHours || "48"} onChange={(e) => update("gracePeriodHours", e.target.value)} className={inputClass} />
+          <Field
+            label="Grace Period (hours)"
+            hint="Time after a failed renewal before the subscription is marked overdue."
+          >
+            <input
+              type="number"
+              value={settings.gracePeriodHours || "48"}
+              onChange={(e) => update("gracePeriodHours", e.target.value)}
+              className={inputClass}
+            />
           </Field>
         </div>
         <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
           <p className="text-xs text-amber-700">
-            <strong>Business Rule:</strong> Failed renewals enter "past_due" status for the configured grace period.
-            During this time, 2 reminders are sent. After the grace period expires without payment, the subscription is automatically cancelled.
+            <strong>Business rule:</strong> Failed renewals remain overdue
+            during the grace period. Two reminders are sent before the
+            subscription is cancelled.
           </p>
         </div>
       </Section>
 
       <Section icon={Tag} title="Day-Type Labels">
-        <p className="mb-4 text-sm text-gray-500">Customize the display names for each day's episode theme.</p>
+        <p className="mb-4 text-sm text-gray-500">
+          Customize the display names for each day's episode theme.
+        </p>
         <div className="space-y-3">
           {Object.entries(DEFAULT_DAY_LABELS).map(([key]) => (
             <div key={key} className="flex items-center gap-3">
-              <span className="w-24 text-xs capitalize text-gray-400">{key}</span>
+              <span className="w-24 text-xs capitalize text-gray-400">
+                {key}
+              </span>
               <input
                 value={dayLabels[key] || ""}
-                onChange={(e) => setDayLabels({ ...dayLabels, [key]: e.target.value })}
+                onChange={(e) =>
+                  setDayLabels({ ...dayLabels, [key]: e.target.value })
+                }
                 className={inputClass}
               />
             </div>
@@ -138,7 +188,11 @@ export default function Settings() {
         >
           <Save size={16} /> {saving ? "Saving..." : "Save All Settings"}
         </button>
-        {saved && <span className="text-sm font-medium text-emerald-600">All settings saved!</span>}
+        {saved && (
+          <span className="text-sm font-medium text-emerald-600">
+            All settings saved!
+          </span>
+        )}
       </div>
     </div>
   );
