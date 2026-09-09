@@ -29,7 +29,7 @@ import AdminNotifications from "./pages/admin/Notifications";
 import AdminSettings from "./pages/admin/Settings";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminLayout from "./components/layout/AdminLayout";
-import { ToastProvider } from "./components/admin/useToast";
+import { ToastProvider } from "./components/admin/ToastProvider";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Support from "./pages/Support";
@@ -47,8 +47,6 @@ function SubscriberRoute({ children }) {
 
   useEffect(() => {
     if (!user) {
-      setChecking(false);
-      setHasAccess(false);
       return;
     }
     api
