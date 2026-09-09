@@ -103,8 +103,8 @@ export default function Subscription() {
         await api.post("/payments/verify", { reference: data.payment.reference });
         navigate("/dashboard", { replace: true });
       }
-    } catch (err) {
-      alert(err.response?.data?.error || "Something went wrong");
+    } catch {
+      alert("We couldn't complete your subscription. Please try again.");
     }
   };
 
@@ -113,8 +113,8 @@ export default function Subscription() {
     try {
       await update(subscription.id, { status: "cancelled" });
       navigate("/subscription", { replace: true });
-    } catch (err) {
-      alert(err.response?.data?.error || "Something went wrong");
+    } catch {
+      alert("We couldn't update your subscription. Please try again.");
     }
   };
 
@@ -136,8 +136,8 @@ export default function Subscription() {
           navigate("/dashboard", { replace: true });
         }
       }
-    } catch (err) {
-      alert(err.response?.data?.error || "Something went wrong");
+    } catch {
+      alert("We couldn't update automatic renewal. Please try again.");
     }
   };
 
@@ -160,7 +160,7 @@ export default function Subscription() {
         <div className="mb-6 flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
           <Clock size={20} className="flex-shrink-0 animate-pulse text-blue-600" />
           <div>
-            <p className="text-sm font-semibold text-blue-800">Confirming payment...</p>
+            <p className="text-sm font-semibold text-blue-800">Confirming payment…</p>
             <p className="text-xs text-blue-600">Checking with Paystack, please wait.</p>
           </div>
         </div>
@@ -276,7 +276,7 @@ export default function Subscription() {
                     <p className="text-xs text-gray-500">
                       {subscription.autoRenew
                         ? `Charged automatically to your card${last4 ? ` (•••• ${last4})` : ""} each ${periodLabel}`
-                        : "Off — your access ends when the current period expires"}
+                        : "Off — your access ends when this billing period expires"}
                     </p>
                   </div>
                 </div>
@@ -334,7 +334,7 @@ export default function Subscription() {
                 </div>
 
                 <p className="mt-2 text-center text-xs text-gray-400">
-                  Pay with card, bank transfer, USSD or bank. Only card payments auto-renew each period.
+                  Pay by card, bank transfer, or USSD. Only card payments renew automatically.
                 </p>
               </>
             )}
