@@ -37,39 +37,48 @@ export const LANDING = {
   },
   audio: {
     headline: "Press play for peace of mind.",
-    title: "Motivation Monday — Vision Setting",
-    subtitle: "Motivation Monday — 60 sec",
+    subtitle: "60 sec free sample",
     caption: "Listen to a sample episode: 'Motivation Monday — Vision Setting'",
   },
   blueprint: {
     headline: "Your Daily Guide to Growth.",
     days: [
       {
+        key: "monday",
         day: "Motivation Mondays",
+        pillar: "Motivation & Vision",
         icon: "Sun",
         description: "Vision-setting and discipline to start the week strong.",
         tint: "bg-mayden-coral-tint",
       },
       {
+        key: "tuesday",
         day: "Tactical Tuesdays",
+        pillar: "Money Tactics",
         icon: "Target",
         description: "Practical, everyday money habits and micro-saving tips.",
         tint: "bg-mayden-blue-tint",
       },
       {
+        key: "wednesday",
         day: "Wellness Wednesdays",
+        pillar: "Nervous System Resets",
         icon: "Heart",
         description: "Somatic breathing exercises to lower financial stress.",
         tint: "bg-mayden-pink-tint",
       },
       {
+        key: "thursday",
         day: "Testimonial Thursdays",
+        pillar: "Success Stories",
         icon: "Users",
         description: "Relatable real-life stories from women just like you.",
         tint: "bg-mayden-purple-tint",
       },
       {
+        key: "friday",
         day: "Financial Fridays",
+        pillar: "Financial Wins",
         icon: "TrendingUp",
         description:
           "Weekly resets, celebrating wins, and separating self-worth from net worth.",
