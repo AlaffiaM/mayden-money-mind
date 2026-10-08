@@ -18,12 +18,26 @@ import PricingCard from "../components/ui/PricingCard";
 import FaqAccordion from "../components/ui/FaqAccordion";
 import { LANDING } from "../constants/copy";
 import { usePricing } from "../hooks/usePricing";
+import { businessDayOfWeek } from "../utils/businessTime.js";
 
 const icons = { Sun, Target, Heart, Users, TrendingUp, Lock, Shield, Clock };
+const WEEKDAY_KEYS = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+];
 
 export default function Landing() {
   const navigate = useNavigate();
-  const { pricing } = usePricing();
+  const { pricing, dayLabels } = usePricing();
+  const todayKey = WEEKDAY_KEYS[businessDayOfWeek(new Date())];
+  const todayTheme = LANDING.blueprint.days.find(
+    (item) => item.key === todayKey,
+  );
 
   const handleSubscribe = () => navigate("/register");
   const handlePlaySample = () =>
@@ -169,7 +183,9 @@ export default function Landing() {
           </h2>
           <div className="max-w-lg mx-auto bg-white rounded-2xl p-6 lg:p-8 shadow-sm border border-gray-100">
             <p className="text-sm font-semibold text-mayden-dark mb-1">
-              {LANDING.audio.title}
+              {todayTheme
+                ? `${dayLabels[todayKey] || todayTheme.day} — ${todayTheme.pillar}`
+                : "Money & Mind — Weekend"}
             </p>
             <p className="text-xs text-gray-400 mb-6">
               {LANDING.audio.subtitle}
@@ -200,7 +216,7 @@ export default function Landing() {
                     <Icon size={20} />
                   </div>
                   <h3 className="font-semibold text-mayden-dark text-sm mb-2">
-                    {item.day}
+                    {dayLabels[item.key] || item.day}
                   </h3>
                   <p className="text-xs text-gray-600 leading-relaxed">
                     {item.description}
