@@ -126,14 +126,47 @@ app.get("/api/debug/emailVerified", async (req, res) => {
 
 const DEFAULT_PRICING = { weeklyPrice: "100", monthlyPrice: "350", currency: "NGN" };
 const PRICING_KEYS = ["weeklyPrice", "monthlyPrice", "currency"];
+const DEFAULT_DAY_LABELS = {
+  monday: "Motivation Mondays",
+  tuesday: "Tactical Tuesdays",
+  wednesday: "Wellness Wednesdays",
+  thursday: "Testimonial Thursdays",
+  friday: "Financial Fridays",
+};
 
 // Public pricing settings
 app.get("/api/settings/pricing", async (req, res, next) => {
   try {
-    const settings = await prisma.setting.findMany({ where: { key: { in: PRICING_KEYS } } });
+    const settings = await prisma.setting.findMany({
+      where: { key: { in: [...PRICING_KEYS, "dayLabels"] } },
+    });
     const map = {};
     for (const s of settings) map[s.key] = s.value;
-    res.json({ ...DEFAULT_PRICING, ...map });
+
+    let dayLabels = DEFAULT_DAY_LABELS;
+    if (map.dayLabels) {
+      try {
+        const parsed = JSON.parse(map.dayLabels);
+        const keys = Object.keys(DEFAULT_DAY_LABELS);
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          !Array.isArray(parsed) &&
+          keys.every((key) => typeof parsed[key] === "string")
+        ) {
+          dayLabels = { ...DEFAULT_DAY_LABELS, ...parsed };
+        } else {
+          logger.warn("Invalid public dayLabels setting; using defaults.");
+        }
+      } catch (err) {
+        logger.warn(
+          { err },
+          "Unable to parse public dayLabels setting; using defaults.",
+        );
+      }
+    }
+
+    res.json({ ...DEFAULT_PRICING, ...map, dayLabels });
   } catch (err) {
     next(err);
   }
