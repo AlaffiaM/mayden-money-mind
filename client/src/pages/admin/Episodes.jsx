@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import api from "../../services/api";
 import {
   Plus,
@@ -29,6 +29,7 @@ import Loader from "../../components/admin/Loader";
 import ConfirmModal from "../../components/admin/ConfirmModal";
 import StatusBadge from "../../components/admin/StatusBadge";
 import { useToast } from "../../components/admin/useToast.js";
+import LoadError from "../../components/ui/LoadError";
 
 const DAY_TYPES = [
   {
@@ -202,7 +203,7 @@ function WeekCalendar({ episodes, weekOffset, onPublish }) {
   });
 
   return (
-    <div className="grid grid-cols-5 gap-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
       {days.map((day) => (
         <div
           key={day.key}
@@ -235,9 +236,9 @@ function WeekCalendar({ episodes, weekOffset, onPublish }) {
               {day.episode.status !== "published" && (
                 <button
                   onClick={() => onPublish(day.episode.id)}
-                  className="mt-2 w-full flex items-center justify-center gap-1 px-2 py-1 bg-emerald-500 text-white text-xs rounded-lg hover:bg-emerald-600 transition-colors"
+                  className="mt-2 w-full flex items-center justify-center gap-1 rounded-lg bg-emerald-500 px-3 py-2 text-sm text-white transition-colors hover:bg-emerald-600"
                 >
-                  <Send size={10} /> Publish
+                  <Send size={14} /> Publish
                 </button>
               )}
             </div>
@@ -255,6 +256,8 @@ function WeekCalendar({ episodes, weekOffset, onPublish }) {
 export default function Episodes() {
   const [episodes, setEpisodes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [audioFilesError, setAudioFilesError] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingEp, setEditingEp] = useState(null);
   const [weekOffset, setWeekOffset] = useState(0);
@@ -275,25 +278,44 @@ export default function Episodes() {
   const previewRef = useRef(null);
   const toast = useToast();
 
-  const fetchEpisodes = () => {
+  const fetchEpisodes = useCallback(() => {
     api
       .get("/admin/episodes")
-      .then(({ data }) => setEpisodes(data))
-      .catch(() => {})
+      .then(({ data }) => {
+        setEpisodes(data);
+        setLoadError(false);
+      })
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
-  };
+  }, []);
 
-  const fetchAudioFiles = () => {
+  const fetchAudioFiles = useCallback(() => {
     api
       .get("/admin/audio-files")
-      .then(({ data }) => setAudioFiles(data))
-      .catch(() => {});
-  };
+      .then(({ data }) => {
+        setAudioFiles(data);
+        setAudioFilesError(false);
+      })
+      .catch(() => {
+        setAudioFilesError(true);
+      });
+  }, []);
 
   useEffect(() => {
     fetchEpisodes();
     fetchAudioFiles();
-  }, []);
+  }, [fetchEpisodes, fetchAudioFiles]);
+
+  const retryEpisodes = useCallback(() => {
+    setLoading(true);
+    setLoadError(false);
+    fetchEpisodes();
+  }, [fetchEpisodes]);
+
+  const retryAudioFiles = useCallback(() => {
+    setAudioFilesError(false);
+    fetchAudioFiles();
+  }, [fetchAudioFiles]);
 
   const getNextAvailableDate = (dayTypeKey, excludeDates) => {
     const idx = DAY_TYPES.findIndex((d) => d.key === dayTypeKey);
@@ -621,6 +643,21 @@ export default function Episodes() {
     return <Loader label="Loading episodes…" />;
   }
 
+  if (loadError) {
+    return (
+      <div className="space-y-6">
+        <AdminPageHeading
+          title="Episodes"
+          subtitle="Create episodes with audio and show notes. They auto-publish on the scheduled date and notify subscribers."
+        />
+        <LoadError
+          message="Couldn't load episodes. Check your connection and try again."
+          onRetry={retryEpisodes}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <AdminPageHeading
@@ -689,8 +726,14 @@ export default function Episodes() {
       />
 
       <div className="space-y-4">
+        {audioFilesError && (
+          <LoadError
+            message="Couldn't load audio files, so audio can't be assigned yet."
+            onRetry={retryAudioFiles}
+          />
+        )}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <h2 className="font-semibold text-mayden-dark text-lg">
               All Episodes
             </h2>
@@ -843,7 +886,7 @@ export default function Episodes() {
                   {weekDayEps.map((day) => (
                     <div
                       key={day.key}
-                      className={`flex items-center gap-3 px-4 py-2 hover:bg-gray-50/50 ${day.episode && selectedIds.includes(day.episode.id) ? "bg-mayden-magenta/5" : ""}`}
+                      className={`flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-3 sm:flex-nowrap sm:px-4 sm:py-2 hover:bg-gray-50/50 ${day.episode && selectedIds.includes(day.episode.id) ? "bg-mayden-magenta/5" : ""}`}
                     >
                       <button
                         onClick={() =>
@@ -863,7 +906,12 @@ export default function Episodes() {
                       <span
                         className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 w-14 text-center ${day.color}`}
                       >
-                        {day.label.slice(0, 3)}
+                        <span className="block">{day.label.slice(0, 3)}</span>
+                        {day.episode && (
+                          <span className="mt-0.5 block font-normal text-gray-500">
+                            {formatShort(toLocalDateStr(new Date(day.episode.publishDate)))}
+                          </span>
+                        )}
                       </span>
                       {day.episode ? (
                         <>
@@ -888,7 +936,7 @@ export default function Episodes() {
                               <Play size={12} />
                             )}
                           </button>
-                          <span className="text-xs font-medium text-mayden-dark truncate flex-1 min-w-0">
+                          <span className="text-xs font-medium text-mayden-dark break-words flex-1 min-w-[8rem]">
                             {day.episode.title}
                           </span>
                           <StatusBadge status={day.episode.status} />
@@ -906,24 +954,25 @@ export default function Episodes() {
                               No audio
                             </span>
                           )}
-                          <div className="flex items-center gap-1 shrink-0">
+                          <div className="ml-auto flex items-center gap-1 shrink-0">
                             {day.episode.status !== "published" && (
                               <button
                                 onClick={() => handlePublish(day.episode.id)}
-                                className="px-1.5 py-0.5 bg-emerald-500 text-white text-[10px] rounded hover:bg-emerald-600"
+                                className="min-h-8 px-2 bg-emerald-500 text-white text-[10px] rounded hover:bg-emerald-600"
                               >
                                 Publish
                               </button>
                             )}
                             <button
                               onClick={() => openEdit(day.episode)}
-                              className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[10px] rounded hover:bg-gray-200"
+                              className="min-h-8 px-2 bg-gray-100 text-gray-600 text-[10px] rounded hover:bg-gray-200"
                             >
                               Edit
                             </button>
                             <button
                               onClick={() => setDeleteTarget(day.episode)}
-                              className="text-red-400 hover:text-red-600"
+                              aria-label={`Delete ${day.episode.title}`}
+                              className="flex min-h-8 min-w-8 items-center justify-center text-red-400 hover:text-red-600"
                             >
                               <Trash2 size={12} />
                             </button>
