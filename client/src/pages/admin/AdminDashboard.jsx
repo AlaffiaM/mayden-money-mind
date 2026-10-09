@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import {
@@ -17,6 +17,7 @@ import AdminCard from "../../components/admin/AdminCard";
 import AdminTable from "../../components/admin/AdminTable";
 import Loader from "../../components/admin/Loader";
 import { useToast } from "../../components/admin/useToast.js";
+import LoadError from "../../components/ui/LoadError";
 
 function MiniLineChart({ data, color = "#EC268F", height = 60 }) {
   if (!data || data.length === 0) return null;
@@ -83,18 +84,30 @@ export default function AdminDashboard() {
   const [utmReport, setUtmReport] = useState(null);
   const [downloading, setDownloading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
 
-  useEffect(() => {
+  const loadDashboard = useCallback(() => {
     Promise.all([api.get("/admin/stats"), api.get("/admin/reports/utm")])
       .then(([statsRes, utmRes]) => {
         setStats(statsRes.data);
         setUtmReport(utmRes.data);
+        setLoadError(false);
       })
-      .catch(() => {})
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  const retryDashboard = useCallback(() => {
+    setLoading(true);
+    setLoadError(false);
+    loadDashboard();
+  }, [loadDashboard]);
 
   const downloadCsv = async () => {
     setDownloading(true);
@@ -117,7 +130,14 @@ export default function AdminDashboard() {
   };
 
   if (loading) return <Loader label="Loading dashboard…" />;
-  if (!stats) return <p className="text-gray-500">Failed to load dashboard.</p>;
+  if (loadError || !stats) {
+    return (
+      <LoadError
+        message="Couldn't load the admin dashboard. Check your connection and try again."
+        onRetry={retryDashboard}
+      />
+    );
+  }
 
   const cards = [
     {
@@ -263,7 +283,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <button
-          onClick={() => navigate("/admin/subscriptions")}
+          onClick={() => navigate("/admin/users")}
           className="group rounded-2xl border border-gray-100 bg-white p-5 text-left shadow-sm transition-all hover:border-mayden-magenta/30 hover:shadow-md"
         >
           <div className="flex items-center justify-between">
