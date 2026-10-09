@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useSubscription } from "../hooks/useSubscription";
 import { usePricing } from "../hooks/usePricing";
@@ -15,19 +15,31 @@ import {
 } from "lucide-react";
 import SubscriberLayout from "../components/layout/SubscriberLayout";
 import { useToast } from "../components/admin/useToast.js";
+import LoadError from "../components/ui/LoadError";
 
 export default function Subscription() {
   const navigate = useNavigate();
-  const { subscription, loading, subscribe, update, setAutoRenew, refetch } =
+  const { subscription, loading, subscribe, setAutoRenew, refetch } =
     useSubscription();
-  const { pricing } = usePricing();
+  const {
+    pricing,
+    loading: pricingLoading,
+    error: pricingError,
+    reload: reloadPricing,
+  } = usePricing();
   const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlStatus = searchParams.get("status");
   const urlReference = searchParams.get("reference");
+  const urlMode = searchParams.get("mode");
   const [polling, setPolling] = useState(false);
+  const [autoRenewProcessing, setAutoRenewProcessing] = useState(false);
+  const processedReference = useRef(null);
+  const pollingRef = useRef(false);
 
   const pollForActivation = useCallback(async () => {
+    if (pollingRef.current) return;
+    pollingRef.current = true;
     setPolling(true);
     let attempts = 0;
     const maxAttempts = 15;
@@ -36,12 +48,14 @@ export default function Subscription() {
       try {
         const { data } = await api.get("/subscriptions/mine/status");
         if (data.status === "active") {
+          pollingRef.current = false;
           setPolling(false);
           setSearchParams({});
           navigate("/dashboard", { replace: true });
           return;
         }
         if (data.status === "failed" || attempts >= maxAttempts) {
+          pollingRef.current = false;
           setPolling(false);
           setSearchParams({ status: "failed" });
           return;
@@ -51,6 +65,7 @@ export default function Subscription() {
       } catch {
         attempts++;
         if (attempts >= maxAttempts) {
+          pollingRef.current = false;
           setPolling(false);
           setSearchParams({ status: "failed" });
         } else {
@@ -63,21 +78,46 @@ export default function Subscription() {
   }, [navigate, setSearchParams]);
 
   useEffect(() => {
-    if (urlReference) {
-      setSearchParams({ status: "success" });
-      api
-        .post("/payments/verify", { reference: urlReference })
-        .then(() => pollForActivation())
-        .catch(() => pollForActivation());
-    }
-  }, [urlReference]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!urlReference || processedReference.current === urlReference) return;
+    processedReference.current = urlReference;
+    const enablingAutoRenew = urlMode === "auto-renew";
+
+    api
+      .post("/payments/verify", { reference: urlReference })
+      .then(async ({ data }) => {
+        if (!data.success) {
+          setSearchParams({ status: "failed" });
+          return;
+        }
+
+        if (enablingAutoRenew && !data.autoRenew) {
+          await refetch();
+          setSearchParams({ status: "renewal_failed" });
+          return;
+        }
+
+        setSearchParams({
+          status: "success",
+          ...(enablingAutoRenew ? { mode: "auto-renew" } : {}),
+        });
+        await pollForActivation();
+      })
+      .catch(async () => {
+        if (enablingAutoRenew) {
+          await refetch().catch(() => {});
+          setSearchParams({ status: "renewal_check_failed" });
+          return;
+        }
+        setSearchParams({ status: "failed" });
+      });
+  }, [urlReference, urlMode, pollForActivation, refetch, setSearchParams]);
 
   useEffect(() => {
-    if (urlStatus === "success" && !urlReference) {
+    if (urlStatus === "success" && !urlReference && !urlMode) {
       const activationTimer = setTimeout(pollForActivation, 0);
       return () => clearTimeout(activationTimer);
     }
-  }, [urlStatus, urlReference, pollForActivation]);
+  }, [urlStatus, urlReference, urlMode, pollForActivation]);
 
   useEffect(() => {
     if (urlStatus && urlStatus !== "success") {
@@ -104,6 +144,13 @@ export default function Subscription() {
   }, [subscription, refetch]);
 
   const handleSubscribe = async (plan) => {
+    if (pricingLoading || pricingError) {
+      if (pricingError) {
+        toast("Current plan prices couldn't be loaded. Please try again.", "error");
+        reloadPricing();
+      }
+      return;
+    }
     try {
       const sub = await subscribe(plan);
       const { data } = await api.post("/payments/initialize", {
@@ -128,36 +175,79 @@ export default function Subscription() {
 
   const handleCancel = async () => {
     if (!subscription) return;
+    if (
+      !window.confirm(
+        `Turn off automatic renewal? Your access will continue until ${new Date(subscription.nextRenewal).toLocaleDateString()}.`,
+      )
+    ) {
+      return;
+    }
+
+    setAutoRenewProcessing(true);
     try {
-      await update(subscription.id, { status: "cancelled" });
-      navigate("/subscription", { replace: true });
+      await setAutoRenew(subscription.id, false);
+      toast("Automatic renewal is off. Your access continues through this billing period.", "success");
     } catch {
-      toast("We couldn't update your subscription. Please try again.", "error");
+      toast("We couldn't turn off automatic renewal. Please try again.", "error");
+    } finally {
+      setAutoRenewProcessing(false);
     }
   };
 
   const handleAutoRenewToggle = async () => {
     if (!subscription) return;
+
+    if (subscription.autoRenew) {
+      await handleCancel();
+      return;
+    }
+
+    const price =
+      subscription.plan === "weekly" ? pricing.weeklyPrice : pricing.monthlyPrice;
+    if (pricingLoading || pricingError) {
+      if (pricingError) {
+        toast("Current plan prices couldn't be loaded. Please try again.", "error");
+        reloadPricing();
+      }
+      return;
+    }
+    if (
+      !window.confirm(
+        `You'll be charged ₦${price} now to set up automatic card renewal. Continue?`,
+      )
+    ) {
+      return;
+    }
+
+    setAutoRenewProcessing(true);
     try {
-      if (subscription.autoRenew) {
-        await setAutoRenew(subscription.id, false);
+      const { data } = await api.post("/payments/initialize", {
+        subscriptionId: subscription.id,
+        forceCard: true,
+      });
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+        return;
+      }
+
+      const { data: verification } = await api.post("/payments/verify", {
+        reference: data.payment.reference,
+      });
+      if (verification.success && verification.autoRenew) {
+        navigate("/dashboard", { replace: true });
+      } else if (verification.success) {
+        await refetch();
+        toast(
+          "Payment went through, but this card couldn't be set up for automatic renewal. Try another card.",
+          "error",
+        );
       } else {
-        await setAutoRenew(subscription.id, true);
-        const { data } = await api.post("/payments/initialize", {
-          subscriptionId: subscription.id,
-          forceCard: true,
-        });
-        if (data.redirectUrl) {
-          window.location.href = data.redirectUrl;
-        } else {
-          await api.post("/payments/verify", {
-            reference: data.payment.reference,
-          });
-          navigate("/dashboard", { replace: true });
-        }
+        toast("We couldn't confirm the card payment. Please check before trying again.", "error");
       }
     } catch {
       toast("We couldn't update automatic renewal. Please try again.", "error");
+    } finally {
+      setAutoRenewProcessing(false);
     }
   };
 
@@ -231,6 +321,38 @@ export default function Subscription() {
       );
     }
 
+    if (urlStatus === "renewal_failed") {
+      return (
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <AlertTriangle size={20} className="flex-shrink-0 text-amber-600" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">
+              Payment went through, but automatic renewal could not be set up
+            </p>
+            <p className="text-xs text-amber-700">
+              Your access remains active through this billing period. Try a different card to enable automatic renewal.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (urlStatus === "renewal_check_failed") {
+      return (
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <AlertTriangle size={20} className="flex-shrink-0 text-amber-600" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">
+              We couldn't confirm automatic renewal
+            </p>
+            <p className="text-xs text-amber-700">
+              Check your subscription status before trying again to avoid another charge.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     if (subscription?.status === "cancelled") {
       return (
         <div className="mb-6 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -286,6 +408,12 @@ export default function Subscription() {
     <SubscriberLayout>
       <div className="mx-auto max-w-lg">
         {statusBanner}
+        {pricingError && (
+          <LoadError
+            message="Current prices aren't available yet. The service may be waking up; retry before subscribing or turning auto-renew on."
+            onRetry={reloadPricing}
+          />
+        )}
 
         <h1 className="mb-6 text-2xl font-serif font-bold text-mayden-dark">
           My Subscription
@@ -299,7 +427,11 @@ export default function Subscription() {
                   Active
                 </span>
                 <span className="text-sm font-medium text-mayden-dark">
-                  {subscription.plan === "weekly"
+                  {pricingError
+                    ? "Current price unavailable"
+                    : pricingLoading
+                    ? "Loading current price…"
+                    : subscription.plan === "weekly"
                     ? `₦${pricing.weeklyPrice} / Week`
                     : `₦${pricing.monthlyPrice} / Month`}
                 </span>
@@ -344,7 +476,7 @@ export default function Subscription() {
                     <p className="text-xs text-gray-500">
                       {subscription.autoRenew
                         ? `Charged automatically to your card${last4 ? ` (•••• ${last4})` : ""} each ${periodLabel}`
-                        : "Off — your access ends when this billing period expires"}
+                        : "Off — access continues through this paid period. Turning it on charges the plan price now."}
                     </p>
                   </div>
                 </div>
@@ -352,7 +484,11 @@ export default function Subscription() {
                   type="button"
                   onClick={handleAutoRenewToggle}
                   aria-pressed={subscription.autoRenew}
-                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${subscription.autoRenew ? "bg-emerald-500" : "bg-gray-300"}`}
+                  disabled={
+                    autoRenewProcessing ||
+                    (!subscription.autoRenew && (pricingLoading || pricingError))
+                  }
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:cursor-wait disabled:opacity-50 ${subscription.autoRenew ? "bg-emerald-500" : "bg-gray-300"}`}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${subscription.autoRenew ? "translate-x-6" : "translate-x-1"}`}
@@ -365,8 +501,9 @@ export default function Subscription() {
                   variant="outline"
                   className="w-full text-sm !border-red-200 !text-red-500 hover:!bg-red-50"
                   onClick={handleCancel}
+                  disabled={autoRenewProcessing}
                 >
-                  Cancel Subscription
+                  Turn Off Auto-renew
                 </Button>
               )}
             </div>
@@ -375,6 +512,11 @@ export default function Subscription() {
           <div className="space-y-4">
             {!polling && (
               <>
+                {pricingLoading ? (
+                  <p role="status" className="py-6 text-center text-sm text-gray-500">
+                    Loading current plan prices…
+                  </p>
+                ) : !pricingError ? (
                 <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => handleSubscribe("weekly")}
@@ -413,10 +555,11 @@ export default function Subscription() {
                     </p>
                   </button>
                 </div>
+                ) : null}
 
                 <p className="mt-2 text-center text-xs text-gray-400">
-                  Pay by card, bank transfer, or USSD. Only card payments renew
-                  automatically.
+                  Pay by card, bank transfer, or USSD. Eligible card payments
+                  can renew automatically.
                 </p>
               </>
             )}
