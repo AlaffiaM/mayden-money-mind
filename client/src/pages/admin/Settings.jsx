@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import api from "../../services/api";
 import { Save, CreditCard, Clock, Tag } from "lucide-react";
 import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import Loader from "../../components/admin/Loader";
 import { useToast } from "../../components/admin/useToast.js";
+import LoadError from "../../components/ui/LoadError";
 
 const DEFAULT_DAY_LABELS = {
   monday: "Motivation Mondays",
@@ -44,25 +45,37 @@ function Field({ label, children, hint }) {
 export default function Settings() {
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [dayLabels, setDayLabels] = useState(DEFAULT_DAY_LABELS);
   const toast = useToast();
 
-  useEffect(() => {
+  const loadSettings = useCallback(() => {
     api
       .get("/admin/settings")
       .then(({ data }) => {
         setSettings(data);
+        setLoadError(false);
         try {
           setDayLabels(JSON.parse(data.dayLabels || "{}"));
         } catch (error) {
           console.error("Unable to read saved day labels.", error);
         }
       })
-      .catch(() => {})
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  const retrySettings = useCallback(() => {
+    setLoading(true);
+    setLoadError(false);
+    loadSettings();
+  }, [loadSettings]);
 
   const update = (key, value) => setSettings({ ...settings, [key]: value });
 
@@ -88,6 +101,20 @@ export default function Settings() {
   };
 
   if (loading) return <Loader label="Loading settings…" />;
+  if (loadError) {
+    return (
+      <div className="space-y-6">
+        <AdminPageHeading
+          title="Settings"
+          subtitle="Pricing, episode schedule and day-type labels."
+        />
+        <LoadError
+          message="Couldn't load settings. Check your connection and try again."
+          onRetry={retrySettings}
+        />
+      </div>
+    );
+  }
 
   const inputClass =
     "w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-mayden-magenta focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20";
