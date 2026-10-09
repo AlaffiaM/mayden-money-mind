@@ -11,6 +11,7 @@ export function PlayerProvider({ children }) {
   const {
     audioRef,
     playing,
+    loading: buffering,
     currentTime,
     duration,
     error,
@@ -22,6 +23,11 @@ export function PlayerProvider({ children }) {
     skip,
     handleTimeUpdate,
     handleLoadedMetadata,
+    handlePlaying,
+    handleWaiting,
+    handleCanPlay,
+    handlePause,
+    handleEnded,
     handleError,
   } = useAudio();
 
@@ -117,6 +123,8 @@ export function PlayerProvider({ children }) {
         duration,
         error,
         loading,
+        fetching: loading,
+        buffering,
         setError,
         playEpisode,
         toggle,
@@ -134,8 +142,12 @@ export function PlayerProvider({ children }) {
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={(e) => {
           handleLoadedMetadata(e);
-          setLoading(false);
         }}
+        onPlaying={handlePlaying}
+        onWaiting={handleWaiting}
+        onCanPlay={handleCanPlay}
+        onPause={handlePause}
+        onEnded={handleEnded}
         onError={handleError}
       />
     </PlayerContext.Provider>
