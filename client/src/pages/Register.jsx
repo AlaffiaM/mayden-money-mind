@@ -185,6 +185,9 @@ export default function Register() {
           >
             Phone (optional)
           </label>
+          <p className="mb-1.5 text-xs text-gray-400">
+            You can leave this blank and register with your email.
+          </p>
           <div className="relative">
             <Phone
               size={16}
