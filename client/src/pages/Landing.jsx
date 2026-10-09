@@ -16,37 +16,55 @@ import Button from "../components/ui/Button";
 import AudioPlayer from "../components/ui/AudioPlayer";
 import PricingCard from "../components/ui/PricingCard";
 import FaqAccordion from "../components/ui/FaqAccordion";
+import LoadError from "../components/ui/LoadError";
 import { LANDING } from "../constants/copy";
 import { usePricing } from "../hooks/usePricing";
-import { businessDayOfWeek } from "../utils/businessTime.js";
 
 const icons = { Sun, Target, Heart, Users, TrendingUp, Lock, Shield, Clock };
-const WEEKDAY_KEYS = [
-  "sunday",
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-];
 
 export default function Landing() {
   const navigate = useNavigate();
-  const { pricing, dayLabels } = usePricing();
-  const todayKey = WEEKDAY_KEYS[businessDayOfWeek(new Date())];
-  const todayTheme = LANDING.blueprint.days.find(
-    (item) => item.key === todayKey,
-  );
+  const {
+    pricing,
+    dayLabels,
+    loading: pricingLoading,
+    error: pricingError,
+    reload: reloadPricing,
+  } = usePricing();
 
   const handleSubscribe = () => navigate("/register");
   const handlePlaySample = () =>
     document.getElementById("audio")?.scrollIntoView({ behavior: "smooth" });
+  const createAccountLabel = LANDING.footer.newsletter.cta;
 
   return (
     <main className="min-h-screen bg-white text-gray-800 relative pb-20 sm:pb-0">
-      <div className="absolute top-0 left-0 right-0 z-20 px-4 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-end gap-4">
+      <div className="absolute top-0 left-0 right-0 z-20 px-4 py-3">
+        <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:justify-between">
+          <nav
+            aria-label="Page sections"
+            className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"
+          >
+            <a
+              href="#audio"
+              className="text-xs sm:text-sm text-gray-500 hover:text-mayden-magenta transition-colors font-medium"
+            >
+              Free sample
+            </a>
+            <a
+              href="#how-it-works"
+              className="text-xs sm:text-sm text-gray-500 hover:text-mayden-magenta transition-colors font-medium"
+            >
+              How it works
+            </a>
+            <a
+              href="#pricing"
+              className="text-xs sm:text-sm text-gray-500 hover:text-mayden-magenta transition-colors font-medium"
+            >
+              Pricing
+            </a>
+          </nav>
+          <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => navigate("/login")}
             className="text-sm text-gray-500 hover:text-mayden-magenta transition-colors font-medium"
@@ -59,6 +77,7 @@ export default function Landing() {
           >
             Get Started
           </button>
+          </div>
         </div>
       </div>
 
@@ -99,6 +118,10 @@ export default function Landing() {
           <p className="text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto mb-6 leading-relaxed">
             {LANDING.hero.subheadline}
           </p>
+          <p className="mb-6 text-sm text-gray-500">
+            Create a free account first, then choose your plan and payment
+            method. Listening to the sample does not require an account.
+          </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 lg:gap-8 mb-10">
             {LANDING.hero.trust.map((item, i) => {
@@ -121,12 +144,40 @@ export default function Landing() {
               pill
               className="shadow-xl shadow-mayden-magenta/30"
             >
-              Subscribe Now – ₦{pricing.weeklyPrice} / Week
+              Create your free account
             </Button>
             <Button variant="outline" onClick={handlePlaySample} pill>
               {LANDING.hero.ctaPlay}
             </Button>
           </div>
+        </div>
+      </section>
+
+      <section id="audio" className="bg-gray-50 px-4 py-16 lg:py-20 scroll-mt-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl lg:text-4xl font-serif font-bold text-mayden-dark mb-8">
+            {LANDING.audio.headline}
+          </h2>
+          <div className="max-w-lg mx-auto bg-white rounded-2xl p-6 lg:p-8 shadow-sm border border-gray-100">
+            <p className="text-sm font-semibold text-mayden-dark mb-1">
+              {LANDING.audio.title}
+            </p>
+            <p className="text-xs text-gray-400 mb-6">
+              {LANDING.audio.subtitle}
+            </p>
+            <AudioPlayer
+              src="/audio/Maiden Microfinance Bank MONDAY.mp3.mpeg"
+              large
+              runTimeSeconds={87}
+            />
+          </div>
+          <Button
+            onClick={handleSubscribe}
+            pill
+            className="mt-6"
+          >
+            {createAccountLabel}
+          </Button>
         </div>
       </section>
 
@@ -147,7 +198,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="bg-white px-4 py-12 lg:py-16">
+      <section id="how-it-works" className="bg-white px-4 py-12 lg:py-16 scroll-mt-4">
         <div className="max-w-3xl mx-auto">
           <h3 className="text-center text-sm font-semibold text-gray-400 uppercase tracking-wider mb-8">
             {LANDING.howItWorks.headline}
@@ -173,29 +224,6 @@ export default function Landing() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section id="audio" className="bg-gray-50 px-4 py-16 lg:py-20">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl lg:text-4xl font-serif font-bold text-mayden-dark mb-8">
-            {LANDING.audio.headline}
-          </h2>
-          <div className="max-w-lg mx-auto bg-white rounded-2xl p-6 lg:p-8 shadow-sm border border-gray-100">
-            <p className="text-sm font-semibold text-mayden-dark mb-1">
-              {todayTheme
-                ? `${dayLabels[todayKey] || todayTheme.day} — ${todayTheme.pillar}`
-                : "Money & Mind — Weekend"}
-            </p>
-            <p className="text-xs text-gray-400 mb-6">
-              {LANDING.audio.subtitle}
-            </p>
-            <AudioPlayer
-              src="/audio/Maiden Microfinance Bank MONDAY.mp3.mpeg"
-              large
-            />
-          </div>
-          <p className="text-xs text-gray-400 mt-4">{LANDING.audio.caption}</p>
         </div>
       </section>
 
@@ -228,6 +256,17 @@ export default function Landing() {
         </div>
       </section>
 
+      <section className="bg-white px-4 pb-16 lg:pb-20">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-gray-100 bg-mayden-pink-tint/30 p-6 text-center sm:p-8">
+          <h2 className="mb-3 text-2xl font-serif font-bold text-mayden-dark">
+            {LANDING.creators.headline}
+          </h2>
+          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-gray-600">
+            {LANDING.creators.body}
+          </p>
+        </div>
+      </section>
+
       <section
         id="pricing"
         className="bg-gray-50 border-t border-gray-100 px-4 py-16 lg:py-20"
@@ -236,25 +275,36 @@ export default function Landing() {
           <h2 className="text-3xl lg:text-4xl font-serif font-bold text-mayden-dark mb-10">
             {LANDING.pricing.headline}
           </h2>
-          <PricingCard
-            plans={[
-              {
-                label: "Weekly",
-                price: `₦${pricing.weeklyPrice}`,
-                period: "/week",
-              },
-              {
-                label: "Monthly",
-                price: `₦${pricing.monthlyPrice}`,
-                period: "/month",
-                badge: "Most Popular",
-                save: `Save ₦${parseInt(pricing.weeklyPrice) * 4 - parseInt(pricing.monthlyPrice)} vs. weekly`,
-              },
-            ]}
-            note={LANDING.pricing.note}
-            trust={LANDING.pricing.trust}
-            included={LANDING.pricing.included}
-          />
+          {pricingError ? (
+            <LoadError
+              message="Current prices aren't available yet. The service may be waking up; please try again in a moment."
+              onRetry={reloadPricing}
+            />
+          ) : pricingLoading ? (
+            <p role="status" className="text-sm text-gray-500">
+              Loading current plan prices…
+            </p>
+          ) : (
+            <PricingCard
+              plans={[
+                {
+                  label: "Weekly",
+                  price: `₦${pricing.weeklyPrice}`,
+                  period: "/week",
+                },
+                {
+                  label: "Monthly",
+                  price: `₦${pricing.monthlyPrice}`,
+                  period: "/month",
+                  badge: "Most Popular",
+                  save: `Save ₦${parseInt(pricing.weeklyPrice) * 4 - parseInt(pricing.monthlyPrice)} vs. weekly`,
+                },
+              ]}
+              note={LANDING.pricing.note}
+              trust={LANDING.pricing.trust}
+              included={LANDING.pricing.included}
+            />
+          )}
           <div className="mt-8">
             <Button
               pill
@@ -323,7 +373,7 @@ export default function Landing() {
           onClick={handleSubscribe}
           className="w-full py-3 bg-mayden-magenta text-white rounded-xl font-semibold text-sm shadow-lg shadow-mayden-magenta/25 hover:bg-mayden-magenta/90 transition-colors"
         >
-          Subscribe – ₦{pricing.weeklyPrice}/week
+          Create a free account
         </button>
       </div>
     </main>
