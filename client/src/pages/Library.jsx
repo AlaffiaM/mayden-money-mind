@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../services/api";
 import { usePlayer } from "../context/usePlayer";
 import { Search, Play, Pause } from "lucide-react";
 import SubscriberLayout from "../components/layout/SubscriberLayout";
+import LoadError from "../components/ui/LoadError";
 
 const moodTags = [
   { label: "I want focus", query: "monday" },
@@ -45,15 +46,31 @@ function EqBars() {
 
 export default function Library() {
   const [episodes, setEpisodes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [search, setSearch] = useState("");
   const { episode: activeEp, playing, playEpisode, toggle } = usePlayer();
 
-  useEffect(() => {
+  const loadLibrary = useCallback(() => {
     api
       .get("/episodes/my-library")
-      .then(({ data }) => setEpisodes(data))
-      .catch(() => {});
+      .then(({ data }) => {
+        setEpisodes(data);
+        setLoadError(false);
+      })
+      .catch(() => setLoadError(true))
+      .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadLibrary();
+  }, [loadLibrary]);
+
+  const retryLibrary = useCallback(() => {
+    setLoading(true);
+    setLoadError(false);
+    loadLibrary();
+  }, [loadLibrary]);
 
   const dayTypes = ["monday", "tuesday", "wednesday", "thursday", "friday"];
   const isDayType = dayTypes.includes(search.toLowerCase());
@@ -125,7 +142,17 @@ export default function Library() {
       </div>
 
       <div className="space-y-3">
-        {filtered.map((ep) => {
+        {loading ? (
+          <div className="py-12 text-center">
+            <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-mayden-magenta border-t-transparent" />
+            <p className="mt-3 text-sm text-gray-500">Loading your library…</p>
+          </div>
+        ) : loadError ? (
+          <LoadError
+            message="Couldn't load your library. Check your connection and try again."
+            onRetry={retryLibrary}
+          />
+        ) : filtered.map((ep) => {
           const isActive = activeEp?.id === ep.id;
           const isPlaying = isActive && playing;
           return (
@@ -191,7 +218,7 @@ export default function Library() {
             </div>
           );
         })}
-        {filtered.length === 0 && (
+        {!loading && !loadError && filtered.length === 0 && (
           <p className="py-12 text-center text-gray-400">
             {episodes.length === 0
               ? "Your library is empty. Start listening from the dashboard to build it."
