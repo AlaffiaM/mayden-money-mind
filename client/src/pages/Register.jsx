@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
-import { Mail, User, Phone, Loader2 } from "lucide-react";
+import { Mail, User, Loader2 } from "lucide-react";
+import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 import PasswordInput from "../components/ui/PasswordInput";
 import AuthLayout from "../components/ui/AuthLayout";
 import { getUtm } from "../utils/utm";
@@ -16,10 +18,7 @@ function validate(form) {
   if (!EMAIL_RE.test(form.email.trim())) {
     errors.email = "A valid email is required";
   }
-  if (
-    form.phone.trim() &&
-    (form.phone.trim().length < 7 || form.phone.trim().length > 20)
-  ) {
+  if (form.phone && !isValidPhoneNumber(form.phone)) {
     errors.phone = "Enter a valid phone number";
   }
   if (form.password.length < 8) {
@@ -188,21 +187,26 @@ export default function Register() {
           <p className="mb-1.5 text-xs text-gray-400">
             You can leave this blank and register with your email.
           </p>
-          <div className="relative">
-            <Phone
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              id="phone"
-              type="tel"
-              autoComplete="tel"
-              value={form.phone}
-              onChange={setField("phone")}
-              className={inputClass(errors.phone)}
-              placeholder="080 1234 5678"
-            />
-          </div>
+          <PhoneInput
+            id="phone"
+            defaultCountry="NG"
+            value={form.phone || undefined}
+            onChange={(phone) => {
+              setForm((current) => ({ ...current, phone: phone || "" }));
+              setErrors((current) => ({ ...current, phone: undefined }));
+            }}
+            countrySelectProps={{ "aria-label": "Country calling code" }}
+            numberInputProps={{
+              autoComplete: "tel",
+              className: "min-w-0 flex-1 bg-transparent py-2.5 text-sm outline-none",
+              placeholder: "080 1234 5678",
+            }}
+            className={`w-full rounded-lg border px-3 ${
+              errors.phone
+                ? "border-amber-300"
+                : "border-gray-200 focus-within:border-mayden-magenta"
+            } focus-within:ring-2 focus-within:ring-mayden-magenta/20`}
+          />
           {errors.phone && (
             <p className="mt-1.5 text-xs text-amber-700">{errors.phone}</p>
           )}
