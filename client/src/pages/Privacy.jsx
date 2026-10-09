@@ -8,17 +8,19 @@ export default function Privacy() {
         <h1 className="text-3xl font-serif font-bold text-mayden-dark mb-6">Privacy Policy</h1>
         <div className="prose prose-sm text-gray-600 leading-relaxed space-y-4">
           <p>Effective Date: January 1, 2026</p>
-          <p>This Privacy Policy describes how Mayden Microfinance Bank ("we", "us") collects, uses, and protects your personal information in compliance with the Nigeria Data Protection Regulation (NDPR) and the Nigeria Data Protection Act (NDPA).</p>
+          <p>This Privacy Policy explains how Mayden Microfinance Bank ("we", "us") handles personal information when you use Money & Mind. It is intended to describe the service's current practices.</p>
           <h2 className="text-lg font-semibold text-mayden-dark">1. Information We Collect</h2>
-          <p>We collect your name, email address, phone number, payment history, and listening activity data when you use the Money & Mind service.</p>
+          <p>We collect the name and email address you provide when creating an account, and an optional phone number if you choose to provide one. We also process account and subscription status, payment amounts and references, the last four digits of a card when supplied by the payment processor, and listening activity such as episodes played.</p>
           <h2 className="text-lg font-semibold text-mayden-dark">2. How We Use Your Information</h2>
-          <p>Your information is used to provide and improve the Service, process payments, send notifications, and communicate with you about your subscription.</p>
+          <p>We use this information to create and secure accounts, provide audio and subscription access, process and reconcile payments, send account or service messages, respond to support requests, and maintain and improve the service.</p>
           <h2 className="text-lg font-semibold text-mayden-dark">3. Data Protection</h2>
-          <p>We implement bank-grade encryption and security measures to protect your personal data. Your data is stored securely and is not shared with third parties except as required by law.</p>
-          <h2 className="text-lg font-semibold text-mayden-dark">4. Your Rights</h2>
-          <p>Under the NDPA, you have the right to access, correct, delete, and port your personal data. To exercise these rights, contact our support team.</p>
-          <h2 className="text-lg font-semibold text-mayden-dark">5. Contact</h2>
-          <p>For privacy-related inquiries, please contact support through the app or email us at support@maydenbank.com.</p>
+          <p>We use technical and organizational safeguards intended to protect account information. Passwords are stored as password hashes. Paystack processes payments; Money & Mind does not collect or store full payment-card numbers. Email delivery may be handled by Brevo. Service providers that host or operate the app may process information on our behalf. We may also disclose information where required by law. No online service can guarantee absolute security.</p>
+          <h2 className="text-lg font-semibold text-mayden-dark">4. Retention</h2>
+          <p>We retain information for as long as needed to operate your account and provide the service, and as needed for security, dispute handling, accounting, and legal obligations. Some records may need to be retained after an account is closed where the law requires it.</p>
+          <h2 className="text-lg font-semibold text-mayden-dark">5. Your Rights</h2>
+          <p>You may request access to or correction of your personal information, and may ask about deletion or other rights available under applicable data-protection law. We may need to retain some records for legal or operational reasons. Our privacy-request contact details are being verified and will be added to this policy once confirmed.</p>
+          <h2 className="text-lg font-semibold text-mayden-dark">6. Contact</h2>
+          <p>Our contact details for privacy questions and requests are being verified. We will update this policy when a monitored contact channel has been confirmed.</p>
         </div>
       </div>
     </div>
