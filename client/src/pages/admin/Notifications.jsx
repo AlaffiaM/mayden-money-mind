@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../../services/api";
 import { Send, Bell, Clock, CheckCircle, Trash2 } from "lucide-react";
 import AdminPageHeading from "../../components/admin/AdminPageHeading";
@@ -6,10 +6,12 @@ import AdminCard from "../../components/admin/AdminCard";
 import ConfirmModal from "../../components/admin/ConfirmModal";
 import Loader from "../../components/admin/Loader";
 import { useToast } from "../../components/admin/useToast.js";
+import LoadError from "../../components/ui/LoadError";
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -18,13 +20,26 @@ export default function Notifications() {
   const [confirmClearAll, setConfirmClearAll] = useState(false);
   const toast = useToast();
 
-  useEffect(() => {
+  const loadNotifications = useCallback(() => {
     api
       .get("/admin/notifications")
-      .then(({ data }) => setNotifications(data))
-      .catch(() => {})
+      .then(({ data }) => {
+        setNotifications(data);
+        setLoadError(false);
+      })
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
+
+  const retryNotifications = useCallback(() => {
+    setLoading(true);
+    setLoadError(false);
+    loadNotifications();
+  }, [loadNotifications]);
 
   const handleSend = async () => {
     if (!title.trim() || !body.trim()) return;
@@ -39,9 +54,7 @@ export default function Notifications() {
       setSent(true);
       setTitle("");
       setBody("");
-      api
-        .get("/admin/notifications")
-        .then(({ data }) => setNotifications(data));
+      loadNotifications();
       setTimeout(() => setSent(false), 3000);
     } catch (err) {
       toast(err.response?.data?.error || "Failed to send", "error");
@@ -190,9 +203,18 @@ export default function Notifications() {
           </div>
           <div className="max-h-[600px] overflow-y-auto">
             {notifications.length === 0 ? (
-              <p className="py-12 text-center text-gray-400">
-                No notifications sent yet
-              </p>
+              loadError ? (
+                <div className="p-4">
+                  <LoadError
+                    message="Couldn't load notification history. Check your connection and try again."
+                    onRetry={retryNotifications}
+                  />
+                </div>
+              ) : (
+                <p className="py-12 text-center text-gray-400">
+                  No notifications sent yet
+                </p>
+              )
             ) : (
               <div className="divide-y divide-gray-100">
                 {notifications.map((n) => (
