@@ -4,16 +4,17 @@ import { useAudio } from "../../hooks/useAudio";
 import { usePlayer } from "../../context/usePlayer";
 import { useToast } from "../admin/useToast";
 
-function Waveform({ playing }) {
+function Waveform({ playing, loading = false }) {
   return (
     <div
-      className={`flex items-center justify-center gap-[3px] h-8 ${playing ? "waveform-playing" : ""}`}
+      className={`flex h-8 items-center justify-center gap-[3px] ${
+        playing ? "waveform-playing" : loading ? "waveform-loading" : ""
+      }`}
     >
       {[...Array(7)].map((_, i) => (
         <div
           key={i}
           className="waveform-bar w-[3px] rounded-full bg-mayden-magenta/60"
-          style={{ height: "6px" }}
         />
       ))}
     </div>
@@ -54,6 +55,8 @@ function GlobalPlayer({ episode, large = false }) {
     current,
     duration,
     loading,
+    buffering,
+    fetching,
     episode: activeEp,
     playEpisode,
     toggle,
@@ -63,7 +66,10 @@ function GlobalPlayer({ episode, large = false }) {
 
   const isActive = activeEp?.id === episode.id;
   const isPlaying = isActive && playing;
-  const displayDuration = isActive ? duration : episode?.runTimeSeconds || 0;
+  const isBuffering = loading || (isActive && buffering);
+  const displayDuration = isActive
+    ? duration || episode?.runTimeSeconds || 0
+    : episode?.runTimeSeconds || 0;
 
   const handleToggle = () => {
     if (!isActive) playEpisode(episode);
@@ -81,7 +87,18 @@ function GlobalPlayer({ episode, large = false }) {
           large ? "flex flex-col items-center" : "flex items-center gap-4"
         }
       >
-        {large && <Waveform playing={isPlaying} />}
+        {large && (
+          <div className="flex flex-col items-center">
+            <Waveform playing={isPlaying && !isBuffering} loading={isBuffering} />
+            <p role="status" aria-live="polite" className="text-xs text-gray-500">
+              {isBuffering
+                ? "Buffering audio…"
+                : isPlaying
+                  ? "Now playing"
+                  : ""}
+            </p>
+          </div>
+        )}
 
         <div className={`relative flex items-center ${large ? "my-4" : ""}`}>
           {large && <RadialPulse active={isPlaying} />}
@@ -102,12 +119,19 @@ function GlobalPlayer({ episode, large = false }) {
 
             <button
               onClick={handleToggle}
-              disabled={loading}
+              disabled={fetching}
+              aria-label={
+                isBuffering
+                  ? "Buffering audio"
+                  : isPlaying
+                    ? "Pause audio"
+                    : "Play audio"
+              }
               className={`flex-shrink-0 rounded-full bg-mayden-magenta text-white hover:bg-mayden-magenta/90 hover:scale-105 transition-all shadow-lg shadow-mayden-magenta/25 disabled:opacity-50 disabled:cursor-not-allowed ${
                 large ? "w-20 h-20 lg:w-[120px] lg:h-[120px]" : "w-12 h-12"
               } flex items-center justify-center`}
             >
-              {loading ? (
+              {isBuffering ? (
                 <div
                   className={`border-2 border-white border-t-transparent rounded-full animate-spin ${large ? "w-8 h-8" : "w-5 h-5"}`}
                 />
@@ -146,13 +170,17 @@ function GlobalPlayer({ episode, large = false }) {
                   0,
                   Math.min(1, (e.clientX - rect.left) / rect.width),
                 );
-                seek(pct * (duration || displayDuration));
+                seek(pct * displayDuration, displayDuration);
               }}
             >
               <div
                 className="h-full bg-mayden-magenta rounded-full transition-all duration-150"
                 style={{
-                  width: `${duration > 0 ? ((isActive ? current : 0) / duration) * 100 : 0}%`,
+                  width: `${
+                    displayDuration > 0
+                      ? ((isActive ? current : 0) / displayDuration) * 100
+                      : 0
+                  }%`,
                 }}
               />
             </div>
@@ -166,21 +194,27 @@ function GlobalPlayer({ episode, large = false }) {
   );
 }
 
-function PlayerWithSrc({ src, large = false }) {
+function PlayerWithSrc({ src, large = false, runTimeSeconds = 0 }) {
   const toast = useToast();
   const {
     playing,
     currentTime,
     duration,
+    loading,
     error,
     audioRef,
     toggle,
     handleTimeUpdate,
     handleLoadedMetadata,
+    handlePlaying,
+    handleWaiting,
+    handleCanPlay,
+    handlePause,
+    handleEnded,
     handleError,
     seek,
     skip,
-  } = useAudio();
+  } = useAudio({ durationHint: runTimeSeconds });
 
   useEffect(() => {
     if (error) toast(error, "error");
@@ -204,6 +238,11 @@ function PlayerWithSrc({ src, large = false }) {
         disablePictureInPicture
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
+        onPlaying={handlePlaying}
+        onWaiting={handleWaiting}
+        onCanPlay={handleCanPlay}
+        onPause={handlePause}
+        onEnded={handleEnded}
         onError={handleError}
         preload="metadata"
       />
@@ -212,7 +251,14 @@ function PlayerWithSrc({ src, large = false }) {
           large ? "flex flex-col items-center" : "flex items-center gap-4"
         }
       >
-        {large && <Waveform playing={playing} />}
+        {large && (
+          <div className="flex flex-col items-center">
+            <Waveform playing={playing && !loading} loading={loading} />
+            <p role="status" aria-live="polite" className="text-xs text-gray-500">
+              {loading ? "Buffering audio…" : playing ? "Now playing" : ""}
+            </p>
+          </div>
+        )}
 
         <div className={`relative flex items-center ${large ? "my-4" : ""}`}>
           {large && <RadialPulse active={playing} />}
@@ -232,11 +278,16 @@ function PlayerWithSrc({ src, large = false }) {
 
             <button
               onClick={handleToggle}
+              aria-label={loading ? "Buffering audio" : playing ? "Pause audio" : "Play audio"}
               className={`flex-shrink-0 rounded-full bg-mayden-magenta text-white hover:bg-mayden-magenta/90 hover:scale-105 transition-all shadow-lg shadow-mayden-magenta/25 ${
                 large ? "w-20 h-20 lg:w-[120px] lg:h-[120px]" : "w-12 h-12"
               } flex items-center justify-center`}
             >
-              {playing ? (
+              {loading ? (
+                <div
+                  className={`border-2 border-white border-t-transparent rounded-full animate-spin ${large ? "w-8 h-8" : "w-5 h-5"}`}
+                />
+              ) : playing ? (
                 <Pause size={large ? 36 : 20} />
               ) : (
                 <Play size={large ? 36 : 20} className="ml-1" />
@@ -270,18 +321,22 @@ function PlayerWithSrc({ src, large = false }) {
                   0,
                   Math.min(1, (e.clientX - rect.left) / rect.width),
                 );
-                seek(pct * duration);
+                seek(pct * (duration || runTimeSeconds));
               }}
             >
               <div
                 className="h-full bg-mayden-magenta rounded-full transition-all duration-150"
                 style={{
-                  width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
+                  width: `${
+                    (duration || runTimeSeconds) > 0
+                      ? (currentTime / (duration || runTimeSeconds)) * 100
+                      : 0
+                  }%`,
                 }}
               />
             </div>
             <span className="text-xs text-gray-400 w-10 tabular-nums">
-              {formatTime(duration)}
+              {formatTime(duration || runTimeSeconds)}
             </span>
           </div>
         </div>
@@ -290,7 +345,18 @@ function PlayerWithSrc({ src, large = false }) {
   );
 }
 
-export default function AudioPlayer({ episode, src, large = false }) {
+export default function AudioPlayer({
+  episode,
+  src,
+  large = false,
+  runTimeSeconds = 0,
+}) {
   if (episode) return <GlobalPlayer episode={episode} large={large} />;
-  return <PlayerWithSrc src={src} large={large} />;
+  return (
+    <PlayerWithSrc
+      src={src}
+      large={large}
+      runTimeSeconds={runTimeSeconds}
+    />
+  );
 }
