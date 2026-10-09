@@ -150,7 +150,7 @@ export async function update(req, res) {
       }
       updateData.pausedAt = null;
     } else if (status === "cancelled") {
-      if (!sub.autoRenew || !sub.paystackSubscriptionCode) {
+      if (!sub.paystackSubscriptionCode) {
         return res.status(400).json({
           error: `This subscription does not auto-renew and cannot be cancelled — it will end automatically on ${sub.nextRenewal.toISOString().split('T')[0]}`,
         });
@@ -165,6 +165,8 @@ export async function update(req, res) {
         });
       }
       updateData.autoRenew = false;
+      updateData.paystackSubscriptionCode = null;
+      if (sub.status === "active") updateData.status = "active";
     }
 
     const updated = await prisma.subscription.update({
@@ -192,17 +194,26 @@ export async function setAutoRenew(req, res) {
       return res.status(400).json({ error: "autoRenew must be a boolean" });
     }
 
-    if (autoRenew === false && sub.autoRenew && sub.paystackSubscriptionCode) {
+    if (autoRenew) {
+      return res.status(400).json({
+        error: "Complete a card payment to set up automatic renewal",
+      });
+    }
+
+    if (sub.paystackSubscriptionCode) {
       try {
         await disablePaystackSubscription(sub.paystackSubscriptionCode);
       } catch (err) {
         console.error("[auto-renew] failed to disable Paystack subscription:", err.message);
+        return res.status(502).json({
+          error: "Failed to turn off automatic renewal with the payment provider — please try again",
+        });
       }
     }
 
     const updated = await prisma.subscription.update({
       where: { id: parseInt(req.params.id) },
-      data: { autoRenew },
+      data: { autoRenew: false, paystackSubscriptionCode: null },
     });
 
     res.json(updated);
