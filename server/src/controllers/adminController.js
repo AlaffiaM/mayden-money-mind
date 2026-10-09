@@ -6,6 +6,11 @@ import { getUploadUrl } from "../services/audioStorageService.js";
 import { signAudioUrl } from "../utils/audioAccessControl.js";
 import { businessDateStr, businessDayOfWeek, businessToday } from "../utils/businessTime.js";
 import logger from "../utils/logger.js";
+import {
+  getPaystackPlanAmount,
+  updatePaystackPlanAmount,
+} from "../services/paymentService.js";
+import { brevoConfigured, sendUserEmail } from "../services/emailService.js";
 
 const ADMIN_PREVIEW_TTL_SECONDS = 60 * 60;
 
@@ -30,6 +35,21 @@ const SETTINGS_KEYS = [
   "dayLabels",
   "notificationTime", "enableInApp", "enableWhatsApp", "enableEmail",
 ];
+
+const SUBSCRIPTION_PLANS = {
+  weekly: {
+    label: "weekly",
+    interval: "week",
+    priceKey: "weeklyPrice",
+    codeKey: "paystackPlanWeekly",
+  },
+  monthly: {
+    label: "monthly",
+    interval: "month",
+    priceKey: "monthlyPrice",
+    codeKey: "paystackPlanMonthly",
+  },
+};
 
 const SENSITIVE_SETTING_RE =
   /(secret|password|passwd|token|api[_-]?key|private[_-]?key|credential|webhook|signature|hash)$/i;
@@ -69,19 +89,120 @@ export async function getSettings(req, res, next) {
   }
 }
 
-export async function updateSettings(req, res, next) {
+async function announcePriceChanges(changes) {
+  for (const change of changes) {
+    const plan = SUBSCRIPTION_PLANS[change.plan];
+    const subscriptions = await prisma.subscription.findMany({
+      where: { plan: change.plan, status: { in: ["active", "past_due"] } },
+      select: {
+        autoRenew: true,
+        user: { select: { id: true, fullName: true, email: true } },
+      },
+    });
+
+    if (!subscriptions.length) continue;
+
+    const body = `The ${plan.label} subscription price is changing from ₦${change.oldPrice} to ₦${change.newPrice} per ${plan.interval}. If automatic renewal is on, the new price will be charged at your next renewal. You can turn off automatic renewal anytime in your subscription settings; your access continues through the paid period.`;
+    const automaticRenewalUsers = new Map();
+    for (const subscription of subscriptions) {
+      if (subscription.autoRenew && subscription.user.email) {
+        automaticRenewalUsers.set(subscription.user.id, subscription.user);
+      }
+    }
+
+    if (automaticRenewalUsers.size) {
+      if (!brevoConfigured()) {
+        throw new Error("Configure Brevo email before changing prices for subscribers with automatic renewal");
+      }
+
+      const results = await Promise.allSettled(
+        [...automaticRenewalUsers.values()].map((user) =>
+          sendUserEmail({
+            to: user.email,
+            subject: "An update to your Money & Mind subscription price",
+            title: "Subscription price update",
+            body: `Hi ${user.fullName}, ${body}`,
+          }),
+        ),
+      );
+      if (results.some((result) => result.status === "rejected" || !result.value?.sent)) {
+        throw new Error("Price-change email notices could not be delivered to all subscribers");
+      }
+    }
+
+    await prisma.notification.create({
+      data: {
+        title: "Subscription price update",
+        body,
+        channels: "inapp",
+        sentBy: "system",
+        subscribersOnly: true,
+      },
+    });
+  }
+}
+
+async function updateExistingPaystackPlanPrices(changes) {
+  const updatedPlans = [];
+  try {
+    for (const change of changes) {
+      const plan = SUBSCRIPTION_PLANS[change.plan];
+      const setting = await prisma.setting.findUnique({
+        where: { key: plan.codeKey },
+      });
+      const subscriptions = await prisma.subscription.findMany({
+        where: {
+          plan: change.plan,
+          status: { in: ["active", "past_due"] },
+          autoRenew: true,
+        },
+        select: { paystackPlanCode: true },
+      });
+      const planCodes = new Set(
+        [setting?.value, ...subscriptions.map((sub) => sub.paystackPlanCode)].filter(Boolean),
+      );
+
+      for (const planCode of planCodes) {
+        const oldAmount = await getPaystackPlanAmount(planCode);
+        if (oldAmount === change.newPrice) continue;
+        await updatePaystackPlanAmount(planCode, change.newPrice);
+        updatedPlans.push({ planCode, amount: oldAmount });
+      }
+    }
+  } catch (err) {
+    const rollbackErrors = [];
+    for (const updated of updatedPlans.reverse()) {
+      try {
+        await updatePaystackPlanAmount(updated.planCode, updated.amount);
+      } catch (rollbackError) {
+        rollbackErrors.push(rollbackError.message);
+      }
+    }
+    if (rollbackErrors.length) {
+      logger.error("[settings] Paystack price rollback failed:", rollbackErrors);
+    }
+    throw err;
+  }
+  return updatedPlans;
+}
+
+export async function updateSettings(req, res) {
   try {
     const updates = req.body;
     const ops = [];
+    const normalizedUpdates = {};
 
     for (const key of SETTINGS_KEYS) {
       if (updates[key] !== undefined) {
 
         let value = updates[key];
-        if (key === 'weeklyPrice' || key === 'gracePeriodHours') {
+        if (key === "weeklyPrice" || key === "monthlyPrice" || key === "gracePeriodHours") {
           const num = Number(value);
           if (isNaN(num) || !isFinite(num)) {
             return res.status(400).json({ error: `Invalid value for ${key}: must be a number` });
+          }
+          if ((key === "weeklyPrice" || key === "monthlyPrice") && (!Number.isInteger(num) || num <= 0)) {
+            return res.status(400).json({ error: `Invalid value for ${key}: must be a positive whole number` });
           }
           value = String(num);
         } else if (key === 'dayLabels') {
@@ -102,6 +223,7 @@ export async function updateSettings(req, res, next) {
           }
           value = JSON.stringify(parsed);
         }
+        normalizedUpdates[key] = value;
         ops.push(
           prisma.setting.upsert({
             where: { key },
@@ -112,11 +234,48 @@ export async function updateSettings(req, res, next) {
       }
     }
 
-    await Promise.all(ops);
+    const currentPriceSettings = await prisma.setting.findMany({
+      where: { key: { in: ["weeklyPrice", "monthlyPrice"] } },
+    });
+    const currentPrices = {
+      weeklyPrice: "100",
+      monthlyPrice: "350",
+    };
+    for (const setting of currentPriceSettings) currentPrices[setting.key] = setting.value;
+
+    const priceChanges = Object.entries(SUBSCRIPTION_PLANS)
+      .filter(([, plan]) => normalizedUpdates[plan.priceKey] !== undefined)
+      .map(([planName, plan]) => ({
+        plan: planName,
+        oldPrice: Number(currentPrices[plan.priceKey]),
+        newPrice: Number(normalizedUpdates[plan.priceKey]),
+      }))
+      .filter((change) => change.oldPrice !== change.newPrice);
+
+    if (priceChanges.length) {
+      await announcePriceChanges(priceChanges);
+    }
+
+    const updatedPlans = await updateExistingPaystackPlanPrices(priceChanges);
+    try {
+      await Promise.all(ops);
+    } catch (err) {
+      for (const updated of updatedPlans.reverse()) {
+        try {
+          await updatePaystackPlanAmount(updated.planCode, updated.amount);
+        } catch (rollbackError) {
+          logger.error("[settings] Paystack price rollback failed:", rollbackError.message);
+        }
+      }
+      throw err;
+    }
 
     res.json(await getSafeSettings());
   } catch (err) {
-    next(err);
+    logger.error("[settings] update failed:", err);
+    res.status(502).json({
+      error: `Settings were not fully updated: ${err.message}`,
+    });
   }
 }
 
