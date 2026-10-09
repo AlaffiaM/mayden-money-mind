@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { prisma } from "../config/prisma.js";
 import { JWT_SECRET } from "../config/env.js";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../services/emailService.js";
@@ -38,7 +39,9 @@ export async function register(req, res) {
 
   try {
     const { fullName, email, phone, password } = req.body;
-    const normalizedPhone = phone?.trim() || null;
+    const normalizedPhone = phone?.trim()
+      ? parsePhoneNumberFromString(phone.trim(), "NG")?.number || null
+      : null;
 
     const existingEmail = await prisma.user.findUnique({ where: { email } });
     if (existingEmail) {
