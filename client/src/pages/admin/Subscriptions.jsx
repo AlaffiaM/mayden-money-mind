@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import api from "../../services/api";
 import { Download, CreditCard, CheckCircle, AlertTriangle } from "lucide-react";
 import AdminPageHeading from "../../components/admin/AdminPageHeading";
@@ -6,6 +6,7 @@ import AdminStatCard from "../../components/admin/AdminStatCard";
 import AdminTable from "../../components/admin/AdminTable";
 import StatusBadge from "../../components/admin/StatusBadge";
 import { downloadCsv } from "../../utils/csv";
+import LoadError from "../../components/ui/LoadError";
 
 const STATUS_FILTERS = [
   { value: "", label: "All" },
@@ -19,14 +20,28 @@ const STATUS_FILTERS = [
 export default function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
 
-  useEffect(() => {
+  const fetchSubscriptions = useCallback(() => {
     api.get("/admin/subscriptions")
-      .then(({ data }) => setSubscriptions(data))
-      .catch(() => {})
+      .then(({ data }) => {
+        setSubscriptions(data);
+        setLoadError(false);
+      })
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetchSubscriptions();
+  }, [fetchSubscriptions]);
+
+  const retrySubscriptions = useCallback(() => {
+    setLoading(true);
+    setLoadError(false);
+    fetchSubscriptions();
+  }, [fetchSubscriptions]);
 
   const filteredSubscriptions = useMemo(() => {
     if (!statusFilter) return subscriptions;
@@ -36,6 +51,21 @@ export default function Subscriptions() {
   const activeSubscriptions = subscriptions.filter((s) => s.status === "active").length;
   const expiredSubscriptions = subscriptions.filter((s) => s.status === "expired").length;
   const totalRevenue = subscriptions.reduce((sum, s) => sum + (s.amount || 0), 0);
+
+  if (loadError) {
+    return (
+      <div className="space-y-6">
+        <AdminPageHeading
+          title="Subscriptions"
+          subtitle="All plans, their owners and renewal state."
+        />
+        <LoadError
+          message="Couldn't load subscriptions. Check your connection and try again."
+          onRetry={retrySubscriptions}
+        />
+      </div>
+    );
+  }
 
   const handleExport = () => {
     downloadCsv(
@@ -106,7 +136,16 @@ export default function Subscriptions() {
             <td colSpan={8} className="py-12 text-center"><div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-mayden-magenta border-t-transparent" /></td>
           </tr>
         ) : (
-          filteredSubscriptions.map((s) => (
+          loadError ? (
+            <tr>
+              <td colSpan={8} className="p-4">
+                <LoadError
+                  message="Couldn't load subscriptions. Check your connection and try again."
+                  onRetry={retrySubscriptions}
+                />
+              </td>
+            </tr>
+          ) : filteredSubscriptions.map((s) => (
             <tr key={s.id} className="hover:bg-mayden-gray/40">
               <td className="px-4 py-3">
                 <p className="font-medium text-mayden-dark">{s.user?.fullName}</p>
