@@ -9,11 +9,21 @@ const formatTime = (s) => {
 };
 
 export default function NowPlayingBar() {
-  const { episode, playing, current, duration, loading, toggle, seek, close } =
-    usePlayer();
+  const {
+    episode,
+    playing,
+    current,
+    duration,
+    loading,
+    buffering,
+    toggle,
+    seek,
+    close,
+  } = usePlayer();
 
   if (!episode) return null;
 
+  const isBuffering = loading || buffering;
   const dayLabel = episode.dayType
     ? episode.dayType.charAt(0).toUpperCase() + episode.dayType.slice(1)
     : "";
@@ -25,10 +35,10 @@ export default function NowPlayingBar() {
           <button
             onClick={toggle}
             disabled={loading}
-            aria-label={playing ? "Pause" : "Play"}
+            aria-label={isBuffering ? "Buffering audio" : playing ? "Pause" : "Play"}
             className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-mayden-magenta text-white shadow-md shadow-mayden-magenta/30 transition-all hover:scale-105 disabled:opacity-50"
           >
-            {loading ? (
+            {isBuffering ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
             ) : playing ? (
               <Pause size={18} />
@@ -41,6 +51,13 @@ export default function NowPlayingBar() {
             <div className="flex items-center gap-2">
               <span className="truncate text-sm font-semibold text-mayden-dark">
                 {episode.title || "Playing"}
+              </span>
+              <span
+                role="status"
+                aria-live="polite"
+                className="flex-shrink-0 text-[10px] text-gray-500"
+              >
+                {isBuffering ? "Buffering…" : playing ? "Now playing" : "Paused"}
               </span>
               {dayLabel && (
                 <span className="flex-shrink-0 rounded-full bg-mayden-magenta/10 px-2 py-0.5 text-[10px] font-semibold text-mayden-magenta">
