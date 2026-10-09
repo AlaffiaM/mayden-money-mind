@@ -38,12 +38,24 @@ export async function register(req, res) {
 
   try {
     const { fullName, email, phone, password } = req.body;
+    const normalizedPhone = phone?.trim() || null;
 
-    const existing = await prisma.user.findFirst({
-      where: { OR: [{ email }, { phone }] },
-    });
-    if (existing) {
-      return res.status(409).json({ error: "User already exists" });
+    const existingEmail = await prisma.user.findUnique({ where: { email } });
+    if (existingEmail) {
+      return res.status(409).json({
+        error: "An account with this email address already exists. Please sign in instead.",
+      });
+    }
+
+    if (normalizedPhone) {
+      const existingPhone = await prisma.user.findUnique({
+        where: { phone: normalizedPhone },
+      });
+      if (existingPhone) {
+        return res.status(409).json({
+          error: "An account with this phone number already exists. Please sign in or use a different number.",
+        });
+      }
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -51,7 +63,7 @@ export async function register(req, res) {
       data: {
         fullName,
         email,
-        phone,
+        phone: normalizedPhone,
         passwordHash,
 
         utmSource: req.body.utmSource || null,
@@ -74,6 +86,22 @@ export async function register(req, res) {
 
     res.status(201).json({ token: issueToken(user), user: serializeUser(user) });
   } catch (err) {
+    if (err?.code === "P2002") {
+      const target = Array.isArray(err.meta?.target)
+        ? err.meta.target.join(" ")
+        : String(err.meta?.target || "");
+      if (target.includes("email")) {
+        return res.status(409).json({
+          error: "An account with this email address already exists. Please sign in instead.",
+        });
+      }
+      if (target.includes("phone")) {
+        return res.status(409).json({
+          error: "An account with this phone number already exists. Please sign in or use a different number.",
+        });
+      }
+      return res.status(409).json({ error: "An account with these details already exists." });
+    }
     logger.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
