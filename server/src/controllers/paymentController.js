@@ -66,18 +66,19 @@ async function activateSubscription(subscriptionId, extras = {}) {
 
 async function linkCardSubscription(subscriptionId, data) {
   const auth = data?.authorization;
-  if (!auth || auth.channel !== "card" || !auth.reusable || !auth.authorization_code) return;
+  if (!auth || auth.channel !== "card" || !auth.reusable || !auth.authorization_code) return false;
 
   const sub = await prisma.subscription.findUnique({
     where: { id: subscriptionId },
   });
-  if (!sub || sub.paystackSubscriptionCode) return;
-
-  const planCodes = await ensurePlans();
-  const planCode = planCodes?.[sub.plan];
-  if (!planCode) return;
+  if (!sub) return false;
+  if (sub.paystackSubscriptionCode) return true;
 
   try {
+    const planCodes = await ensurePlans();
+    const planCode = planCodes?.[sub.plan];
+    if (!planCode) return false;
+
     const created = await createPaystackSubscription({
       customer: data.customer?.customer_code,
       plan: planCode,
@@ -91,9 +92,12 @@ async function linkCardSubscription(subscriptionId, data) {
           paystackPlanCode: planCode,
         },
       });
+      return true;
     }
+    return false;
   } catch (err) {
     logger.error("[link-card] failed to create Paystack subscription:", err.message);
+    return false;
   }
 }
 
@@ -182,7 +186,13 @@ export async function verify(req, res) {
       await welcomeNewSubscriber(payment.subscriptionId);
     }
 
-    res.json({ success: !!data });
+    const updatedSubscription = data
+      ? await prisma.subscription.findUnique({
+          where: { id: payment.subscriptionId },
+          select: { autoRenew: true },
+        })
+      : null;
+    res.json({ success: !!data, autoRenew: !!updatedSubscription?.autoRenew });
   } catch (err) {
     logger.error(err);
     res.status(500).json({ error: "Internal server error" });
@@ -428,7 +438,7 @@ export async function webhook(req, res) {
       if (subscriptionCode) {
         await prisma.subscription.updateMany({
           where: { paystackSubscriptionCode: subscriptionCode },
-          data: { status: "cancelled", autoRenew: false },
+          data: { autoRenew: false, paystackSubscriptionCode: null },
         });
       }
       return res.sendStatus(200);
@@ -439,7 +449,7 @@ export async function webhook(req, res) {
       if (subscriptionCode) {
         await prisma.subscription.updateMany({
           where: { paystackSubscriptionCode: subscriptionCode },
-          data: { autoRenew: false },
+          data: { autoRenew: false, paystackSubscriptionCode: null },
         });
       }
       return res.sendStatus(200);
