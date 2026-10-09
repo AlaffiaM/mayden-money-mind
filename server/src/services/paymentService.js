@@ -26,6 +26,43 @@ const PLAN_SETTING_BY_PLAN = {
   monthly: "paystackPlanMonthly",
 };
 
+export async function getPaystackPlanAmount(planCode) {
+  const secret = await getPaystackKey();
+  if (!secret) throw new Error("Paystack secret key is not configured");
+
+  const response = await fetch(`${PAYSTACK_API}/plan/${encodeURIComponent(planCode)}`, {
+    headers: { Authorization: `Bearer ${secret}` },
+  });
+  const data = await response.json();
+  if (!response.ok || !data.status || !Number.isInteger(data.data?.amount)) {
+    throw new Error(data.message || `Failed to read Paystack plan ${planCode}`);
+  }
+  return data.data.amount / 100;
+}
+
+export async function updatePaystackPlanAmount(planCode, amount) {
+  const secret = await getPaystackKey();
+  if (!secret) throw new Error("Paystack secret key is not configured");
+  if (!planCode || !Number.isInteger(amount) || amount <= 0) {
+    throw new Error("A valid Paystack plan code and positive integer amount are required");
+  }
+
+  const response = await fetch(`${PAYSTACK_API}/plan/${encodeURIComponent(planCode)}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${secret}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ amount: amount * 100 }),
+  });
+
+  const data = await response.json();
+  if (!response.ok || !data.status) {
+    throw new Error(data.message || `Failed to update Paystack plan ${planCode}`);
+  }
+  return data.data;
+}
+
 // Ensure Paystack plans exist and match current prices
 export async function ensurePlans() {
   const secret = await getPaystackKey();
@@ -44,9 +81,14 @@ export async function ensurePlans() {
 
   const codes = {};
   for (const plan of plans) {
+    if (!Number.isInteger(plan.amount) || plan.amount <= 0) {
+      throw new Error(`Invalid ${plan.plan} plan price`);
+    }
+
     const settingKey = PLAN_SETTING_BY_PLAN[plan.plan];
     let code = await getSetting(settingKey);
     if (code) {
+      await updatePaystackPlanAmount(code, plan.amount);
       codes[plan.plan] = code;
       continue;
     }
@@ -91,12 +133,15 @@ export async function initializePayment(user, subscriptionId, amount, subPlan, {
     return { reference, redirectUrl: null };
   }
 
+  const callbackParams = new URLSearchParams({ reference });
+  if (forceCard) callbackParams.set("mode", "auto-renew");
+
   const body = {
     email: user.email,
     amount: amountInKobo,
     reference,
     channels: forceCard ? ["card"] : ALL_CHANNELS,
-    callback_url: `${(process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "")}/subscription?reference=${reference}`,
+    callback_url: `${(process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "")}/subscription?${callbackParams}`,
   };
 
   const response = await fetch(`${PAYSTACK_API}/transaction/initialize`, {
@@ -159,7 +204,8 @@ export async function createPaystackSubscription({ customer, plan, authorization
 // Disable a Paystack recurring subscription
 export async function disablePaystackSubscription(subscriptionCode) {
   const secret = await getPaystackKey();
-  if (!secret || !subscriptionCode) return null;
+  if (!subscriptionCode) throw new Error("Paystack subscription code is required");
+  if (!secret) throw new Error("Paystack secret key is not configured");
 
   const response = await fetch(`${PAYSTACK_API}/subscription/${subscriptionCode}`, {
     method: "DELETE",
