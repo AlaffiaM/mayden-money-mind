@@ -1,4 +1,4 @@
-import { startTransition, useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { Search, Filter, Eye, Trash2, Headphones } from "lucide-react";
@@ -8,6 +8,7 @@ import ConfirmModal from "../../components/admin/ConfirmModal";
 import StatusBadge from "../../components/admin/StatusBadge";
 import { InlineLoader } from "../../components/admin/Loader";
 import { useToast } from "../../components/admin/useToast.js";
+import LoadError from "../../components/ui/LoadError";
 
 const STATUS_FILTERS = [
   { value: "", label: "All Users" },
@@ -20,6 +21,7 @@ const STATUS_FILTERS = [
 export default function Users() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -32,17 +34,29 @@ export default function Users() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => {
-    startTransition(() => setLoading(true));
+  const fetchUsers = useCallback(() => {
     const params = {};
     if (debouncedSearch) params.search = debouncedSearch;
     if (statusFilter) params.status = statusFilter;
     api
       .get("/admin/users", { params })
-      .then(({ data }) => setUsers(data))
-      .catch(() => {})
+      .then(({ data }) => {
+        setUsers(data);
+        setLoadError(false);
+      })
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, [debouncedSearch, statusFilter]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  const retryUsers = useCallback(() => {
+    setLoading(true);
+    setLoadError(false);
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -111,7 +125,16 @@ export default function Users() {
             </td>
           </tr>
         ) : (
-          users.map((u) => (
+          loadError ? (
+            <tr>
+              <td colSpan={7} className="p-4">
+                <LoadError
+                  message="Couldn't load users. Check your connection and try again."
+                  onRetry={retryUsers}
+                />
+              </td>
+            </tr>
+          ) : users.map((u) => (
             <tr key={u.id} className="hover:bg-mayden-gray/40">
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3">
