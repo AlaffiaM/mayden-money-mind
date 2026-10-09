@@ -4,10 +4,10 @@ export const LANDING = {
     headlineLight: "Protect your peace.",
     subheadline:
       "A premium, 2-minute daily audio series designed for women in the Mayden community to ease financial anxiety, build wealth-generating habits, and regulate the nervous system.",
-    ctaPlay: "Listen to a free sample",
+    ctaPlay: "Hear the free sample",
     trust: [
-      { icon: "Lock", text: "Secured by Mayden Microfinance Bank" },
-      { icon: "Shield", text: "Bank-grade encryption" },
+      { icon: "Lock", text: "Made for the Mayden community" },
+      { icon: "Shield", text: "Short, practical daily audio" },
       { icon: "Clock", text: "Cancel anytime" },
     ],
   },
@@ -37,8 +37,8 @@ export const LANDING = {
   },
   audio: {
     headline: "Press play for peace of mind.",
-    subtitle: "60 sec free sample",
-    caption: "Listen to a sample episode: 'Motivation Monday — Vision Setting'",
+    title: "Motivation Monday — Vision Setting",
+    subtitle: "Free full-episode sample · about 1½ minutes",
   },
   blueprint: {
     headline: "Your Daily Guide to Growth.",
@@ -86,12 +86,16 @@ export const LANDING = {
       },
     ],
   },
+  creators: {
+    headline: "Created for the Mayden community",
+    body: "Money & Mind is a partnership between Mayden Microfinance Bank and Alaffia Media Ltd. The weekday series covers motivation, practical money habits, wellbeing, real-life stories, and weekly financial reflection.",
+  },
   pricing: {
     headline: "Invest in Your Mind for Less Than the Cost of a Data Bundle.",
-    note: "Secure billing through Mayden Microfinance Bank. Cancel anytime.",
-    cta: "Activate My Subscription",
+    note: "Pay by card, bank transfer, or USSD. Eligible card payments can renew automatically.",
+    cta: "Choose a plan after creating your account",
     trust:
-      "Secure, one-click billing integrated directly with Mayden Microfinance Bank.",
+      "Automatic renewal is available for eligible card payments and can be turned off anytime.",
     included: [
       "Daily 2-minute audio delivered every morning",
       "Somatic exercises and breathing techniques",
@@ -103,9 +107,9 @@ export const LANDING = {
     headline: "Frequently Asked Questions",
     items: [
       {
-        question: "How does the auto-deduction work?",
+        question: "How are payments and automatic renewals handled?",
         answer:
-          "Your subscription is securely deducted from your Mayden account using one-click billing. Card details are only required if you choose card payments.",
+          "Pay by card, bank transfer, or USSD. Only eligible card payments can renew automatically. Turning auto-renew back on requires a card payment at the current plan price. Turning it off stops future charges, and your access continues through the paid period.",
       },
       {
         question: "Can I switch from weekly to monthly?",
@@ -120,21 +124,20 @@ export const LANDING = {
       {
         question: "How do I cancel?",
         answer:
-          "Cancel instantly from your account settings. No calls, no emails, no hassle.",
+          "Turn off auto-renew from your subscription settings. You will keep access through the end of the paid period, and no further renewal will be charged.",
       },
     ],
   },
   footer: {
     newsletter: {
-      headline: "Give yourself two thoughtful minutes today.",
-      placeholder: "Your email address",
-      cta: "Start listening",
+      headline: "Ready for your daily two-minute reset?",
+      cta: "Create your free account",
     },
     delivery:
-      "Delivered via in-app notification. Best experience: Add to Home Screen.",
+      "Create an account first, then choose a plan and payment method to unlock the full library.",
     links: [
       { label: "Terms & Conditions", href: "/terms" },
-      { label: "Privacy Policy (NDPA compliant)", href: "/privacy" },
+      { label: "Privacy Policy", href: "/privacy" },
       { label: "Contact Support", href: "/support" },
     ],
     copyright:
