@@ -51,6 +51,9 @@
   .waveform-playing .waveform-bar {
     animation: waveform-active 0.6s ease-in-out infinite;
   }
+  .waveform-loading .waveform-bar {
+    animation: waveform-active 1.2s ease-in-out infinite;
+  }
   @keyframes waveform-active {
     0%, 100% { height: 4px; }
     25% { height: 24px; }
