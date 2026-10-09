@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import {
@@ -14,6 +14,7 @@ import StatusBadge from "../../components/admin/StatusBadge";
 import AdminTable from "../../components/admin/AdminTable";
 import Loader from "../../components/admin/Loader";
 import { useToast } from "../../components/admin/useToast.js";
+import LoadError from "../../components/ui/LoadError";
 
 const DAY_LABELS = {
   monday: "Motivation",
@@ -28,19 +29,39 @@ export default function UserDetail() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [overrideModal, setOverrideModal] = useState(null);
   const [reason, setReason] = useState("");
   const [overriding, setOverriding] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const toast = useToast();
 
-  useEffect(() => {
+  const loadUser = useCallback(() => {
     api
       .get(`/admin/users/${id}`)
-      .then(({ data }) => setUser(data))
-      .catch(() => navigate("/admin/users"))
+      .then(({ data }) => {
+        setUser(data);
+        setLoadError(false);
+      })
+      .catch((error) => {
+        if (error.response?.status === 404) {
+          navigate("/admin/users", { replace: true });
+          return;
+        }
+        setLoadError(true);
+      })
       .finally(() => setLoading(false));
   }, [id, navigate]);
+
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
+
+  const retryUser = useCallback(() => {
+    setLoading(true);
+    setLoadError(false);
+    loadUser();
+  }, [loadUser]);
 
   const handleOverride = async () => {
     if (!overrideModal) return;
@@ -69,6 +90,21 @@ export default function UserDetail() {
   };
 
   if (loading) return <Loader label="Loading user…" />;
+  if (loadError)
+    return (
+      <div className="space-y-4">
+        <LoadError
+          message="This user's details couldn't be loaded."
+          onRetry={retryUser}
+        />
+        <button
+          onClick={() => navigate("/admin/users")}
+          className="text-sm font-medium text-mayden-magenta hover:underline"
+        >
+          Back to users
+        </button>
+      </div>
+    );
   if (!user) return null;
 
   const sub = user.subscriptions?.[0] || null;
