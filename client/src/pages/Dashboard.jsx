@@ -8,6 +8,7 @@ import Carousel from "../components/ui/Carousel";
 import EpisodeCard from "../components/ui/EpisodeCard";
 import InstallBanner from "../components/ui/InstallBanner";
 import SubscriberLayout from "../components/layout/SubscriberLayout";
+import { usePricing } from "../hooks/usePricing";
 import { ChevronDown, ChevronUp, CreditCard, Calendar } from "lucide-react";
 import { businessDayOfWeek } from "../utils/businessTime.js";
 
@@ -63,6 +64,12 @@ function greeting() {
 export default function Dashboard() {
   const { user } = useAuth();
   const { subscription } = useSubscription();
+  const {
+    pricing,
+    loading: pricingLoading,
+    error: pricingError,
+    reload: reloadPricing,
+  } = usePricing();
   const { episode: activeEp, playing: anyPlaying } = usePlayer();
   const [todayEpisode, setTodayEpisode] = useState(null);
   const [episodes, setEpisodes] = useState([]);
@@ -251,10 +258,27 @@ export default function Dashboard() {
             <div>
               <p className="text-sm font-medium text-mayden-dark">
                 Active –{" "}
-                {subscription.plan === "weekly"
-                  ? "₦100/Weekly"
-                  : "₦350/Monthly"}
+                {pricingError
+                  ? "Current price unavailable"
+                  : pricingLoading
+                  ? "Loading current price…"
+                  : subscription.plan === "weekly"
+                  ? `₦${pricing.weeklyPrice}/Weekly`
+                  : `₦${pricing.monthlyPrice}/Monthly`}
               </p>
+              {pricingError && (
+                <button
+                  onClick={reloadPricing}
+                  className="mt-1 text-xs text-mayden-magenta hover:underline"
+                >
+                  Retry loading price
+                </button>
+              )}
+              {pricingLoading && (
+                <p role="status" className="mt-1 text-xs text-gray-500">
+                  Loading current price…
+                </p>
+              )}
               <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
                 <Calendar size={11} />
                 Next renewal:{" "}
