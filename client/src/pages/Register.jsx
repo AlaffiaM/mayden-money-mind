@@ -18,8 +18,8 @@ function validate(form) {
   if (!EMAIL_RE.test(form.email.trim())) {
     errors.email = "A valid email is required";
   }
-  if (form.phone && !isValidPhoneNumber(form.phone)) {
-    errors.phone = "Enter a valid phone number";
+  if (!form.phone || !isValidPhoneNumber(form.phone)) {
+    errors.phone = "Enter a valid WhatsApp number";
   }
   if (form.password.length < 8) {
     errors.password = "Password must be at least 8 characters";
@@ -182,10 +182,10 @@ export default function Register() {
             htmlFor="phone"
             className="mb-1.5 block text-sm font-medium text-gray-700"
           >
-            Phone (optional)
+            WhatsApp number
           </label>
           <p className="mb-1.5 text-xs text-gray-400">
-            You can leave this blank and register with your email.
+            Required. Use a number registered with WhatsApp; choose its country code.
           </p>
           <PhoneInput
             id="phone"
@@ -197,9 +197,10 @@ export default function Register() {
             }}
             countrySelectProps={{ "aria-label": "Country calling code" }}
             numberInputProps={{
+              required: true,
               autoComplete: "tel",
               className: "min-w-0 flex-1 bg-transparent py-2.5 text-sm outline-none",
-              placeholder: "080 1234 5678",
+              placeholder: "WhatsApp number",
             }}
             className={`w-full rounded-lg border px-3 ${
               errors.phone
