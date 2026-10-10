@@ -305,7 +305,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <button
           onClick={() => navigate("/admin/users")}
-          className="group rounded-2xl border border-gray-100 bg-white p-5 text-left shadow-sm transition-all hover:border-mayden-magenta/30 hover:shadow-md"
+          className="group rounded-2xl border border-gray-200/80 bg-white p-5 text-left shadow-[0_2px_8px_rgba(26,26,26,0.03)] transition-all hover:-translate-y-0.5 hover:border-mayden-magenta/20 hover:shadow-[0_12px_28px_rgba(26,26,26,0.07)]"
         >
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">Total Users</p>
@@ -320,7 +320,7 @@ export default function AdminDashboard() {
         </button>
         <button
           onClick={() => navigate("/admin/episodes")}
-          className="group rounded-2xl border border-gray-100 bg-white p-5 text-left shadow-sm transition-all hover:border-mayden-magenta/30 hover:shadow-md"
+          className="group rounded-2xl border border-gray-200/80 bg-white p-5 text-left shadow-[0_2px_8px_rgba(26,26,26,0.03)] transition-all hover:-translate-y-0.5 hover:border-mayden-magenta/20 hover:shadow-[0_12px_28px_rgba(26,26,26,0.07)]"
         >
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">Episodes Published</p>
