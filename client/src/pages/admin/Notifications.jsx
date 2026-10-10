@@ -283,20 +283,19 @@ export default function Notifications() {
           </div>
         </AdminCard>
 
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-gray-100 bg-mayden-gray/60 px-5 py-4">
-            <h2 className="font-serif font-bold text-mayden-dark">
-              Notification History
-            </h2>
-            {notifications.length > 0 && (
+        <AdminCard
+          title="Notification History"
+          actions={
+            notifications.length > 0 && (
               <button
                 onClick={() => setConfirmClearAll(true)}
-                className="flex items-center gap-1 rounded-full px-2 py-1 text-xs text-red-400 transition-colors hover:text-red-600"
+                className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
               >
                 <Trash2 size={12} /> Clear All
               </button>
-            )}
-          </div>
+            )
+          }
+        >
           <div className="max-h-150 overflow-y-auto">
             {notifications.length === 0 ? (
               loadError ? (
@@ -353,7 +352,7 @@ export default function Notifications() {
               </div>
             )}
           </div>
-        </div>
+        </AdminCard>
       </div>
 
       <ConfirmModal
