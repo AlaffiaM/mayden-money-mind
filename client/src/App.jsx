@@ -21,6 +21,7 @@ const VerifyEmailSent = lazy(() => import("./pages/VerifyEmailSent"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Library = lazy(() => import("./pages/Library"));
 const Subscription = lazy(() => import("./pages/Subscription"));
+const AccountSettings = lazy(() => import("./pages/AccountSettings"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminEpisodes = lazy(() => import("./pages/admin/Episodes"));
 const AdminUsers = lazy(() => import("./pages/admin/Users"));
@@ -129,6 +130,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Subscription />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <AccountSettings />
             </ProtectedRoute>
           }
         />
