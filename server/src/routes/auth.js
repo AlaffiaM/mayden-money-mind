@@ -51,14 +51,15 @@ router.post(
     body("email").isEmail().withMessage("A valid email is required").normalizeEmail().toLowerCase(),
     body("password").isLength({ min: 8 }).withMessage("Password must be at least 8 characters"),
     body("phone")
-      .optional({ checkFalsy: true })
       .trim()
+      .notEmpty()
+      .withMessage("WhatsApp number is required")
+      .bail()
       .custom((value) => {
-        if (!value) return true;
         const phoneNumber = parsePhoneNumberFromString(value, "NG");
         return Boolean(phoneNumber?.isValid());
       })
-      .withMessage("Enter a valid phone number"),
+      .withMessage("Enter a valid WhatsApp number"),
   ],
   register
 );
