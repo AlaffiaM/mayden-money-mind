@@ -128,59 +128,88 @@ export default function SubscriberLayout({ children }) {
   ];
 
   return (
-    <div className="min-h-screen bg-mayden-gray">
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/dashboard">
+    <div className="min-h-screen bg-[#f6f6f9]">
+      <header className="sticky top-0 z-40 border-b border-gray-200/80 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex h-[4.5rem] max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+          <Link
+            to="/dashboard"
+            aria-label="Money & Mind home"
+            className="shrink-0"
+          >
             <LogoLockup orientation="horizontal" />
           </Link>
-          <div className="flex items-center gap-4">
+          <nav aria-label="Main navigation" className="hidden items-center gap-1 md:flex">
+            {nav.map((item) => {
+              const active = location.pathname === item.to;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  aria-current={active ? "page" : undefined}
+                  className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors ${
+                    active
+                      ? "bg-mayden-pink-tint text-mayden-magenta"
+                      : "text-gray-500 hover:bg-gray-50 hover:text-mayden-dark"
+                  }`}
+                >
+                  <item.icon size={16} />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="flex shrink-0 items-center gap-3 sm:gap-4">
+            <span className="hidden text-sm text-gray-500 lg:inline">
+              Hi, {user?.fullName?.split(" ")[0]}
+            </span>
             <NotificationBell />
             <Link
               to="/settings"
               aria-label="Account settings"
               title="Account settings"
-              className={`text-gray-400 transition-colors hover:text-mayden-magenta ${
+              aria-current={location.pathname === "/settings" ? "page" : undefined}
+              className={`rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-50 hover:text-mayden-magenta ${
                 location.pathname === "/settings" ? "text-mayden-magenta" : ""
               }`}
             >
               <Settings size={18} />
             </Link>
-            <span className="hidden text-sm text-gray-500 sm:inline">
-              Hi, {user?.fullName?.split(" ")[0]}
-            </span>
             <LogoutButton
               ariaLabel="Log out"
-              className="text-gray-400 hover:text-mayden-magenta transition-colors"
+              className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
             >
               <LogOut size={18} />
             </LogoutButton>
           </div>
         </div>
-      </header>
-
-      <div className="max-w-5xl mx-auto px-4 py-6 pb-28">
-        <nav className="mb-6 grid grid-cols-3 gap-1 rounded-xl border border-gray-100 bg-white p-1 shadow-sm">
+        <nav
+          aria-label="Main navigation"
+          className="mx-auto grid max-w-6xl grid-cols-3 gap-1 px-4 pb-3 md:hidden"
+        >
           {nav.map((item) => {
             const active = location.pathname === item.to;
             return (
               <Link
                 key={item.to}
                 to={item.to}
-                className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-colors sm:gap-2 sm:px-4 sm:text-sm ${
+                aria-current={active ? "page" : undefined}
+                className={`flex items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-semibold transition-colors ${
                   active
-                    ? "bg-mayden-magenta text-white"
-                    : "text-gray-500 hover:text-mayden-magenta"
+                    ? "bg-mayden-pink-tint text-mayden-magenta"
+                    : "text-gray-500 hover:bg-gray-50 hover:text-mayden-magenta"
                 }`}
               >
-                <item.icon size={16} />
+                <item.icon size={15} />
                 {item.label}
               </Link>
             );
           })}
         </nav>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-4 py-6 pb-32 sm:px-6 sm:py-8">
         {children}
-      </div>
+      </main>
 
       <NowPlayingBar />
     </div>
