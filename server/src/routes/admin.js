@@ -1,4 +1,5 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import { authenticate } from "../middleware/auth.js";
 import { requireAdmin } from "../middleware/admin.js";
 import { upload } from "../services/audioStorageService.js";
@@ -31,6 +32,14 @@ import {
 } from "../controllers/adminController.js";
 
 const router = Router();
+const notificationBroadcastLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false, forwardedHeader: false },
+  message: { error: "Too many notification broadcasts. Please try again later." },
+});
 
 router.use(authenticate, requireAdmin);
 
@@ -67,7 +76,7 @@ router.get("/payments/export", exportPayments);
 
 // Notifications
 router.get("/notifications", listNotifications);
-router.post("/notifications", createNotification);
+router.post("/notifications", notificationBroadcastLimiter, createNotification);
 router.post("/notifications/test", testNotification);
 router.delete("/notifications/:id", deleteNotification);
 router.delete("/notifications", clearNotifications);
