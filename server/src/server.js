@@ -79,6 +79,7 @@ async function main() {
   logger.info("✅ Background jobs started");
   logger.info("   - Renewal processor (every 12h)");
   logger.info("   - Auto-publisher    (every 15min)");
+  logger.info("   - Listening email reminders (daily at 10:00 WAT)");
 
   const paystackKey = await getPaystackKey();
   if (paystackKey) {
