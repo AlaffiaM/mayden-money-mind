@@ -24,6 +24,7 @@ export default function Login() {
     <AuthLayout
       title="Welcome back"
       subtitle="Sign in to continue your journey"
+      alignTop
       footer={
         <>
           <p>
