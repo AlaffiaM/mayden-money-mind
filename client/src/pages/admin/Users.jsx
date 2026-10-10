@@ -86,7 +86,7 @@ export default function Users() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, email, or phone..."
+            placeholder="Search by name, email, or WhatsApp number..."
             className="w-full rounded-xl border border-gray-200 py-2 pl-9 pr-3 text-sm focus:border-mayden-magenta focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20"
           />
         </div>
