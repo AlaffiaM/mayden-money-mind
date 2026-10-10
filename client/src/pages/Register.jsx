@@ -101,6 +101,7 @@ export default function Register() {
     <AuthLayout
       title="Create your account"
       subtitle="Start your daily motivation journey"
+      alignTop
       footer={
         <p>
           Already have an account?{" "}
@@ -190,6 +191,7 @@ export default function Register() {
           <PhoneInput
             id="phone"
             defaultCountry="NG"
+            limitMaxLength
             value={form.phone || undefined}
             onChange={(phone) => {
               setForm((current) => ({ ...current, phone: phone || "" }));
