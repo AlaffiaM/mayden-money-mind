@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../context/useAuth";
 import api from "../services/api";
+import { Bell } from "lucide-react";
 import SubscriberLayout from "../components/layout/SubscriberLayout";
+import UserPageHeading from "../components/ui/UserPageHeading";
 import Loader from "../components/admin/Loader";
 import LoadError from "../components/ui/LoadError";
 
@@ -49,14 +51,10 @@ export default function AccountSettings() {
   return (
     <SubscriberLayout>
       <div className="mx-auto max-w-2xl space-y-6">
-        <div>
-          <h1 className="font-serif text-2xl font-bold text-mayden-dark">
-            Account settings
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage your account and listening reminders.
-          </p>
-        </div>
+        <UserPageHeading
+          title="Account settings"
+          subtitle="Manage your account and listening reminders."
+        />
 
         {loading ? (
           <Loader label="Loading account settings…" />
@@ -70,16 +68,26 @@ export default function AccountSettings() {
             }}
           />
         ) : (
-          <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <h2 className="font-serif text-lg font-bold text-mayden-dark">
-              Daily listening email
-            </h2>
+          <section className="rounded-3xl border border-gray-200/80 bg-white p-6 shadow-[0_8px_28px_rgba(26,26,26,0.045)] sm:p-8">
+            <div className="flex items-start gap-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-mayden-pink-tint text-mayden-magenta">
+                <Bell size={19} />
+              </span>
+              <div>
+                <h2 className="font-semibold text-mayden-dark">
+                  Daily listening email
+                </h2>
+                <p className="mt-1 text-xs font-medium text-mayden-magenta">
+                  A gentle reminder at 10:00 a.m. WAT
+                </p>
+              </div>
+            </div>
             <p className="mt-2 text-sm leading-relaxed text-gray-500">
               Active subscribers receive one email at 10:00 a.m. WAT when
               today&apos;s audio is ready. You can turn this reminder off
               anytime.
             </p>
-            <label className="mt-5 flex cursor-pointer items-center gap-3">
+            <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50/70 p-4 transition-colors hover:bg-gray-50">
               <input
                 type="checkbox"
                 checked={reminderEnabled}
