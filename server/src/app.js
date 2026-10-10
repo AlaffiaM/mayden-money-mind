@@ -114,19 +114,6 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-app.get("/api/debug/emailVerified", async (req, res) => {
-  try {
-    const result = await prisma.$queryRaw`
-      SELECT column_name
-      FROM information_schema.columns
-      WHERE table_name = 'User' AND column_name = 'emailVerified'
-    `;
-    res.json({ exists: result.length > 0, column: result });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 const DEFAULT_PRICING = { weeklyPrice: "100", monthlyPrice: "350", currency: "NGN" };
 const PRICING_KEYS = ["weeklyPrice", "monthlyPrice", "currency"];
 const DEFAULT_DAY_LABELS = {
@@ -184,7 +171,10 @@ app.get("/api/notifications/latest", authenticate, async (req, res, next) => {
     });
 
     const notifications = await prisma.notification.findMany({
-      where: hasActiveSub ? undefined : { subscribersOnly: false },
+      where: {
+        channels: { contains: "inapp" },
+        ...(hasActiveSub ? {} : { subscribersOnly: false }),
+      },
       orderBy: { sentAt: "desc" },
       take: 20,
       include: { reads: { where: { userId: req.user.id }, select: { id: true } } },
