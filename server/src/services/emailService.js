@@ -3,7 +3,9 @@ import logger from "../utils/logger.js";
 
 const SENDER_NAME = "Money & Mind";
 const BREVO_URL = "https://api.brevo.com/v3/smtp/email";
-const LOGO_URL = `${FRONTEND_URL}/assets/logo.jpg`;
+const LOGO_URL =
+  process.env.EMAIL_LOGO_URL ||
+  "https://moneyandmind.alaffiaradio.com/assets/logo.jpg";
 
 export function brevoConfigured() {
   return Boolean(process.env.BREVO_API_KEY && process.env.BREVO_FROM_EMAIL);
@@ -88,10 +90,15 @@ function codeBox(code) {
 
 // Send a formatted Brevo email
 export async function sendUserEmail({ to, subject, title, body }) {
+  const bodyHtml = String(body)
+    .split(/\r?\n/)
+    .map((paragraph) => `<p style="margin:0 0 14px;">${escapeHtml(paragraph) || "&nbsp;"}</p>`)
+    .join("");
   return sendEmail({
     to,
     subject,
-    htmlContent: emailTemplate({ title, bodyHtml: escapeHtml(body) }),
+    textContent: `${title}\n\n${body}`,
+    htmlContent: emailTemplate({ title, bodyHtml }),
   });
 }
 
