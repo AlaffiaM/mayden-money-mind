@@ -56,7 +56,7 @@ export async function register(req, res) {
       });
       if (existingPhone) {
         return res.status(409).json({
-          error: "An account with this phone number already exists. Please sign in or use a different number.",
+          error: "An account with this WhatsApp number already exists. Please sign in or use a different number.",
         });
       }
     }
@@ -100,7 +100,7 @@ export async function register(req, res) {
       }
       if (target.includes("phone")) {
         return res.status(409).json({
-          error: "An account with this phone number already exists. Please sign in or use a different number.",
+          error: "An account with this WhatsApp number already exists. Please sign in or use a different number.",
         });
       }
       return res.status(409).json({ error: "An account with these details already exists." });
