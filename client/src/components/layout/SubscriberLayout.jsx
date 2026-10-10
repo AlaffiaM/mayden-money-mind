@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/useAuth";
 import api from "../../services/api";
-import { LogOut, Library, Home, CreditCard, Bell, X } from "lucide-react";
+import { LogOut, Library, Home, CreditCard, Bell, X, Settings } from "lucide-react";
 import LogoutButton from "../ui/LogoutButton";
 import { Link, useLocation } from "react-router-dom";
 import LogoLockup from "../ui/LogoLockup";
@@ -136,6 +136,16 @@ export default function SubscriberLayout({ children }) {
           </Link>
           <div className="flex items-center gap-4">
             <NotificationBell />
+            <Link
+              to="/settings"
+              aria-label="Account settings"
+              title="Account settings"
+              className={`text-gray-400 transition-colors hover:text-mayden-magenta ${
+                location.pathname === "/settings" ? "text-mayden-magenta" : ""
+              }`}
+            >
+              <Settings size={18} />
+            </Link>
             <span className="hidden text-sm text-gray-500 sm:inline">
               Hi, {user?.fullName?.split(" ")[0]}
             </span>
