@@ -137,7 +137,6 @@ export default function Register() {
               id="fullName"
               type="text"
               required
-              autoFocus
               autoComplete="name"
               value={form.fullName}
               onChange={setField("fullName")}
@@ -227,8 +226,8 @@ export default function Register() {
           error={errors.password}
         />
 
-        {strength && (
-          <div className="-mt-2">
+        <div className="-mt-2 min-h-5">
+          {strength && (
             <div className="flex items-center gap-2">
               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200">
                 <div
@@ -238,8 +237,8 @@ export default function Register() {
               </div>
               <span className="text-xs text-gray-500">{strength.label}</span>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <PasswordInput
           id="confirmPassword"
