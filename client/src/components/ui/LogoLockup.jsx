@@ -10,7 +10,9 @@ export default function LogoLockup({ className = "", orientation = "vertical" })
         <span className="font-serif font-semibold text-sm text-mayden-dark">
           Money <span className="text-mayden-magenta">&</span> Mind
         </span>
-        <span className="text-[10px] text-gray-400">by Mayden Microfinance Bank</span>
+        <span className="hidden text-[10px] text-gray-400 lg:inline">
+          by Mayden Microfinance Bank
+        </span>
       </div>
     );
   }
