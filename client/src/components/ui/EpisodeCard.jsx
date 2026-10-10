@@ -48,8 +48,8 @@ export default function EpisodeCard({ episode, onPlay }) {
     <div
       className={`flex w-64 flex-shrink-0 flex-col rounded-2xl border p-5 transition-all ${
         isActive
-          ? "border-mayden-magenta/60 bg-mayden-pink-tint/40 shadow-md"
-          : "border-gray-100 bg-white shadow-sm hover:-translate-y-0.5 hover:shadow-md"
+          ? "border-mayden-magenta/40 bg-white shadow-[0_8px_24px_rgba(236,38,143,0.09)] ring-1 ring-mayden-magenta/10"
+          : "border-gray-200/80 bg-white shadow-[0_3px_12px_rgba(26,26,26,0.035)] hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-md"
       }`}
     >
       <div className="mb-4 flex items-center justify-between">
