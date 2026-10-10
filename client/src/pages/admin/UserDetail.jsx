@@ -10,6 +10,8 @@ import {
   AlertTriangle,
   Headphones,
 } from "lucide-react";
+import AdminPageHeading from "../../components/admin/AdminPageHeading";
+import AdminCard from "../../components/admin/AdminCard";
 import StatusBadge from "../../components/admin/StatusBadge";
 import AdminTable from "../../components/admin/AdminTable";
 import Loader from "../../components/admin/Loader";
@@ -114,35 +116,27 @@ export default function UserDetail() {
 
   return (
     <div className="space-y-6">
-      <button
-        onClick={() => navigate("/admin/users")}
-        className="flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-mayden-dark"
-      >
-        <ArrowLeft size={16} /> Back to Users
-      </button>
+      <AdminPageHeading
+        title={user.fullName}
+        subtitle={`Registered ${new Date(user.createdAt).toLocaleDateString()}`}
+        actions={
+          <>
+            <StatusBadge
+              status={sub?.status || "none"}
+              label={sub?.status || "no subscription"}
+            />
+            <button
+              onClick={() => navigate("/admin/users")}
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-mayden-dark"
+            >
+              <ArrowLeft size={15} /> Back to Users
+            </button>
+          </>
+        }
+      />
 
-      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-mayden-magenta/10 text-xl font-bold text-mayden-magenta">
-              {user.fullName?.charAt(0)?.toUpperCase()}
-            </div>
-            <div>
-              <h1 className="text-xl font-serif font-bold text-mayden-dark">
-                {user.fullName}
-              </h1>
-              <p className="text-sm text-gray-500">
-                Registered {new Date(user.createdAt).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-          <StatusBadge
-            status={sub?.status || "none"}
-            label={sub?.status || "no subscription"}
-          />
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-4 border-t border-gray-100 pt-6 sm:grid-cols-2 lg:grid-cols-4">
+      <AdminCard title="Account details">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Mail size={14} className="text-gray-400" />{" "}
             {user.email || "No email"}
@@ -160,7 +154,7 @@ export default function UserDetail() {
           </div>
         </div>
 
-        <div className="mt-6 flex gap-3 border-t border-gray-100 pt-4">
+        <div className="mt-5 flex flex-wrap gap-3 border-t border-gray-100 pt-4">
           {sub && sub.status !== "cancelled" && (
             <button
               onClick={() => setOverrideModal("cancel")}
@@ -176,16 +170,20 @@ export default function UserDetail() {
             <AlertTriangle size={14} /> Delete User
           </button>
         </div>
-      </div>
+      </AdminCard>
 
-      <div className="flex gap-1 rounded-full bg-white p-1 shadow-sm ring-1 ring-gray-100">
+      <div
+        className="flex gap-1 overflow-x-auto rounded-xl border border-gray-200/80 bg-white p-1 shadow-[0_2px_8px_rgba(26,26,26,0.03)]"
+      >
         {["overview", "subscriptions", "payments", "activity"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-medium capitalize transition-colors ${
+            type="button"
+            aria-pressed={activeTab === tab}
+            className={`min-w-max flex-1 rounded-lg px-4 py-2 text-sm font-medium capitalize transition-colors ${
               activeTab === tab
-                ? "bg-mayden-magenta text-white"
+                ? "bg-mayden-pink-tint text-mayden-magenta"
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
@@ -195,10 +193,7 @@ export default function UserDetail() {
       </div>
 
       {activeTab === "overview" && sub && (
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-serif font-bold text-mayden-dark">
-            Current Subscription
-          </h2>
+        <AdminCard title="Current Subscription">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
               <p className="mb-1 text-xs text-gray-500">Plan</p>
@@ -223,21 +218,18 @@ export default function UserDetail() {
               </p>
             </div>
           </div>
-        </div>
+        </AdminCard>
       )}
 
       {activeTab === "overview" && !sub && (
-        <div className="rounded-2xl border border-gray-100 bg-white p-12 text-center text-gray-400 shadow-sm">
+        <AdminCard className="p-12 text-center text-gray-400 sm:p-12">
           <CreditCard size={32} className="mx-auto mb-2 opacity-50" />
           <p>No subscription found.</p>
-        </div>
+        </AdminCard>
       )}
 
       {activeTab === "subscriptions" && (
-        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <h2 className="mb-3 px-2 pt-1 font-serif text-lg font-bold text-mayden-dark">
-            Subscription History
-          </h2>
+        <AdminCard title="Subscription History">
           <AdminTable
             columns={[
               { label: "Plan" },
@@ -264,14 +256,11 @@ export default function UserDetail() {
               </tr>
             ))}
           </AdminTable>
-        </div>
+        </AdminCard>
       )}
 
       {activeTab === "payments" && (
-        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <h2 className="mb-3 px-2 pt-1 font-serif text-lg font-bold text-mayden-dark">
-            Payment History
-          </h2>
+        <AdminCard title="Payment History">
           <AdminTable
             columns={[
               { label: "Date" },
@@ -298,14 +287,11 @@ export default function UserDetail() {
               </tr>
             ))}
           </AdminTable>
-        </div>
+        </AdminCard>
       )}
 
       {activeTab === "activity" && (
-        <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <h2 className="mb-3 px-2 pt-1 font-serif text-lg font-bold text-mayden-dark">
-            Episode Listening Activity
-          </h2>
+        <AdminCard title="Episode Listening Activity">
           <AdminTable
             columns={[
               { label: "Episode" },
@@ -330,7 +316,7 @@ export default function UserDetail() {
               </tr>
             ))}
           </AdminTable>
-        </div>
+        </AdminCard>
       )}
 
       {overrideModal && (
