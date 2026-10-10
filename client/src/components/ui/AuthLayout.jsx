@@ -1,6 +1,16 @@
-export default function AuthLayout({ title, subtitle, children, footer }) {
+export default function AuthLayout({
+  title,
+  subtitle,
+  children,
+  footer,
+  alignTop = false,
+}) {
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-mayden-gray px-4 py-12">
+    <div
+      className={`relative flex min-h-screen ${
+        alignTop ? "items-start" : "items-center"
+      } justify-center overflow-hidden bg-mayden-gray px-4 py-12`}
+    >
       <div className="absolute -right-28 -top-28 h-80 w-80 rounded-full bg-mayden-magenta/10 blur-3xl" />
       <div className="absolute -bottom-28 -left-28 h-80 w-80 rounded-full bg-mayden-pink-tint blur-3xl" />
       <div className="relative w-full max-w-sm">
