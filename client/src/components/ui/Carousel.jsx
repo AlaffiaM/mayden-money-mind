@@ -23,7 +23,7 @@ export default function Carousel({ title, children }) {
         </button>
         <div
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto scroll-smooth pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none"
+          className="flex gap-4 overflow-x-auto scroll-smooth pb-2 scrollbar-none"
         >
           {children}
         </div>
