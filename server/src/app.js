@@ -5,6 +5,7 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import { prisma } from "./config/prisma.js";
 import authRoutes from "./routes/auth.js";
+import accountRoutes from "./routes/account.js";
 import episodeRoutes from "./routes/episodes.js";
 import subscriptionRoutes from "./routes/subscriptions.js";
 import paymentRoutes from "./routes/payments.js";
@@ -13,6 +14,7 @@ import audioRoutes from "./routes/audio.js";
 import { startRenewalProcessor } from "./services/renewalService.js";
 import { startAutoPublisher } from "./services/autoPublishService.js";
 import { startDailyReminderProcessor } from "./services/dailyReminderService.js";
+import { startDailyListeningReminderProcessor } from "./services/dailyListeningReminderService.js";
 import { startReconciliationProcessor } from "./services/reconciliationService.js";
 import { startSubscribeReminderProcessor } from "./services/subscribeReminderService.js";
 import { authenticate } from "./middleware/auth.js";
@@ -100,6 +102,7 @@ const episodesLimiter = rateLimit({
 });
 
 app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/account", accountRoutes);
 app.use("/api/episodes", episodesLimiter, episodeRoutes);
 app.use("/api/subscriptions", subscriptionLimiter, subscriptionRoutes);
 app.use("/api/payments", paymentRoutes);
@@ -243,6 +246,8 @@ startAutoPublisher();
 startReconciliationProcessor();
 
 startDailyReminderProcessor();
+
+startDailyListeningReminderProcessor();
 
 startSubscribeReminderProcessor();
 
