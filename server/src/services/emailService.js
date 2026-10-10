@@ -178,6 +178,27 @@ export async function sendSubscriptionReminderEmail({ to, fullName }) {
   });
 }
 
+export async function sendDailyListeningReminderEmail({
+  to,
+  fullName,
+  episodeTitle,
+}) {
+  const episodeDescription = episodeTitle
+    ? `Today's audio, <strong>${escapeHtml(episodeTitle)}</strong>, is ready.`
+    : "Today's audio is ready.";
+  const bodyHtml = `
+<p>Hi ${escapeHtml(fullName)},</p>
+<p>${episodeDescription} Take a few minutes for your daily Money &amp; Mind moment.</p>
+<p style="text-align:center;">${ctaButton(`${FRONTEND_URL}/dashboard`, "Listen to today's audio")}</p>
+<p style="font-size:13px;color:#8a8a8a;">This daily reminder is sent to active subscribers. You can turn it off anytime in <a href="${escapeHtml(`${FRONTEND_URL}/settings`)}" style="color:#EC268F;">account settings</a>.</p>`;
+
+  return sendEmail({
+    to,
+    subject: "Today's Money & Mind audio is ready",
+    htmlContent: emailTemplate({ title: "Time to listen", bodyHtml }),
+  });
+}
+
 // Email the 30-minute password reset code
 export async function sendPasswordResetEmail({ to, fullName, code }) {
   const bodyHtml = `
