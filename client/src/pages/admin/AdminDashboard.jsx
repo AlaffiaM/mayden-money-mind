@@ -10,7 +10,10 @@ import {
   Activity,
   Download,
   ArrowUpRight,
+  Plus,
+  Send,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import AdminStatCard from "../../components/admin/AdminStatCard";
 import AdminCard from "../../components/admin/AdminCard";
@@ -181,6 +184,24 @@ export default function AdminDashboard() {
       <AdminPageHeading
         title="Dashboard"
         subtitle="An overview of revenue, subscribers, and growth."
+        actions={
+          <>
+            <Link
+              to="/admin/episodes"
+              className="inline-flex items-center gap-2 rounded-full bg-mayden-magenta px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-mayden-magenta/90"
+            >
+              <Plus size={15} />
+              Manage episodes
+            </Link>
+            <Link
+              to="/admin/notifications"
+              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:border-mayden-magenta/40 hover:text-mayden-magenta"
+            >
+              <Send size={15} />
+              Send announcement
+            </Link>
+          </>
+        }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
