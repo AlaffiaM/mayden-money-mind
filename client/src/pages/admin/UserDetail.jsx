@@ -149,7 +149,7 @@ export default function UserDetail() {
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Phone size={14} className="text-gray-400" />{" "}
-            {user.phone || "No phone"}
+            {user.phone || "No WhatsApp number"}
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Shield size={14} className="text-gray-400" /> {user.role}
