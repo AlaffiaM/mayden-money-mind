@@ -14,6 +14,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import SubscriberLayout from "../components/layout/SubscriberLayout";
+import UserPageHeading from "../components/ui/UserPageHeading";
 import { useToast } from "../components/admin/useToast.js";
 import LoadError from "../components/ui/LoadError";
 
@@ -406,7 +407,11 @@ export default function Subscription() {
 
   return (
     <SubscriberLayout>
-      <div className="mx-auto max-w-lg">
+      <div className="mx-auto max-w-2xl">
+        <UserPageHeading
+          title="My Subscription"
+          subtitle="Manage your plan, renewal settings, and payment access."
+        />
         {statusBanner}
         {pricingError && (
           <LoadError
@@ -415,13 +420,9 @@ export default function Subscription() {
           />
         )}
 
-        <h1 className="mb-6 text-2xl font-serif font-bold text-mayden-dark">
-          My Subscription
-        </h1>
-
         {subscription?.status === "active" && !polling ? (
-          <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-            <div className="bg-gradient-to-br from-mayden-pink-tint/80 to-white p-6">
+          <div className="overflow-hidden rounded-3xl border border-gray-200/80 bg-white shadow-[0_8px_28px_rgba(26,26,26,0.045)]">
+            <div className="bg-gradient-to-br from-mayden-pink-tint/80 via-white to-white p-5 sm:p-7">
               <div className="mb-4 flex items-center gap-2">
                 <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
                   Active
@@ -465,7 +466,7 @@ export default function Subscription() {
               </div>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="space-y-4 p-5 sm:p-7">
               <div className="flex items-center justify-between border-t border-gray-100 pt-4">
                 <div className="flex items-center gap-2">
                   <CreditCard size={16} className="text-gray-400" />
@@ -517,10 +518,10 @@ export default function Subscription() {
                     Loading current plan prices…
                   </p>
                 ) : !pricingError ? (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <button
                     onClick={() => handleSubscribe("weekly")}
-                    className="group rounded-2xl border-2 border-gray-200 bg-white p-6 text-center transition-all hover:-translate-y-0.5 hover:border-mayden-magenta hover:shadow-md"
+                    className="group rounded-2xl border border-gray-200/80 bg-white p-6 text-center shadow-[0_3px_12px_rgba(26,26,26,0.035)] transition-all hover:-translate-y-0.5 hover:border-mayden-magenta/50 hover:shadow-lg"
                   >
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
                       Weekly
@@ -535,7 +536,7 @@ export default function Subscription() {
                   </button>
                   <button
                     onClick={() => handleSubscribe("monthly")}
-                    className="group relative rounded-2xl border-[3px] border-mayden-magenta bg-mayden-pink-tint/40 p-6 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                    className="group relative rounded-2xl border-2 border-mayden-magenta/70 bg-gradient-to-br from-mayden-pink-tint/70 to-white p-6 text-center shadow-[0_6px_22px_rgba(236,38,143,0.08)] transition-all hover:-translate-y-0.5 hover:shadow-lg"
                   >
                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-mayden-magenta px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
                       Most Popular
