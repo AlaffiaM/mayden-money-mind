@@ -3,6 +3,7 @@ import api from "../services/api";
 import { usePlayer } from "../context/usePlayer";
 import { Search, Play, Pause } from "lucide-react";
 import SubscriberLayout from "../components/layout/SubscriberLayout";
+import UserPageHeading from "../components/ui/UserPageHeading";
 import LoadError from "../components/ui/LoadError";
 
 const moodTags = [
@@ -101,14 +102,16 @@ export default function Library() {
 
   return (
     <SubscriberLayout>
-      <div className="mb-6">
-        <h1 className="mb-2 text-2xl font-serif font-bold text-mayden-dark lg:text-3xl">
-          My Library
-        </h1>
-        <p className="mb-4 text-sm text-gray-500">
+      <UserPageHeading
+        title="My Library"
+        subtitle={
+          <>
           Episodes you've listened to. Your library stays with you even if your
           subscription lapses — renew to play again.
-        </p>
+          </>
+        }
+      />
+      <section className="mb-6 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_3px_14px_rgba(26,26,26,0.035)] sm:p-5">
         <div className="mb-4 flex flex-wrap gap-2">
           {moodTags.map((tag) => (
             <button
@@ -116,7 +119,8 @@ export default function Library() {
               onClick={() =>
                 setSearch((s) => (s === tag.query ? "" : tag.query))
               }
-              className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
+              aria-pressed={search === tag.query}
+              className={`rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors ${
                 search === tag.query
                   ? "bg-mayden-magenta text-white border-mayden-magenta"
                   : "border-gray-200 text-gray-600 hover:border-mayden-magenta hover:text-mayden-magenta"
@@ -136,12 +140,12 @@ export default function Library() {
             placeholder="Search your library..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm focus:border-mayden-magenta focus:outline-none focus:ring-2 focus:ring-mayden-magenta/20"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50/70 py-3 pl-10 pr-4 text-sm transition-colors placeholder:text-gray-400 focus:border-mayden-magenta focus:bg-white focus:outline-none focus:ring-2 focus:ring-mayden-magenta/15"
           />
         </div>
-      </div>
+      </section>
 
-      <div className="space-y-3">
+      <div className="space-y-3.5">
         {loading ? (
           <div className="py-12 text-center">
             <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-mayden-magenta border-t-transparent" />
@@ -158,10 +162,10 @@ export default function Library() {
           return (
             <div
               key={ep.id}
-              className={`rounded-2xl border p-4 transition-all ${
+              className={`rounded-2xl border p-4 transition-all sm:p-5 ${
                 isActive
-                  ? "border-mayden-magenta/50 bg-mayden-pink-tint/30 shadow-sm"
-                  : "border-gray-100 bg-white shadow-sm"
+                  ? "border-mayden-magenta/40 bg-white shadow-[0_8px_28px_rgba(236,38,143,0.09)] ring-1 ring-mayden-magenta/10"
+                  : "border-gray-200/80 bg-white shadow-[0_3px_12px_rgba(26,26,26,0.035)] hover:border-gray-300"
               }`}
             >
               <div className="flex items-start justify-between gap-4">
@@ -219,11 +223,14 @@ export default function Library() {
           );
         })}
         {!loading && !loadError && filtered.length === 0 && (
-          <p className="py-12 text-center text-gray-400">
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-5 py-14 text-center text-gray-500">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-mayden-pink-tint text-mayden-magenta">
+              <Play size={20} />
+            </div>
             {episodes.length === 0
               ? "Your library is empty. Start listening from the dashboard to build it."
               : "No episodes match your search."}
-          </p>
+          </div>
         )}
       </div>
     </SubscriberLayout>
