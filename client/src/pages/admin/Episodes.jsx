@@ -207,7 +207,7 @@ function WeekCalendar({ episodes, weekOffset, onPublish }) {
       {days.map((day) => (
         <div
           key={day.key}
-          className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm min-h-[180px]"
+          className="min-h-[180px] rounded-2xl border border-gray-200/80 bg-white p-4 shadow-[0_2px_8px_rgba(26,26,26,0.03)] transition-shadow hover:shadow-[0_8px_22px_rgba(26,26,26,0.06)]"
         >
           <div className="flex items-center justify-between mb-3">
             <span
@@ -856,9 +856,9 @@ export default function Episodes() {
             return (
               <div
                 key={weekKey}
-                className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+                className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-[0_2px_8px_rgba(26,26,26,0.03)]"
               >
-                <div className="flex items-center justify-between border-b border-gray-100 bg-mayden-gray/60 px-4 py-2">
+                <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/80 px-4 py-3">
                   <div className="flex items-center gap-3">
                     <button
                       onClick={toggleWeekSelect}
