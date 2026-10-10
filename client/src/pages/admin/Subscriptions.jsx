@@ -73,7 +73,7 @@ export default function Subscriptions() {
         "User ID": s.userId,
         "Full Name": s.user?.fullName || "",
         Email: s.user?.email || "",
-        Phone: s.user?.phone || "",
+        "WhatsApp Number": s.user?.phone || "",
         Plan: s.plan,
         Status: s.status,
         "Start Date": s.startDate ? new Date(s.startDate).toLocaleDateString() : "",
@@ -122,7 +122,7 @@ export default function Subscriptions() {
         columns={[
           { label: "User" },
           { label: "Email" },
-          { label: "Phone" },
+          { label: "WhatsApp Number" },
           { label: "Plan" },
           { label: "Status" },
           { label: "Start Date" },
