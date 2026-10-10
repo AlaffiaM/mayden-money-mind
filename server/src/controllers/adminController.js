@@ -943,29 +943,131 @@ export async function listNotifications(req, res, next) {
 
 export async function createNotification(req, res, next) {
   try {
-    const { title, body: notifBody, channels } = req.body;
+    const title = typeof req.body.title === "string" ? req.body.title.trim() : "";
+    const notifBody = typeof req.body.body === "string" ? req.body.body.trim() : "";
+    const channels = normalizeNotificationChannels(req.body.channels);
     if (!title || !notifBody) {
-      return res.status(400).json({ error: "Title and body are required" });
+      return res.status(400).json({ error: "Title and message are required" });
+    }
+    if (title.length > 120 || notifBody.length > 5000) {
+      return res.status(400).json({ error: "Title or message is too long" });
+    }
+    if (!channels) {
+      return res.status(400).json({ error: "Select in-app, email, or both channels" });
+    }
+
+    let emailUsers = [];
+    if (channels.includes("email")) {
+      if (!brevoConfigured()) {
+        return res.status(503).json({ error: "Email delivery is not configured" });
+      }
+      emailUsers = await prisma.user.findMany({
+        where: { email: { not: null }, emailVerified: { not: null } },
+        select: { id: true, email: true },
+      });
+      if (emailUsers.length === 0) {
+        return res.status(400).json({ error: "There are no users with verified email addresses to receive this message" });
+      }
     }
 
     const notification = await prisma.notification.create({
       data: {
         title,
         body: notifBody,
-        channels: channels || "inapp",
+        channels: channels.join(","),
         sentBy: "admin",
       },
     });
-    res.status(201).json(notification);
+
+    let emailSent = 0;
+    let emailFailed = 0;
+    const batchSize = 5;
+    for (let i = 0; i < emailUsers.length; i += batchSize) {
+      const batch = emailUsers.slice(i, i + batchSize);
+      const results = await Promise.all(
+        batch.map(async (user) => {
+          try {
+            const result = await sendUserEmail({
+              to: user.email,
+              subject: `Money & Mind: ${title}`,
+              title,
+              body: notifBody,
+            });
+            if (!result.sent) {
+              logger.error(`[notification] email to user ${user.id} was not sent: ${result.reason}`);
+              return false;
+            }
+            return true;
+          } catch (err) {
+            logger.error(`[notification] email to user ${user.id} failed:`, err.message);
+            return false;
+          }
+        }),
+      );
+      const successful = results.filter(Boolean).length;
+      emailSent += successful;
+      emailFailed += results.length - successful;
+    }
+
+    res.status(201).json({ notification, recipients: { inApp: channels.includes("inapp") ? "all users" : 0, emailSent, emailFailed } });
   } catch (err) {
     next(err);
   }
 }
 
+function normalizeNotificationChannels(value) {
+  const channels = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(",")
+      : [];
+  const selected = [...new Set(channels.map((channel) => String(channel).trim().toLowerCase()))];
+  if (selected.length === 0 || selected.some((channel) => !["inapp", "email"].includes(channel))) {
+    return null;
+  }
+  return ["inapp", "email"].filter((channel) => selected.includes(channel));
+}
+
 export async function testNotification(req, res, next) {
   try {
-    const { title, body: notifBody, channels } = req.body;
-    res.json({ success: true, message: "Test notification sent", preview: { title, body: notifBody, channels } });
+    const title = typeof req.body.title === "string" ? req.body.title.trim() : "";
+    const notifBody = typeof req.body.body === "string" ? req.body.body.trim() : "";
+    const channels = normalizeNotificationChannels(req.body.channels);
+    if (!title || !notifBody || !channels) {
+      return res.status(400).json({ error: "Provide a title, message, and at least one delivery channel" });
+    }
+    if (title.length > 120 || notifBody.length > 5000) {
+      return res.status(400).json({ error: "Title or message is too long" });
+    }
+
+    let emailSent = false;
+    if (channels.includes("email")) {
+      if (!brevoConfigured()) {
+        return res.status(503).json({ error: "Email delivery is not configured" });
+      }
+      const admin = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { email: true },
+      });
+      if (!admin?.email) {
+        return res.status(400).json({ error: "Your admin account does not have an email address for testing" });
+      }
+      const result = await sendUserEmail({
+        to: admin.email,
+        subject: `TEST — Money & Mind: ${title}`,
+        title,
+        body: notifBody,
+      });
+      if (!result.sent) {
+        return res.status(503).json({ error: "Test email could not be sent" });
+      }
+      emailSent = true;
+    }
+    res.json({
+      success: true,
+      message: emailSent ? "Test email sent to your admin address" : "In-app preview ready",
+      preview: { title, body: notifBody, channels: channels.join(",") },
+    });
   } catch (err) {
     next(err);
   }
