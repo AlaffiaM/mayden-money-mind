@@ -10,7 +10,7 @@ export default function Privacy() {
           <p>Effective Date: January 1, 2026</p>
           <p>This Privacy Policy explains how Mayden Microfinance Bank ("we", "us") handles personal information when you use Money & Mind. It is intended to describe the service's current practices.</p>
           <h2 className="text-lg font-semibold text-mayden-dark">1. Information We Collect</h2>
-          <p>We collect the name and email address you provide when creating an account, and an optional phone number if you choose to provide one. We also process account and subscription status, payment amounts and references, the last four digits of a card when supplied by the payment processor, and listening activity such as episodes played.</p>
+          <p>We collect the name, email address, and WhatsApp number you provide when creating an account. We also process account and subscription status, payment amounts and references, the last four digits of a card when supplied by the payment processor, and listening activity such as episodes played.</p>
           <h2 className="text-lg font-semibold text-mayden-dark">2. How We Use Your Information</h2>
           <p>We use this information to create and secure accounts, provide audio and subscription access, process and reconcile payments, send account or service messages (including a daily listening reminder to active subscribers unless it is turned off in account settings), respond to support requests, and maintain and improve the service.</p>
           <h2 className="text-lg font-semibold text-mayden-dark">3. Data Protection</h2>
