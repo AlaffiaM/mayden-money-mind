@@ -100,9 +100,24 @@ export default function Subscriptions() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <AdminStatCard label="Total Revenue" value={`₦${totalRevenue.toLocaleString()}`} icon={CreditCard} tone="emerald" />
-        <AdminStatCard label="Active Subscriptions" value={activeSubscriptions} icon={CheckCircle} tone="emerald" />
-        <AdminStatCard label="Expired Subscriptions" value={expiredSubscriptions} icon={AlertTriangle} tone="red" />
+        <AdminStatCard
+          label="Total Revenue"
+          value={`₦${totalRevenue.toLocaleString()}`}
+          icon={CreditCard}
+          accent="text-emerald-600"
+        />
+        <AdminStatCard
+          label="Active Subscriptions"
+          value={activeSubscriptions}
+          icon={CheckCircle}
+          accent="text-emerald-600"
+        />
+        <AdminStatCard
+          label="Expired Subscriptions"
+          value={expiredSubscriptions}
+          icon={AlertTriangle}
+          accent="text-red-600"
+        />
       </div>
 
       <div>
