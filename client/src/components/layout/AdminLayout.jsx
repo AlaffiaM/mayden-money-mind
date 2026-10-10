@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import LogoutButton from "../ui/LogoutButton";
-import { ToastProvider } from "../admin/ToastProvider";
 
 const nav = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -135,11 +134,9 @@ export default function AdminLayout({ children }) {
       )}
 
       <main className="min-w-0 flex-1 overflow-auto">
-        <ToastProvider>
-          <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
-            {children}
-          </div>
-        </ToastProvider>
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
+          {children}
+        </div>
       </main>
     </div>
   );
