@@ -14,7 +14,7 @@ export default function AdminTable({
             {columns.map((col, i) => (
               <th
                 key={i}
-                className={`bg-gray-50/80 px-4 py-3.5 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-500 ${col.className || ""}`}
+                className={`bg-gray-50/80 px-4 py-3.5 text-[10px] font-bold uppercase tracking-widest text-gray-500 ${col.className || ""}`}
               >
                 {col.label}
               </th>
