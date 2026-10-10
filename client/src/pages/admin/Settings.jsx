@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import api from "../../services/api";
 import { Save, CreditCard, Clock, Tag } from "lucide-react";
 import AdminPageHeading from "../../components/admin/AdminPageHeading";
+import AdminCard from "../../components/admin/AdminCard";
 import Loader from "../../components/admin/Loader";
 import { useToast } from "../../components/admin/useToast.js";
 import LoadError from "../../components/ui/LoadError";
@@ -16,17 +17,16 @@ const DEFAULT_DAY_LABELS = {
 
 function Section({ icon: Icon, title, children }) {
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-      <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-mayden-magenta/10">
+    <AdminCard
+      title={title}
+      actions={
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-mayden-pink-tint">
           <Icon size={18} className="text-mayden-magenta" />
         </div>
-        <h2 className="font-serif text-lg font-bold text-mayden-dark">
-          {title}
-        </h2>
-      </div>
+      }
+    >
       {children}
-    </div>
+    </AdminCard>
   );
 }
 
@@ -127,31 +127,33 @@ export default function Settings() {
       />
 
       <Section icon={CreditCard} title="Pricing">
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Weekly Price (₦)">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Weekly Price (₦)">
+              <input
+                type="number"
+                value={settings.weeklyPrice || ""}
+                onChange={(e) => update("weeklyPrice", e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Monthly Price (₦)">
+              <input
+                type="number"
+                value={settings.monthlyPrice || ""}
+                onChange={(e) => update("monthlyPrice", e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+          <Field label="Currency" hint="Three-letter currency code, such as NGN.">
             <input
-              type="number"
-              value={settings.weeklyPrice || ""}
-              onChange={(e) => update("weeklyPrice", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Monthly Price (₦)">
-            <input
-              type="number"
-              value={settings.monthlyPrice || ""}
-              onChange={(e) => update("monthlyPrice", e.target.value)}
+              value={settings.currency || ""}
+              onChange={(e) => update("currency", e.target.value)}
               className={inputClass}
             />
           </Field>
         </div>
-        <Field label="Currency" hint="Three-letter currency code, such as NGN.">
-          <input
-            value={settings.currency || ""}
-            onChange={(e) => update("currency", e.target.value)}
-            className={inputClass}
-          />
-        </Field>
       </Section>
 
       <Section icon={Clock} title="Episode & Renewal">
